@@ -1,0 +1,48 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+    <id>dist</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>PortfolioTracker</baseDirectory>
+
+    <!-- El fat JAR ejecutable -->
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}.jar</source>
+            <destName>PortfolioTracker.jar</destName>
+            <outputDirectory>/</outputDirectory>
+        </file>
+    </files>
+
+    <fileSets>
+        <!-- Scripts de arranque y servicio -->
+        <fileSet>
+            <directory>src/dist</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>start.bat</include>
+                <include>start.sh</include>
+                <include>install-service.bat</include>
+                <include>uninstall-service.bat</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+        <!-- Carpeta data con la BD y seeds -->
+        <fileSet>
+            <directory>data</directory>
+            <outputDirectory>/data</outputDirectory>
+            <includes>
+                <include>portfolio.db</include>
+                <include>seed.sql</include>
+                <include>price_history_seed.sql</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</assembly>
+
+
+
