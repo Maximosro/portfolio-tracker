@@ -90,6 +90,12 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .pl-positive{color:var(--color-success);font-weight:600}
 .pl-negative{color:var(--color-notification);font-weight:600}
 .pl-zero{color:var(--color-text-muted)}
+/* ─── Compact positions table ─── */
+.data-table.compact{font-size:12px;table-layout:fixed;width:100%}
+.data-table.compact th{padding:var(--space-2) var(--space-2);font-size:10px;letter-spacing:.03em}
+.data-table.compact td{padding:var(--space-2) var(--space-2)}
+.data-table.compact .ticker-badge{font-size:12px}
+.data-table.compact .ticker-name{font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ===================== CHARTS ===================== */
 .chart-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);box-shadow:var(--shadow-sm);margin-bottom:var(--space-6)}
 .chart-title{font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-4)}
@@ -163,6 +169,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 /* ===================== DETAIL MODAL ===================== */
 .detail-overlay{display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:600;align-items:center;justify-content:center;padding:var(--space-4)}
 .detail-overlay.open{display:flex}
+#portfolioDetailOverlay.open{display:block;background:var(--color-bg);z-index:700;padding:0}
 .detail-modal{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);width:100%;max-width:680px;max-height:90dvh;box-shadow:var(--shadow-md);display:flex;flex-direction:column;overflow:hidden;animation:newsSlideUp .25s ease}
 .detail-modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-divider);flex-shrink:0}
 .detail-modal-header h2{font-size:var(--text-lg);font-weight:700;display:flex;align-items:center;gap:var(--space-2)}
@@ -215,6 +222,26 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .alert-type-badge.warning{background:oklch(from var(--color-gold) l c h / .1);color:var(--color-gold)}
 .alert-type-badge.info{background:oklch(from var(--color-primary) l c h / .1);color:var(--color-primary)}
 /* ===================== RESPONSIVE ===================== */
+/* ===================== PERIOD HISTORY MODAL ===================== */
+.ph-overlay{display:none;position:fixed;inset:0;background:oklch(0 0 0/.65);z-index:800;align-items:center;justify-content:center;padding:var(--space-4)}
+.ph-overlay.open{display:flex}
+.ph-modal{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);width:100%;max-width:740px;max-height:85dvh;box-shadow:var(--shadow-md);display:flex;flex-direction:column;overflow:hidden;animation:newsSlideUp .25s ease}
+.ph-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-divider);flex-shrink:0}
+.ph-header h3{font-size:var(--text-lg);font-weight:700;display:flex;align-items:center;gap:var(--space-2)}
+.ph-body{flex:1;overflow-y:auto;padding:var(--space-5) var(--space-6)}
+.ph-summary{display:flex;gap:var(--space-4);margin-bottom:var(--space-5)}
+.ph-summary-card{flex:1;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);text-align:center}
+.ph-summary-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);font-weight:500}
+.ph-summary-value{font-size:var(--text-lg);font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.ph-chart-wrap{position:relative;height:220px;margin-bottom:var(--space-5)}
+.ph-table{width:100%;border-collapse:collapse;font-size:var(--text-xs)}
+.ph-table th{text-align:left;padding:var(--space-2) var(--space-3);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em;font-size:9px;border-bottom:2px solid var(--color-divider);white-space:nowrap}
+.ph-table td{padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--color-divider);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ph-table tr:last-child td{border-bottom:none}
+.ph-table tr:hover td{background:var(--color-surface-offset)}
+.ph-table .num-right{text-align:right}
+.ph-clickable{cursor:pointer;transition:all var(--transition-interactive)}
+.ph-clickable:hover{border-color:var(--color-primary);box-shadow:0 0 0 1px var(--color-primary);transform:translateY(-1px)}
 @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:640px){
@@ -252,6 +279,10 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
         Exportar
       </button>
+      <button class="btn btn-secondary btn-sm" onclick="openPortfolioDetail()" title="Rentabilidad y patrimonio">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>
+        Detalle de Cartera
+      </button>
       <button class="btn btn-secondary btn-sm" onclick="openAddModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
         Nueva posición
@@ -275,10 +306,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Capital Invertido</div><div class="kpi-value" id="kpiInvested">—</div><div class="kpi-sub" id="kpiPositions">0 posiciones</div></div>
       <div class="kpi-card"><div class="kpi-label">Valor Actual</div><div class="kpi-value" id="kpiValue">—</div><div class="kpi-sub">Basado en precios actuales</div></div>
-      <div class="kpi-card"><div class="kpi-label">Ganancia / Pérdida</div><div class="kpi-value" id="kpiPL">—</div><div class="kpi-sub" id="kpiPLSub">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ganancia / Pérdida</div><div class="kpi-value" id="kpiPL">—</div><div class="kpi-sub" id="kpiPLSub">—</div><div class="kpi-sub" id="kpiPLDay" style="margin-top:var(--space-1)">—</div></div>
       <div class="kpi-card"><div class="kpi-label">DCA Mensual</div><div class="kpi-value" id="kpiDca">—</div><div class="kpi-sub" id="kpiDcaSub">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Rentab. Anualizada (XIRR)</div><div class="kpi-value" id="kpiXirr">—</div><div class="kpi-sub" id="kpiXirrSub" title="Tasa interna de retorno anualizada considerando fechas y montos de cada compra DCA" style="cursor:help">Basado en flujos DCA</div></div>
     </div>
+
 
     <!-- CHARTS ROW -->
     <div style="display:flex;gap:var(--space-6);margin-bottom:var(--space-6);flex-wrap:wrap">
@@ -317,18 +349,18 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <div class="section-title">Posiciones</div>
       </div>
       <div class="section-body" style="padding:0">
-        <div class="table-wrap">
-          <table class="data-table">
+         <div class="table-wrap">
+          <table class="data-table compact">
             <thead>
               <tr>
                 <th>Ticker</th>
                 <th>Acciones</th>
-                <th>P.Medio (€)</th>
-                <th>P.Actual (€)</th>
-                <th>Invertido (€)</th>
-                <th>Valor (€)</th>
-                <th>P&amp;L (€)</th>
-                <th>P&amp;L (%)</th>
+                <th>P.Medio</th>
+                <th>P.Actual</th>
+                <th>Día</th>
+                <th>Invertido</th>
+                <th>Valor</th>
+                <th>P&amp;L</th>
                 <th>TIR</th>
                 <th></th>
               </tr>
@@ -758,6 +790,113 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   </div>
 </div>
 
+<!-- PORTFOLIO DETAIL SCREEN -->
+<div class="detail-overlay" id="portfolioDetailOverlay" onclick="if(event.target===this)closePortfolioDetail()">
+  <div style="background:var(--color-bg);width:100%;height:100%;overflow-y:auto;padding:var(--space-6) var(--space-8)">
+    <div style="max-width:var(--content-wide);margin:0 auto">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6);padding-bottom:var(--space-4);border-bottom:1px solid var(--color-divider)">
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <button class="btn btn-ghost btn-sm" onclick="closePortfolioDetail()" style="padding:var(--space-2)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <div>
+            <div style="font-size:var(--text-lg);font-weight:700">Detalle de Cartera</div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-muted)">Rentabilidad por periodos y evolución patrimonial</div>
+          </div>
+        </div>
+        <button class="btn-ghost btn" onclick="closePortfolioDetail()">✕</button>
+      </div>
+
+      <!-- KPIs principales resumidos -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-6)">
+        <div class="kpi-card"><div class="kpi-label">Capital Invertido</div><div class="kpi-value" id="pdInvested">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Valor Actual</div><div class="kpi-value" id="pdValue">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">P&amp;L Total</div><div class="kpi-value" id="pdPL">—</div><div class="kpi-sub" id="pdPLPct"></div></div>
+        <div class="kpi-card"><div class="kpi-label">XIRR Anualizada</div><div class="kpi-value" id="pdXirr">—</div></div>
+      </div>
+
+      <!-- Period Returns -->
+      <div style="margin-bottom:var(--space-6)">
+        <div style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-4)">Rentabilidad por Periodos</div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr)" id="returnsGrid">
+          <div class="kpi-card" style="padding:var(--space-3) var(--space-4)"><div class="kpi-label" style="font-size:9px">Hoy</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retToday">—</div><div class="kpi-sub" id="retTodaySub"></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('week')"><div class="kpi-label" style="font-size:9px">Semana</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retWeek">—</div><div class="kpi-sub" id="retWeekSub"></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('month')"><div class="kpi-label" style="font-size:9px">Mes</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retMonth">—</div><div class="kpi-sub" id="retMonthSub"></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('quarter')"><div class="kpi-label" style="font-size:9px">Trimestre</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retQuarter">—</div><div class="kpi-sub" id="retQuarterSub"></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('ytd')"><div class="kpi-label" style="font-size:9px">YTD</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retYtd">—</div><div class="kpi-sub" id="retYtdSub"></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('year')"><div class="kpi-label" style="font-size:9px">1 Año</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retYear">—</div><div class="kpi-sub" id="retYearSub"></div></div>
+        </div>
+      </div>
+
+      <!-- Equity Curve -->
+      <div class="chart-card" style="margin-bottom:var(--space-6)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
+          <div class="chart-title" style="margin-bottom:0">📈 Patrimonio — Valor vs Capital Invertido</div>
+          <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
+            <button class="range-btn eq-range" data-eqrange="1m" onclick="setEquityRange('1m')">1M</button>
+            <button class="range-btn eq-range active" data-eqrange="3m" onclick="setEquityRange('3m')">3M</button>
+            <button class="range-btn eq-range" data-eqrange="6m" onclick="setEquityRange('6m')">6M</button>
+            <button class="range-btn eq-range" data-eqrange="1y" onclick="setEquityRange('1y')">1A</button>
+            <button class="range-btn eq-range" data-eqrange="ytd" onclick="setEquityRange('ytd')">YTD</button>
+            <button class="range-btn eq-range" data-eqrange="all" onclick="setEquityRange('all')">Todo</button>
+          </div>
+        </div>
+        <div style="position:relative;height:400px"><canvas id="equityChart"></canvas></div>
+      </div>
+
+      <!-- Distribución + evolución en esta pantalla también -->
+      <div style="display:flex;gap:var(--space-6);flex-wrap:wrap">
+        <div class="chart-card" style="flex:0 0 35%;min-width:280px;margin-bottom:0">
+          <div class="chart-title">Distribución de Cartera</div>
+          <div style="position:relative;height:300px"><canvas id="pdPieChart"></canvas></div>
+        </div>
+        <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
+            <div class="chart-title" style="margin-bottom:0">Evolución de Precios</div>
+            <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
+              <button class="range-btn pd-range active" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
+              <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
+              <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
+              <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
+              <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
+            </div>
+          </div>
+          <div style="position:relative;height:300px"><canvas id="pdHistChart"></canvas></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PERIOD HISTORY MODAL -->
+<div class="ph-overlay" id="periodHistoryOverlay" onclick="if(event.target===this)closePeriodHistory()">
+  <div class="ph-modal">
+    <div class="ph-header">
+      <h3 id="phTitle">📊 Histórico</h3>
+      <button class="btn btn-ghost" onclick="closePeriodHistory()">✕</button>
+    </div>
+    <div class="ph-body">
+      <div class="ph-summary">
+        <div class="ph-summary-card">
+          <div class="ph-summary-label">Rentabilidad</div>
+          <div class="ph-summary-value" id="phTotalPct">—</div>
+        </div>
+        <div class="ph-summary-card">
+          <div class="ph-summary-label">Variación</div>
+          <div class="ph-summary-value" id="phTotalEur">—</div>
+        </div>
+      </div>
+      <div class="ph-chart-wrap"><canvas id="phChart"></canvas></div>
+      <table class="ph-table">
+        <thead id="phTableHead"></thead>
+        <tbody id="phTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -878,7 +1017,20 @@ function renderKPIs() {
   document.getElementById('kpiValue').textContent = tv !== null ? fmtEur(tv) : '— (sin precios)';
   document.getElementById('kpiPL').textContent = pl !== null ? fmtEur(pl) : '—';
   document.getElementById('kpiPL').className = 'kpi-value ' + (pl === null ? '' : pl >= 0 ? 'positive' : 'negative');
-  document.getElementById('kpiPLSub').textContent = plPct !== null ? fmtPct(plPct) : 'Actualiza los precios';
+  document.getElementById('kpiPLSub').textContent = plPct !== null ? fmtPct(plPct) + ' total' : 'Actualiza los precios';
+
+  // P&L diario: valor actual vs valor al cierre de ayer (previousClose)
+  const posWithClose = positions.filter(p => p.currentPrice && p.previousClose && p.previousClose > 0);
+  if (posWithClose.length > 0) {
+    const valueNow = posWithClose.reduce((s, p) => s + p.shares * p.currentPrice, 0);
+    const valueClose = posWithClose.reduce((s, p) => s + p.shares * p.previousClose, 0);
+    const dayPL = valueNow - valueClose;
+    const dayPLPct = valueClose > 0 ? (dayPL / valueClose) * 100 : 0;
+    const dayColor = dayPL >= 0 ? 'var(--color-success)' : 'var(--color-notification)';
+    document.getElementById('kpiPLDay').innerHTML = `<span style="color:${dayColor};font-weight:600">Hoy: ${fmtEur(dayPL)} (${fmtPct(dayPLPct)})</span>`;
+  } else {
+    document.getElementById('kpiPLDay').textContent = 'Hoy: sin datos de cierre';
+  }
 
   // DCA mensual
   const now = new Date();
@@ -926,6 +1078,8 @@ function renderTable() {
     const pl = calcPL(pos);
     const plPct = calcPLPct(pos);
     const posXirr = metrics && metrics.positionXirr ? metrics.positionXirr[pos.ticker] : null;
+    const dayChange = (pos.currentPrice && pos.previousClose && pos.previousClose > 0)
+        ? ((pos.currentPrice - pos.previousClose) / pos.previousClose) * 100 : null;
     const detail = positionDetailsMap[pos.ticker];
     const tooltipParts = [];
     if (detail) {
@@ -945,17 +1099,17 @@ function renderTable() {
           <span class="ticker-dot" style="background:${pos.color || '#4f98a3'}"></span>
           <div>
             <div style="font-weight:700;text-decoration:underline;text-decoration-color:var(--color-border);text-underline-offset:2px;transition:text-decoration-color var(--transition-interactive)" onmouseenter="this.style.textDecorationColor='var(--color-primary)'" onmouseleave="this.style.textDecorationColor='var(--color-border)'">${pos.ticker}</div>
-            <div style="font-size:var(--text-xs);color:var(--color-text-muted);font-weight:400">${pos.name || ''}</div>
+            <div class="ticker-name" style="color:var(--color-text-muted);font-weight:400">${pos.name || ''}</div>
           </div>
         </div>
       </td>
       <td>${fmtShares(pos.shares)}</td>
       <td>${fmtEur(pos.avgPrice, 4)}</td>
       <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
+      <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td>${fmtEur(invested)}</td>
       <td>${value !== null ? fmtEur(value) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
-      <td class="${plClass(pl)}">${fmtEur(pl)}</td>
-      <td class="${plClass(plPct)}">${fmtPct(plPct)}</td>
+      <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
       <td class="${plClass(posXirr)}">${posXirr != null ? fmtPct(posXirr * 100) : '—'}</td>
       <td style="text-align:center;white-space:nowrap">
         <button class="btn-ghost btn btn-sm" onclick="openEditModal('${pos.ticker}')" title="Editar" style="padding:2px 6px">
@@ -977,11 +1131,10 @@ function renderTable() {
   const totalXirr = metrics ? metrics.portfolioXirr : null;
   tbody.insertAdjacentHTML('beforeend', `
     <tr style="background:var(--color-surface-offset);font-weight:700">
-      <td colspan="4" style="text-align:left;color:var(--color-text-muted);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.05em">TOTAL CARTERA</td>
+      <td colspan="5" style="text-align:left;color:var(--color-text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">TOTAL CARTERA</td>
       <td>${fmtEur(ti)}</td>
       <td>${tv !== null ? fmtEur(tv) : '—'}</td>
-      <td class="${plClass(pl)}">${fmtEur(pl)}</td>
-      <td class="${plClass(plPct)}">${fmtPct(plPct)}</td>
+      <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
       <td class="${plClass(totalXirr)}">${totalXirr != null ? fmtPct(totalXirr * 100) : '—'}</td>
       <td></td>
     </tr>`);
@@ -1383,8 +1536,9 @@ function renderPortfolioChart(data, c, ctx) {
     const shares = pos ? pos.shares : 1;
     const points = timestamps.map(ts => {
       const prices = tsMap.get(ts);
-      return prices[ticker] != null ? { x: new Date(ts), y: prices[ticker] * shares } : null;
-    }).filter(Boolean);
+      const val = prices[ticker] != null ? prices[ticker] * shares : null;
+      return { x: new Date(ts), y: val };
+    });
     datasets.push({
       label: ticker, data: points, borderColor: color, backgroundColor: color + '18',
       borderWidth: 2, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
@@ -1513,6 +1667,7 @@ function createLineChart(ctx, c, datasets) {
         tooltip: {
           backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1,
           titleColor: c.text, bodyColor: c.textMuted,
+          filter: item => item.raw.y != null,
           callbacks: {
             label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}`
           }
@@ -2415,6 +2570,470 @@ function renderAlerts() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ===================== PERIOD RETURNS =====================
+async function loadReturns() {
+  try {
+    const resp = await fetch(`${BASE}/api/metrics/returns`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const p = data.periods || {};
+    renderReturnCard('retToday', 'retTodaySub', p.today);
+    renderReturnCard('retWeek', 'retWeekSub', p.week);
+    renderReturnCard('retMonth', 'retMonthSub', p.month);
+    renderReturnCard('retQuarter', 'retQuarterSub', p.quarter);
+    renderReturnCard('retYtd', 'retYtdSub', p.ytd);
+    renderReturnCard('retYear', 'retYearSub', p.year);
+  } catch (e) { /* silencioso */ }
+}
+
+function renderReturnCard(valId, subId, entry) {
+  const valEl = document.getElementById(valId);
+  const subEl = document.getElementById(subId);
+  if (!entry || entry.returnPct == null) {
+    valEl.textContent = '—';
+    valEl.className = 'kpi-value';
+    valEl.style.fontSize = 'var(--text-lg)';
+    subEl.textContent = 'Sin datos';
+    return;
+  }
+  valEl.textContent = fmtPct(entry.returnPct);
+  valEl.className = 'kpi-value ' + (entry.returnPct >= 0 ? 'positive' : 'negative');
+  valEl.style.fontSize = 'var(--text-lg)';
+  subEl.textContent = fmtEur(entry.returnEur);
+  subEl.style.color = entry.returnEur >= 0 ? 'var(--color-success)' : 'var(--color-notification)';
+}
+
+// ===================== PERIOD HISTORY POPUP =====================
+let phChartInst = null;
+
+const PERIOD_TITLES = {
+  week: '📊 Histórico — Última Semana',
+  month: '📊 Histórico — Último Mes',
+  quarter: '📊 Histórico — Último Trimestre',
+  ytd: '📊 Histórico — Año en Curso (YTD)',
+  year: '📊 Histórico — Último Año'
+};
+
+async function openPeriodHistory(period) {
+  document.getElementById('phTitle').textContent = PERIOD_TITLES[period] || '📊 Histórico';
+  document.getElementById('phTotalPct').textContent = '—';
+  document.getElementById('phTotalPct').className = 'ph-summary-value';
+  document.getElementById('phTotalEur').textContent = '—';
+  document.getElementById('phTotalEur').className = 'ph-summary-value';
+  document.getElementById('phTableHead').innerHTML = '';
+  document.getElementById('phTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);padding:var(--space-6)">Cargando…</td></tr>';
+  document.getElementById('periodHistoryOverlay').classList.add('open');
+
+  try {
+    const resp = await fetch(`${BASE}/api/snapshots/period-history?period=${period}`);
+    if (!resp.ok) throw new Error('Error');
+    const data = await resp.json();
+    renderPeriodHistoryModal(data, period);
+  } catch (e) {
+    document.getElementById('phTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-notification);padding:var(--space-6)">Error al cargar datos</td></tr>';
+  }
+}
+
+function closePeriodHistory() {
+  document.getElementById('periodHistoryOverlay').classList.remove('open');
+  if (phChartInst) { phChartInst.destroy(); phChartInst = null; }
+}
+
+function renderPeriodHistoryModal(data, period) {
+  // Summary cards
+  const pctEl = document.getElementById('phTotalPct');
+  const eurEl = document.getElementById('phTotalEur');
+  if (data.totalReturnPct != null) {
+    pctEl.textContent = fmtPct(data.totalReturnPct);
+    pctEl.className = 'ph-summary-value ' + (data.totalReturnPct >= 0 ? 'positive' : 'negative');
+  } else {
+    pctEl.textContent = '—';
+    pctEl.className = 'ph-summary-value';
+  }
+  if (data.totalReturnEur != null) {
+    eurEl.textContent = fmtEur(data.totalReturnEur);
+    eurEl.className = 'ph-summary-value ' + (data.totalReturnEur >= 0 ? 'positive' : 'negative');
+  } else {
+    eurEl.textContent = '—';
+    eurEl.className = 'ph-summary-value';
+  }
+
+  // Chart
+  renderPeriodHistoryChart(data.entries, period);
+
+  // Table
+  const isGrouped = period === 'quarter' || period === 'ytd' || period === 'year';
+  const dateHeader = isGrouped ? 'Periodo' : 'Fecha';
+  document.getElementById('phTableHead').innerHTML = `
+    <tr>
+      <th>${dateHeader}</th>
+      <th class="num-right">Valor</th>
+      <th class="num-right">Invertido</th>
+      <th class="num-right">Rentab.</th>
+      <th class="num-right">Variación</th>
+    </tr>`;
+
+  if (!data.entries || data.entries.length === 0) {
+    document.getElementById('phTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);padding:var(--space-6)">Sin datos disponibles para este periodo</td></tr>';
+    return;
+  }
+
+  document.getElementById('phTableBody').innerHTML = data.entries.map(e => {
+    if (e.totalValue == null) {
+      return `<tr style="opacity:.4">
+        <td style="font-weight:500">${e.groupLabel}</td>
+        <td class="num-right" colspan="4" style="color:var(--color-text-faint);text-align:center">Sin datos</td>
+      </tr>`;
+    }
+    const pctClass = e.returnPct == null ? '' : e.returnPct >= 0 ? 'positive' : 'negative';
+    const eurClass = e.returnEur == null ? '' : e.returnEur >= 0 ? 'positive' : 'negative';
+    const arrow = e.returnPct == null ? '' : e.returnPct > 0 ? '▲' : e.returnPct < 0 ? '▼' : '—';
+    return `<tr>
+      <td style="font-weight:500">${e.groupLabel}</td>
+      <td class="num-right">${fmtEur(e.totalValue)}</td>
+      <td class="num-right" style="color:var(--color-text-muted)">${fmtEur(e.totalInvested)}</td>
+      <td class="num-right ${pctClass}">${arrow} ${e.returnPct != null ? fmtPct(e.returnPct) : '—'}</td>
+      <td class="num-right ${eurClass}">${e.returnEur != null ? fmtEur(e.returnEur) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPeriodHistoryChart(entries, period) {
+  const c = getChartColors();
+  const ctx = document.getElementById('phChart').getContext('2d');
+  if (phChartInst) phChartInst.destroy();
+
+  if (!entries || entries.length === 0) {
+    phChartInst = new Chart(ctx, {
+      type: 'bar', data: { labels: [''], datasets: [{ data: [0], backgroundColor: 'transparent' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Sin datos para este periodo', color: c.textMuted, font: { size: 13 } } } }
+    });
+    return;
+  }
+
+  const labels = entries.map(e => e.groupLabel);
+  const returnValues = entries.map(e => e.returnEur);
+
+  // Color each bar: green if positive, red if negative, gray if null
+  const successColor = getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim();
+  const errorColor = getComputedStyle(document.documentElement).getPropertyValue('--color-notification').trim();
+  const emptyColor = c.border;
+
+  const bgColors = returnValues.map(v => {
+    if (v == null) return emptyColor + '30';
+    return v >= 0 ? successColor + 'CC' : errorColor + 'CC';
+  });
+  const borderColors = returnValues.map(v => {
+    if (v == null) return emptyColor + '60';
+    return v >= 0 ? successColor : errorColor;
+  });
+
+  // Replace nulls with 0 for charting (bars at baseline)
+  const chartData = returnValues.map(v => v != null ? v : 0);
+
+  phChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Variación (€)',
+        data: chartData,
+        backgroundColor: bgColors,
+        borderColor: borderColors,
+        borderWidth: 1,
+        borderRadius: 3,
+        borderSkipped: false,
+        barPercentage: 0.75,
+        categoryPercentage: 0.85
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          ticks: {
+            color: c.textMuted,
+            font: { size: entries.length > 20 ? 8 : 9 },
+            maxRotation: 50,
+            minRotation: 0,
+            autoSkip: false
+          },
+          grid: { display: false }
+        },
+        y: {
+          ticks: {
+            color: c.textMuted,
+            font: { size: 10 },
+            callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €'
+          },
+          grid: { color: c.border + '30' },
+          beginAtZero: false
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1,
+          titleColor: c.text, bodyColor: c.textMuted,
+          callbacks: {
+            label: function(ctx) {
+              const idx = ctx.dataIndex;
+              const entry = entries[idx];
+              if (entry.returnEur == null) return ' Sin datos';
+              const sign = entry.returnEur >= 0 ? '+' : '';
+              return ` ${sign}${fmtEur(entry.returnEur)}  (${entry.returnPct >= 0 ? '+' : ''}${fmtPct(entry.returnPct)})`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ===================== EQUITY CURVE CHART =====================
+let equityChartInst = null;
+let currentEquityRange = '3m';
+
+function setEquityRange(range) {
+  currentEquityRange = range;
+  document.querySelectorAll('.eq-range').forEach(b => b.classList.toggle('active', b.dataset.eqrange === range));
+  loadEquityCurve();
+}
+
+async function loadEquityCurve() {
+  try {
+    const resp = await fetch(`${BASE}/api/snapshots?range=${currentEquityRange}`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    renderEquityChart(data);
+  } catch (e) { /* silencioso */ }
+}
+
+function renderEquityChart(data) {
+  const c = getChartColors();
+  const ctx = document.getElementById('equityChart').getContext('2d');
+  if (equityChartInst) equityChartInst.destroy();
+
+  if (!data || data.length === 0) {
+    equityChartInst = new Chart(ctx, {
+      type: 'line', data: { labels: [''], datasets: [{ data: [0], borderColor: 'transparent' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: 'Sin datos de patrimonio aún — se acumulan diariamente', color: c.textMuted, font: { size: 13 } }
+        }
+      }
+    });
+    return;
+  }
+
+  const valuePoints = data.map(s => ({ x: new Date(s.date + 'T12:00:00'), y: s.totalValue }));
+  const investedPoints = data.map(s => ({ x: new Date(s.date + 'T12:00:00'), y: s.totalInvested }));
+
+  const datasets = [
+    {
+      label: 'Valor de Mercado',
+      data: valuePoints,
+      borderColor: 'var(--color-primary)',
+      backgroundColor: 'transparent',
+      borderWidth: 2.5,
+      pointRadius: valuePoints.length > 30 ? 0 : 3,
+      pointHoverRadius: 5,
+      tension: 0.3,
+      fill: {
+        target: '+1',
+        above: 'rgba(109,170,69,0.13)',
+        below: 'rgba(221,105,116,0.13)'
+      }
+    },
+    {
+      label: 'Capital Invertido',
+      data: investedPoints,
+      borderColor: c.textMuted,
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderDash: [6, 3],
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      tension: 0.1,
+      fill: false
+    }
+  ];
+
+  equityChartInst = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: data.length > 180 ? 'month' : data.length > 30 ? 'week' : 'day', tooltipFormat: 'dd MMM yyyy' },
+          ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 },
+          grid: { color: c.border + '40' }
+        },
+        y: {
+          ticks: {
+            color: c.textMuted, font: { size: 10 },
+            callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €'
+          },
+          grid: { color: c.border + '40' }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { color: c.text, font: { size: 11 }, boxWidth: 12, boxHeight: 12, padding: 12 }
+        },
+        tooltip: {
+          backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1,
+          titleColor: c.text, bodyColor: c.textMuted,
+          callbacks: {
+            label: item => {
+              const val = fmtEur(item.raw.y);
+              return ` ${item.dataset.label}: ${val}`;
+            },
+            afterBody: (items) => {
+              if (items.length >= 2) {
+                const value = items[0].raw.y;
+                const invested = items[1].raw.y;
+                const diff = value - invested;
+                const pct = invested > 0 ? ((diff / invested) * 100).toFixed(2) : '0.00';
+                return `\n  P&L: ${fmtEur(diff)} (${diff >= 0 ? '+' : ''}${pct}%)`;
+              }
+              return '';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ===================== PORTFOLIO DETAIL SCREEN =====================
+let pdPieInst = null;
+let pdHistInst = null;
+let pdHistRange = '1m';
+
+function openPortfolioDetail() {
+  document.getElementById('portfolioDetailOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Populate summary KPIs
+  const ti = totalInvested();
+  const tv = totalValue();
+  const pl = totalPL();
+  const tiPriced = positions.filter(p => p.currentPrice).reduce((s, p) => s + calcInvested(p), 0);
+  const plPct = pl !== null && tiPriced > 0 ? (pl / tiPriced) * 100 : null;
+  const xirr = metrics && metrics.portfolioXirr;
+
+  document.getElementById('pdInvested').textContent = fmtEur(ti);
+  document.getElementById('pdValue').textContent = tv !== null ? fmtEur(tv) : '—';
+  const pdPLEl = document.getElementById('pdPL');
+  pdPLEl.textContent = pl !== null ? fmtEur(pl) : '—';
+  pdPLEl.className = 'kpi-value ' + (pl === null ? '' : pl >= 0 ? 'positive' : 'negative');
+  document.getElementById('pdPLPct').textContent = plPct !== null ? fmtPct(plPct) : '';
+  const pdXirrEl = document.getElementById('pdXirr');
+  pdXirrEl.textContent = xirr != null ? fmtPct(xirr * 100) : '—';
+  pdXirrEl.className = 'kpi-value ' + (xirr == null ? '' : xirr >= 0 ? 'positive' : 'negative');
+
+  // Load data
+  loadReturns();
+  loadEquityCurve();
+  renderPdPieChart();
+  loadPdHistory();
+}
+
+function closePortfolioDetail() {
+  document.getElementById('portfolioDetailOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Secondary pie chart in detail screen
+function renderPdPieChart() {
+  const c = getChartColors();
+  const ctx = document.getElementById('pdPieChart').getContext('2d');
+  if (pdPieInst) pdPieInst.destroy();
+  if (positions.length === 0) return;
+  const data = positions.map(p => calcValue(p) ?? calcInvested(p));
+  const labels = positions.map(p => p.ticker);
+  const colors = positions.map(p => p.color || '#4f98a3');
+  pdPieInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: 'transparent', borderWidth: 0, hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { position: 'right', labels: { color: c.text, font: { size: 11 }, padding: 10, boxWidth: 10, boxHeight: 10 } },
+        tooltip: {
+          backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1,
+          titleColor: c.text, bodyColor: c.textMuted,
+          callbacks: { label: ctx => { const total = ctx.dataset.data.reduce((a, b) => a + b, 0); return ` ${ctx.label}: ${fmtEur(ctx.raw)} (${((ctx.raw / total) * 100).toFixed(1)}%)`; } }
+        }
+      }
+    }
+  });
+}
+
+// Secondary history chart for detail screen
+function setPdRange(range) {
+  pdHistRange = range;
+  document.querySelectorAll('.pd-range').forEach(b => b.classList.toggle('active', b.dataset.pdrange === range));
+  loadPdHistory();
+}
+
+async function loadPdHistory() {
+  try {
+    const resp = await fetch(`${BASE}/api/prices/history?range=${pdHistRange}`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    renderPdHistChart(data);
+  } catch (e) { /* silencioso */ }
+}
+
+function renderPdHistChart(data) {
+  const c = getChartColors();
+  const ctx = document.getElementById('pdHistChart').getContext('2d');
+  if (pdHistInst) pdHistInst.destroy();
+  if (!data || data.length === 0) {
+    pdHistInst = new Chart(ctx, {
+      type: 'line', data: { labels: [''], datasets: [{ data: [0], borderColor: 'transparent' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Sin datos', color: c.textMuted } } }
+    });
+    return;
+  }
+  // Render per-ticker lines
+  const tsMap = new Map();
+  data.forEach(entry => { const ts = entry.timestamp; if (!tsMap.has(ts)) tsMap.set(ts, {}); tsMap.get(ts)[entry.ticker] = entry.priceEur; });
+  const timestamps = [...tsMap.keys()].sort();
+  const tickers = [...new Set(data.map(d => d.ticker))];
+  const datasets = tickers.map(ticker => {
+    const pos = positions.find(p => p.ticker === ticker);
+    const color = pos ? pos.color : '#4f98a3';
+    const points = timestamps.map(ts => ({ x: new Date(ts), y: tsMap.get(ts)[ticker] != null ? tsMap.get(ts)[ticker] : null }));
+    return { label: ticker, data: points, borderColor: color, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3, fill: false, spanGaps: true };
+  });
+  pdHistInst = new Chart(ctx, {
+    type: 'line', data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { type: 'time', time: { tooltipFormat: 'dd MMM yyyy' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
+        y: { ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €' }, grid: { color: c.border + '40' } }
+      },
+      plugins: {
+        legend: { position: 'top', labels: { color: c.text, font: { size: 10 }, boxWidth: 10, boxHeight: 10, padding: 8 } },
+        tooltip: { backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` } }
+      }
+    }
+  });
 }
 
 // ===================== INIT =====================

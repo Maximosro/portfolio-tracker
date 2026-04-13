@@ -46,6 +46,9 @@ public class Position {
     @Column(length = 200)
     private String sector;
 
+    @Column(name = "previous_close")
+    private Double previousClose;
+
     @Column(name = "last_price_update")
     @Convert(converter = InstantStringConverter.class)
     private Instant lastPriceUpdate;

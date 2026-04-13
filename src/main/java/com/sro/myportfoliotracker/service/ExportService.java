@@ -174,8 +174,8 @@ public class ExportService {
 
     private void appendPositionsDetail(StringBuilder sb, List<Position> positions, PortfolioMetricsDto metrics) {
         sb.append("## 3. Detalle por Posición\n\n");
-        sb.append("| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR |\n");
-        sb.append("|--------|--------|--------|----------|-------------|---------------|---------------|-----------|---------|---------|------|\n");
+        sb.append("| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | Var. Día | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR |\n");
+        sb.append("|--------|--------|--------|----------|-------------|---------------|----------|---------------|-----------|---------|---------|------|\n");
 
         double sumInvested = 0, sumValue = 0, sumPL = 0;
 
@@ -185,17 +185,23 @@ public class ExportService {
             Double pl = value != null ? value - invested : null;
             Double plPct = pl != null && invested > 0 ? (pl / invested) * 100 : null;
             Double xirr = metrics.positionXirr() != null ? metrics.positionXirr().get(p.getTicker()) : null;
+            String dayChange = "—";
+            if (p.getCurrentPrice() != null && p.getPreviousClose() != null && p.getPreviousClose() > 0) {
+                double pct = ((p.getCurrentPrice() - p.getPreviousClose()) / p.getPreviousClose()) * 100;
+                dayChange = fmtPct(pct);
+            }
             String lastUpdate = p.getLastPriceUpdate() != null
                     ? p.getLastPriceUpdate().atZone(ZONE).format(DATETIME_FMT)
                     : "Manual";
 
-            sb.append(String.format("| **%s** | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
+            sb.append(String.format("| **%s** | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
                     p.getTicker(),
                     nvl(p.getName()),
                     nvl(p.getSector()),
                     fmtNum(p.getShares(), 6),
                     fmtNum(p.getAvgPrice(), 4),
                     p.getCurrentPrice() != null ? fmtNum(p.getCurrentPrice(), 4) : "—",
+                    dayChange,
                     fmtEur(invested),
                     value != null ? fmtEur(value) : "—",
                     pl != null ? fmtEur(pl) : "—",
@@ -209,7 +215,7 @@ public class ExportService {
         }
 
         double sumPLPct = sumInvested > 0 ? (sumPL / sumInvested) * 100 : 0;
-        sb.append(String.format("| **TOTAL** | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** |\n",
+        sb.append(String.format("| **TOTAL** | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** |\n",
                 fmtEur(sumInvested), fmtEur(sumValue), fmtEur(sumPL), fmtPct(sumPLPct),
                 metrics.portfolioXirr() != null ? fmtPct(metrics.portfolioXirr() * 100) : "N/D"));
         sb.append("\n");

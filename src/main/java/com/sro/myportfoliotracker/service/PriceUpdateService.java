@@ -8,9 +8,6 @@ import com.sro.myportfoliotracker.repository.PositionRepository;
 import com.sro.myportfoliotracker.repository.PriceHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -35,15 +32,6 @@ public class PriceUpdateService {
         return lastUpdate.get();
     }
 
-    /**
-     * Al arrancar la app, actualizar precios inmediatamente.
-     */
-    @EventListener(ApplicationReadyEvent.class)
-    @Order(10)
-    public void onStartup() {
-        log.info("🚀 Actualización de precios al arrancar la aplicación");
-        updateAllPrices();
-    }
 
     /**
      * Cada 30 minutos, 24/7.
@@ -52,6 +40,25 @@ public class PriceUpdateService {
     public void scheduledUpdate() {
         log.info("⏰ Actualización programada de precios");
         updateAllPrices();
+    }
+
+    /**
+     * A medianoche, guardar el precio actual como precio de cierre del día (previousClose).
+     * Esto permite calcular la variación diaria al día siguiente.
+     */
+    @Scheduled(cron = "0 0 0 * * *")
+    public void snapshotClosingPrices() {
+        log.info("🌙 Guardando precios de cierre del día");
+        List<Position> positions = positionRepository.findAll();
+        int updated = 0;
+        for (Position position : positions) {
+            if (position.getCurrentPrice() != null && position.getCurrentPrice() > 0) {
+                position.setPreviousClose(position.getCurrentPrice());
+                positionRepository.save(position);
+                updated++;
+            }
+        }
+        log.info("Precios de cierre guardados: {} posiciones actualizadas", updated);
     }
 
     /**
