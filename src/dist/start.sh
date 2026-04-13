@@ -6,8 +6,20 @@ echo "  Portfolio Tracker - Iniciando..."
 echo "========================================"
 echo
 
+# Ir al directorio donde está este script (donde está el JAR)
+cd "$(dirname "$0")"
+
 # Crear carpeta data si no existe
 mkdir -p data
+
+# Verificar Java
+if ! command -v java &>/dev/null; then
+    echo "ERROR: Java no encontrado en PATH."
+    echo "Instala Java 21+ y asegúrate de que está en el PATH."
+    echo ""
+    echo "Descarga: https://adoptium.net/"
+    exit 1
+fi
 
 # Buscar el JAR
 JAR=$(ls -1 *.jar 2>/dev/null | head -n1)

@@ -33,5 +33,12 @@ public class DcaEntry {
 
     @Column(nullable = false)
     private Double price;
+
+    /**
+     * Tipo de operación: BUY (compra) o SELL (venta).
+     */
+    @Column(name = "entry_type", length = 4)
+    @Builder.Default
+    private String type = "BUY";
 }
 

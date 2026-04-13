@@ -130,6 +130,19 @@ Rangos válidos para `range`: `1d`, `1w`, `1m`, `3m`, `6m`, `1y`, `ytd`, `all`
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | `GET` | `/api/metrics` | XIRR global y por posición (calculado desde flujos DCA reales) |
+| `GET` | `/api/metrics/returns` | Rentabilidad por periodos (hoy, semana, mes, trimestre, YTD, año) |
+
+### Snapshots y Evolución Patrimonial
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/api/snapshots?range=3m` | Snapshots del portfolio (valor + invertido) filtrados por rango |
+| `GET` | `/api/snapshots/period-history?period=week` | Histórico detallado de un periodo con retornos ajustados por DCA |
+
+Rangos válidos para `range`: `1m`, `3m`, `6m`, `1y`, `ytd`, `all`  
+Periodos válidos para `period`: `week`, `month`, `quarter`, `ytd`, `year`
+
+> Los retornos se calculan como **cambio en P&L** (valor - invertido), lo que descuenta automáticamente las aportaciones DCA. Se agrupan por día (semana/mes), por semana (trimestre/YTD) o por mes (año).
 
 ### Alertas
 

@@ -80,12 +80,15 @@ public class YahooFinanceService {
 
             JsonNode meta = result.get(0).path("meta");
             double currentPrice = meta.path("regularMarketPrice").asDouble();
-            double previousClose = meta.path("chartPreviousClose").asDouble();
             String currency = meta.path("currency").asText("USD");
 
             if (currentPrice <= 0) {
                 throw new RuntimeException("Precio inválido (0) para " + yahooTicker);
             }
+
+            // previousClose del meta = cierre del día anterior (correcto para daily)
+            // chartPreviousClose = cierre ANTES del inicio del rango (1 mes atrás) — NO usar para daily
+            double previousDayClose = meta.path("previousClose").asDouble(0);
 
             // Extraer array de precios de cierre del último mes
             JsonNode closePrices = result.get(0).path("indicators").path("quote");
@@ -105,17 +108,22 @@ public class YahooFinanceService {
                 }
             }
 
+            // Fallback: si previousClose no está en meta, usar penúltimo cierre del array
+            if (previousDayClose <= 0 && closes != null && closes.length >= 2) {
+                previousDayClose = closes[closes.length - 2];
+            }
+
             // Calcular variaciones
-            Double changePctDay = previousClose > 0
-                    ? Math.round(((currentPrice - previousClose) / previousClose) * 10000.0) / 100.0
+            Double changePctDay = previousDayClose > 0
+                    ? Math.round(((currentPrice - previousDayClose) / previousDayClose) * 10000.0) / 100.0
                     : null;
 
             Double changePctWeek = null;
             Double changePctMonth = null;
 
             if (closes != null && closes.length > 0) {
-                // Semanal: ~5 sesiones atrás
-                int weekIdx = Math.max(0, closes.length - 5);
+                // Semanal: ~5 sesiones atrás desde el último cierre
+                int weekIdx = Math.max(0, closes.length - 6);
                 if (closes[weekIdx] > 0) {
                     changePctWeek = Math.round(((currentPrice - closes[weekIdx]) / closes[weekIdx]) * 10000.0) / 100.0;
                 }

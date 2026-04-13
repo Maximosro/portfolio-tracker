@@ -20,3 +20,8 @@ spring:
         dialect: org.hibernate.community.dialect.SQLiteDialect
         format_sql: false
     database-platform: org.hibernate.community.dialect.SQLiteDialect
+#telegram:
+#  bot-token: 8740857212:AAGLNpT9xtpcHFd5xE8YfaKUiqNw3zjYv8k
+#  chat-id: "156014286"
+#  enabled: true
+

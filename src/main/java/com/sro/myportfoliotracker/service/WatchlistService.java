@@ -22,6 +22,7 @@ public class WatchlistService {
     private final WatchlistItemRepository watchlistRepository;
     private final YahooFinanceService yahooFinanceService;
     private final ExchangeRateService exchangeRateService;
+    private final ActivityLogService activityLog;
 
     /** Solo actualizar precios si han pasado más de 20 horas desde la última actualización */
     private static final Duration UPDATE_COOLDOWN = Duration.ofHours(20);
@@ -67,8 +68,10 @@ public class WatchlistService {
             saved = watchlistRepository.save(saved);
             log.info("✓ Watchlist: precio inicial de {} → {} EUR (1d:{}% 1w:{}% 1m:{}%)",
                     saved.getTicker(), priceEur, quote.changePctDay(), quote.changePctWeek(), quote.changePctMonth());
+            activityLog.success("WATCHLIST", saved.getTicker() + " añadido a watchlist → " + priceEur + " EUR", saved.getTicker(), "👁");
         } catch (Exception e) {
             log.warn("⚠ Watchlist: no se pudo obtener precio inicial de {}: {}", saved.getTicker(), e.getMessage());
+            activityLog.warning("WATCHLIST", "Añadido " + saved.getTicker() + " sin precio: " + e.getMessage(), saved.getTicker(), "⚠️");
         }
 
         return saved;
@@ -108,6 +111,7 @@ public class WatchlistService {
     @Scheduled(cron = "0 0 9 * * *")
     public void scheduledWatchlistUpdate() {
         log.info("⏰ Actualización diaria programada de watchlist");
+        activityLog.info("WATCHLIST", "Actualización diaria programada de watchlist iniciada", null, "⏰");
         updateWatchlistPrices();
     }
 
@@ -171,6 +175,7 @@ public class WatchlistService {
 
                 log.info("✓ Watchlist: {} → {} EUR (1d:{}% 1w:{}% 1m:{}%)",
                         item.getTicker(), priceEur, quote.changePctDay(), quote.changePctWeek(), quote.changePctMonth());
+                activityLog.success("WATCHLIST", item.getTicker() + " actualizado → " + priceEur + " EUR", item.getTicker(), "👁");
 
                 // Delay entre peticiones
                 Thread.sleep(500);
@@ -184,6 +189,7 @@ public class WatchlistService {
         }
 
         log.info("Watchlist: {} de {} actualizados", updated, items.size());
+        activityLog.success("WATCHLIST", "Watchlist: " + updated + " de " + items.size() + " actualizados", null, "✅");
         return updated;
     }
 }

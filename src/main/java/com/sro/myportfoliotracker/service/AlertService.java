@@ -37,6 +37,10 @@ public class AlertService {
             if (pos == null || pos.getCurrentPrice() == null || pos.getCurrentPrice() <= 0) {
                 continue;
             }
+            // No generar alertas para posiciones cerradas (vendidas totalmente)
+            if (pos.getShares() == null || pos.getShares() <= 0) {
+                continue;
+            }
 
             double price = pos.getCurrentPrice();
             String ticker = pos.getTicker();

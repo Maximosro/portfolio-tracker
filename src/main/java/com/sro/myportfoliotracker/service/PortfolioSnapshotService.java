@@ -32,6 +32,7 @@ public class PortfolioSnapshotService {
     private final PortfolioSnapshotRepository snapshotRepository;
     private final PositionRepository positionRepository;
     private final DcaEntryRepository dcaEntryRepository;
+    private final ActivityLogService activityLog;
 
     // ───────────────────── SNAPSHOT ─────────────────────
 
@@ -61,6 +62,7 @@ public class PortfolioSnapshotService {
         PortfolioSnapshot saved = snapshotRepository.save(snapshot);
         log.info("📸 Snapshot {}: valor={} €, invertido={} €",
                 date, String.format("%.2f", totalValue), String.format("%.2f", totalInvested));
+        activityLog.info("SNAPSHOT", "Snapshot " + date + ": valor=" + String.format("%.2f", totalValue) + " €, invertido=" + String.format("%.2f", totalInvested) + " €", null, "📸");
         return saved;
     }
 
@@ -182,12 +184,16 @@ public class PortfolioSnapshotService {
     }
 
     /**
-     * Suma del coste de todas las compras DCA desde una fecha (inclusive).
+     * Suma neta de operaciones DCA desde una fecha (inclusive).
+     * Compras suman, ventas restan.
      */
     private double dcaContributionsSince(LocalDate from) {
         List<DcaEntry> entries = dcaEntryRepository.findByDateGreaterThanEqual(from);
         return entries.stream()
-                .mapToDouble(e -> e.getShares() * e.getPrice())
+                .mapToDouble(e -> {
+                    double amount = e.getShares() * e.getPrice();
+                    return "SELL".equals(e.getType()) ? -amount : amount;
+                })
                 .sum();
     }
 

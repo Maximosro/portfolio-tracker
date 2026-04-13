@@ -25,6 +25,7 @@ public class PriceUpdateService {
     private final PriceHistoryRepository priceHistoryRepository;
     private final YahooFinanceService yahooFinanceService;
     private final ExchangeRateService exchangeRateService;
+    private final ActivityLogService activityLog;
 
     private final AtomicReference<Instant> lastUpdate = new AtomicReference<>(null);
 
@@ -39,6 +40,7 @@ public class PriceUpdateService {
     @Scheduled(cron = "0 */30 * * * *")
     public void scheduledUpdate() {
         log.info("⏰ Actualización programada de precios");
+        activityLog.info("PRICE", "Actualización programada de precios iniciada", null, "⏰");
         updateAllPrices();
     }
 
@@ -52,6 +54,7 @@ public class PriceUpdateService {
         List<Position> positions = positionRepository.findAll();
         int updated = 0;
         for (Position position : positions) {
+            if (position.getShares() == null || position.getShares() <= 0) continue;
             if (position.getCurrentPrice() != null && position.getCurrentPrice() > 0) {
                 position.setPreviousClose(position.getCurrentPrice());
                 positionRepository.save(position);
@@ -59,6 +62,7 @@ public class PriceUpdateService {
             }
         }
         log.info("Precios de cierre guardados: {} posiciones actualizadas", updated);
+        activityLog.info("PRICE", "Precios de cierre guardados: " + updated + " posiciones", null, "🌙");
     }
 
     /**
@@ -74,6 +78,11 @@ public class PriceUpdateService {
         Instant now = Instant.now();
 
         for (Position position : positions) {
+            // Omitir posiciones cerradas (totalmente vendidas)
+            if (position.getShares() == null || position.getShares() <= 0) {
+                continue;
+            }
+
             String yahoo = position.getYahooTicker();
             if (yahoo == null || yahoo.isBlank()) {
                 log.warn("Posición {} sin Yahoo Ticker, omitida", position.getTicker());
@@ -111,6 +120,7 @@ public class PriceUpdateService {
 
                 log.info("✓ {} ({}) → {} {} → {} EUR",
                         position.getTicker(), yahoo, quote.price(), quote.currency(), priceEur);
+                activityLog.success("PRICE", position.getTicker() + " → " + priceEur + " EUR (vía " + yahoo + ")", position.getTicker(), "📈");
 
                 // Delay entre peticiones para no saturar Yahoo
                 Thread.sleep(500);
@@ -121,6 +131,7 @@ public class PriceUpdateService {
             } catch (Exception e) {
                 log.error("✗ {} ({}): {}", position.getTicker(), yahoo, e.getMessage());
                 failed.add(position.getTicker());
+                activityLog.error("PRICE", "Error actualizando " + position.getTicker() + ": " + e.getMessage(), position.getTicker(), "❌");
 
                 // Guardar en histórico el precio existente para no romper las gráficas
                 if (position.getCurrentPrice() != null) {
@@ -141,6 +152,7 @@ public class PriceUpdateService {
 
         PriceUpdateResult result = new PriceUpdateResult(updated, failed.size(), now, failed);
         log.info("Actualización completada: {} OK, {} errores", updated, failed.size());
+        activityLog.success("PRICE", "Actualización completada: " + updated + " OK, " + failed.size() + " errores", null, "✅");
         return result;
     }
 }

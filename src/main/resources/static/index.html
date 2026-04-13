@@ -66,6 +66,25 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-4);margin-bottom:var(--space-6)}
 .kpi-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);box-shadow:var(--shadow-sm);transition:box-shadow var(--transition-interactive)}
 .kpi-card:hover{box-shadow:var(--shadow-md)}
+.kpi-card.clickable{cursor:pointer}
+.kpi-card.clickable:hover{border-color:var(--color-primary)}
+.kpi-card.exceeded{border-color:var(--color-notification);background:oklch(from var(--color-notification) l c h / .06);box-shadow:0 0 0 1px oklch(from var(--color-notification) l c h / .15)}
+.kpi-card.exceeded:hover{border-color:var(--color-notification)}
+/* DCA progress bar */
+.dca-progress-wrap{margin-top:var(--space-2)}
+.dca-progress-bar{height:6px;border-radius:var(--radius-full);background:var(--color-surface-dynamic);overflow:hidden}
+.dca-progress-fill{height:100%;border-radius:var(--radius-full);transition:width .4s ease}
+.dca-progress-label{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-muted);margin-top:3px;font-variant-numeric:tabular-nums}
+/* DCA target popover */
+.dca-target-popover{display:none;position:absolute;z-index:900;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-md);min-width:260px}
+.dca-target-popover.open{display:block}
+.dca-target-popover h4{font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-3);display:flex;align-items:center;gap:var(--space-2)}
+.dca-target-popover input{width:100%;padding:var(--space-2) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-bg);color:var(--color-text);font-size:var(--text-sm);font-variant-numeric:tabular-nums}
+.dca-target-popover input:focus{outline:none;border-color:var(--color-primary)}
+.dca-target-popover .dca-pop-actions{display:flex;gap:var(--space-2);margin-top:var(--space-3);justify-content:flex-end}
+.dca-target-popover .dca-pop-actions button{font-size:var(--text-xs);padding:var(--space-1) var(--space-3);border-radius:var(--radius-md);border:1px solid var(--color-border);cursor:pointer;background:var(--color-surface);color:var(--color-text);transition:all var(--transition-interactive)}
+.dca-target-popover .dca-pop-actions .dca-pop-save{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+.dca-target-popover .dca-pop-actions .dca-pop-save:hover{background:var(--color-primary-hover)}
 .kpi-label{font-size:var(--text-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-2);font-weight:500}
 .kpi-value{font-size:var(--text-xl);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
 .kpi-value.positive{color:var(--color-success)}
@@ -221,6 +240,26 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .alert-type-badge.danger{background:oklch(from var(--color-notification) l c h / .1);color:var(--color-notification)}
 .alert-type-badge.warning{background:oklch(from var(--color-gold) l c h / .1);color:var(--color-gold)}
 .alert-type-badge.info{background:oklch(from var(--color-primary) l c h / .1);color:var(--color-primary)}
+/* ===================== ACTIVITY LOG ===================== */
+.log-panel{position:fixed;top:60px;right:var(--space-6);width:500px;max-width:calc(100vw - 2rem);max-height:calc(100dvh - 100px);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);z-index:950;display:none;flex-direction:column;overflow:hidden}
+.log-panel.open{display:flex;animation:newsSlideUp .25s ease}
+.log-panel-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-divider);flex-shrink:0}
+.log-panel-body{flex:1;overflow-y:auto;padding:var(--space-3)}
+.log-panel-footer{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-4);border-top:1px solid var(--color-divider);flex-shrink:0;font-size:var(--text-xs);color:var(--color-text-faint);gap:var(--space-2);flex-wrap:wrap}
+.log-item{background:var(--color-surface-2);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-1);display:flex;align-items:flex-start;gap:var(--space-2);transition:background var(--transition-interactive);border-left:3px solid transparent;font-size:var(--text-xs)}
+.log-item:last-child{margin-bottom:0}
+.log-item:hover{background:var(--color-surface-offset)}
+.log-item.success{border-left-color:var(--color-success)}
+.log-item.error{border-left-color:var(--color-notification)}
+.log-item.warning{border-left-color:var(--color-gold)}
+.log-item.info{border-left-color:var(--color-primary)}
+.log-icon{flex-shrink:0;width:22px;height:22px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:12px}
+.log-text{flex:1;min-width:0}
+.log-msg{color:var(--color-text);line-height:1.4}
+.log-meta{display:flex;align-items:center;gap:var(--space-2);margin-top:1px;font-size:10px;color:var(--color-text-faint)}
+.log-cat{font-weight:600;text-transform:uppercase;letter-spacing:.03em;font-size:9px;padding:0 4px;border-radius:2px;background:var(--color-surface-dynamic)}
+.log-filter-btn{padding:1px 6px;font-size:9px;font-weight:600;border-radius:3px;cursor:pointer;border:1px solid var(--color-border);background:transparent;color:var(--color-text-muted);transition:all var(--transition-interactive);letter-spacing:.03em;text-transform:uppercase}
+.log-filter-btn:hover,.log-filter-btn.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
 /* ===================== RESPONSIVE ===================== */
 /* ===================== PERIOD HISTORY MODAL ===================== */
 .ph-overlay{display:none;position:fixed;inset:0;background:oklch(0 0 0/.65);z-index:800;align-items:center;justify-content:center;padding:var(--space-4)}
@@ -254,6 +293,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   .wl-fab{bottom:calc(var(--space-4) + 56px)}
   .news-fab{bottom:var(--space-4)}
   .alert-panel{top:auto;bottom:var(--space-4);right:var(--space-3);width:calc(100vw - 1.5rem);max-height:calc(100dvh - 80px)}
+  .log-panel{top:auto;bottom:var(--space-4);right:var(--space-3);width:calc(100vw - 1.5rem);max-height:calc(100dvh - 80px)}
 }
 </style>
 </head>
@@ -272,9 +312,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
           <path d="M4 16 L13 10 L20 4 L28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>
         </svg>
         <span>Portfolio Tracker</span>
+        <span style="font-size:var(--text-xs);color:var(--color-text-faint);margin-left:var(--space-2);font-weight:400">by Maximosro</span>
       </div>
     </div>
     <div class="header-right">
+      <button class="btn btn-secondary btn-sm" onclick="window.open('guia.html','_blank')" title="Guía de usuario — Aprende a usar Portfolio Tracker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Guía
+      </button>
       <button class="btn btn-secondary btn-sm" onclick="exportReport()" title="Exportar informe para IA (Claude)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
         Exportar
@@ -289,11 +334,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       </button>
       <button class="btn btn-primary btn-sm" onclick="openDcaModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Añadir DCA
+        Nueva operación
       </button>
       <button class="alert-btn" id="alertBtn" onclick="toggleAlertPanel()" aria-label="Alertas" title="Alertas y límites">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="alert-badge" id="alertBadge" style="display:none">0</span>
+      </button>
+      <button class="alert-btn" id="logBtn" onclick="toggleLogPanel()" aria-label="Log de actividad" title="Log de actividad">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       </button>
       <button class="theme-btn" data-theme-toggle aria-label="Cambiar tema">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -306,8 +354,17 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Capital Invertido</div><div class="kpi-value" id="kpiInvested">—</div><div class="kpi-sub" id="kpiPositions">0 posiciones</div></div>
       <div class="kpi-card"><div class="kpi-label">Valor Actual</div><div class="kpi-value" id="kpiValue">—</div><div class="kpi-sub">Basado en precios actuales</div></div>
-      <div class="kpi-card"><div class="kpi-label">Ganancia / Pérdida</div><div class="kpi-value" id="kpiPL">—</div><div class="kpi-sub" id="kpiPLSub">—</div><div class="kpi-sub" id="kpiPLDay" style="margin-top:var(--space-1)">—</div></div>
-      <div class="kpi-card"><div class="kpi-label">DCA Mensual</div><div class="kpi-value" id="kpiDca">—</div><div class="kpi-sub" id="kpiDcaSub">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ganancia / Pérdida</div><div class="kpi-value" id="kpiPL">—</div><div class="kpi-sub" id="kpiPLSub">—</div><div class="kpi-sub" id="kpiPLDay" style="margin-top:var(--space-1)">—</div><div class="kpi-sub" id="kpiRealizedPL" style="margin-top:var(--space-1)"></div></div>
+      <div class="kpi-card clickable" id="kpiDcaCard" style="position:relative" onclick="toggleDcaTargetPopover(event)"><div class="kpi-label">Invertido este Mes</div><div class="kpi-value" id="kpiDca">—</div><div class="kpi-sub" id="kpiDcaSub">—</div><div class="dca-progress-wrap" id="kpiDcaProgress" style="display:none"><div class="dca-progress-bar"><div class="dca-progress-fill" id="kpiDcaFill" style="width:0%;background:var(--color-primary)"></div></div><div class="dca-progress-label"><span id="kpiDcaPctLabel">0%</span><span id="kpiDcaTargetLabel">Obj: —</span></div></div>
+        <div class="dca-target-popover" id="dcaTargetPopover">
+          <h4>🎯 Objetivo mensual de inversión</h4>
+          <input type="number" id="dcaTargetInput" min="0" step="50" placeholder="Ej: 2000" onkeydown="if(event.key==='Enter'){saveDcaTarget(event)}">
+          <div class="dca-pop-actions">
+            <button onclick="clearDcaTarget(event)">Quitar</button>
+            <button class="dca-pop-save" onclick="saveDcaTarget(event)">Guardar</button>
+          </div>
+        </div>
+      </div>
       <div class="kpi-card"><div class="kpi-label">Rentab. Anualizada (XIRR)</div><div class="kpi-value" id="kpiXirr">—</div><div class="kpi-sub" id="kpiXirrSub" title="Tasa interna de retorno anualizada considerando fechas y montos de cada compra DCA" style="cursor:help">Basado en flujos DCA</div></div>
     </div>
 
@@ -319,13 +376,13 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <div class="chart-title">Distribución de Cartera</div>
         <div style="position:relative;height:300px"><canvas id="pieChart"></canvas></div>
       </div>
-      <!-- HISTORY CHART — 70% -->
+      <!-- PRICE CHART — 70% -->
       <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
-          <div class="chart-title" style="margin-bottom:0">Evolución de Cartera</div>
+          <div class="chart-title" style="margin-bottom:0">Evolución de Precios</div>
           <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="histTicker" onchange="loadHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
-              <option value="ALL">Toda la cartera</option>
+              <option value="ALL">Todos los tickers</option>
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
               <button class="range-btn active" data-range="1d" onclick="setRange('1d')">1D</button>
@@ -371,10 +428,47 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       </div>
     </div>
 
+    <!-- CLOSED POSITIONS -->
+    <div class="section" id="closedPositionsSection" style="display:none">
+      <div class="section-header" style="cursor:pointer;user-select:none" onclick="toggleClosedPositions()">
+        <div class="section-title" style="display:flex;align-items:center;gap:var(--space-2)">
+          <svg id="closedChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s;transform:rotate(0deg)"><polyline points="6 9 12 15 18 9"/></svg>
+          <span id="closedPositionsTitle">Posiciones cerradas</span>
+        </div>
+      </div>
+      <div id="closedPositionsBody" style="display:none">
+        <div class="section-body" style="padding:0;opacity:.7">
+          <div class="table-wrap">
+            <table class="data-table compact">
+              <thead>
+                <tr>
+                  <th>Ticker</th>
+                  <th>Operaciones</th>
+                  <th>P.Medio Compra</th>
+                  <th>P.Medio Venta</th>
+                  <th>Total Invertido</th>
+                  <th>Total Recuperado</th>
+                  <th>P&amp;L Realizado</th>
+                  <th>Período</th>
+                  <th>TIR</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="closedBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- DCA HISTORY -->
     <div class="section">
       <div class="section-header">
-        <div class="section-title">Historial DCA</div>
+        <div class="section-title">Historial de Operaciones</div>
+        <button class="btn btn-secondary btn-sm" onclick="openImportModal()" title="Importar operaciones desde un archivo JSON">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Importar JSON
+        </button>
       </div>
       <div class="section-body" style="padding:0">
         <div class="table-wrap">
@@ -386,6 +480,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
                 <th>Acciones</th>
                 <th>Precio (€)</th>
                 <th>Coste (€)</th>
+                <th>P&amp;L Realizado</th>
+                <th>Estado</th>
                 <th></th>
               </tr>
             </thead>
@@ -463,12 +559,20 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 <div id="dcaModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:460px;box-shadow:var(--shadow-md)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
-      <h2 style="font-size:var(--text-lg);font-weight:700">Añadir Compra DCA</h2>
+      <h2 id="dcaModalTitle" style="font-size:var(--text-lg);font-weight:700">Registrar Operación</h2>
       <button class="btn-ghost btn" onclick="closeDcaModal()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+      <!-- BUY/SELL Toggle -->
       <div class="form-group">
-        <label class="form-label" for="dcaTicker">ETF</label>
+        <label class="form-label">Tipo de operación</label>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="btn btn-sm" id="dcaTypeBuy" onclick="setDcaType('BUY')" style="flex:1;border:2px solid var(--color-success);background:oklch(from var(--color-success) l c h / .15);color:var(--color-success);font-weight:700">🟢 Compra</button>
+          <button class="btn btn-sm" id="dcaTypeSell" onclick="setDcaType('SELL')" style="flex:1;border:2px solid var(--color-border);color:var(--color-text-muted);font-weight:700">🔴 Venta</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="dcaTicker">ETF / Acción</label>
         <select class="form-input" id="dcaTicker" onchange="updateDcaPreview()"></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
@@ -477,7 +581,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
           <input class="form-input" type="number" id="dcaShares" step="0.000001" min="0.000001" placeholder="0.00" oninput="updateDcaPreview()">
         </div>
         <div class="form-group">
-          <label class="form-label" for="dcaPrice">Precio Pagado (€)</label>
+          <label class="form-label" for="dcaPrice" id="dcaPriceLabel">Precio Pagado (€)</label>
           <input class="form-input" type="number" id="dcaPrice" step="0.01" min="0.01" placeholder="0.00" oninput="updateDcaPreview()">
         </div>
       </div>
@@ -489,7 +593,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div style="background:var(--color-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-top:var(--space-5);font-size:var(--text-xs);color:var(--color-text-muted)" id="dcaPreview">Rellena los campos para ver el nuevo precio medio.</div>
     <div style="display:flex;justify-content:flex-end;gap:var(--space-3);margin-top:var(--space-6)">
       <button class="btn btn-secondary" onclick="closeDcaModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="executeDca()">Confirmar Compra</button>
+      <button class="btn btn-primary" id="dcaConfirmBtn" onclick="executeDca()">Confirmar Compra</button>
     </div>
   </div>
 </div>
@@ -625,6 +729,99 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <span>📉 Alerta ↓ — Rompió nivel inferior</span>
         <span>⚖️ Peso — Desviación del peso objetivo</span>
       </div>
+    </div>
+    <div style="margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:var(--space-2)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--color-primary)"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+        <span style="font-size:10px;color:var(--color-text-muted)" id="telegramStatusText">Telegram</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="testTelegram()" id="telegramTestBtn" style="font-size:10px;padding:2px 8px;gap:4px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+        Probar Telegram
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: LOG DE ACTIVIDAD -->
+<div class="log-panel" id="logPanel">
+  <div class="log-panel-header">
+    <div class="news-header-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Log de Actividad
+      <span id="logPanelCount" style="font-size:10px;color:var(--color-text-faint);font-weight:400"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:var(--space-2)">
+      <button class="btn btn-secondary btn-sm" onclick="loadActivityLog()" style="gap:var(--space-1);padding:var(--space-1) var(--space-2)" title="Actualizar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="btn-ghost btn btn-sm" onclick="toggleLogPanel()" style="padding:2px 6px">✕</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:3px;padding:var(--space-2) var(--space-4);border-bottom:1px solid var(--color-divider);flex-wrap:wrap">
+    <button class="log-filter-btn active" data-logfilter="ALL" onclick="setLogFilter('ALL')">Todo</button>
+    <button class="log-filter-btn" data-logfilter="PRICE" onclick="setLogFilter('PRICE')">Precios</button>
+    <button class="log-filter-btn" data-logfilter="TELEGRAM" onclick="setLogFilter('TELEGRAM')">Telegram</button>
+    <button class="log-filter-btn" data-logfilter="WATCHLIST" onclick="setLogFilter('WATCHLIST')">Watchlist</button>
+    <button class="log-filter-btn" data-logfilter="DCA" onclick="setLogFilter('DCA')">DCA</button>
+    <button class="log-filter-btn" data-logfilter="SNAPSHOT" onclick="setLogFilter('SNAPSHOT')">Snapshots</button>
+    <button class="log-filter-btn" data-logfilter="ALERT" onclick="setLogFilter('ALERT')">Alertas</button>
+    <button class="log-filter-btn" data-logfilter="SYSTEM" onclick="setLogFilter('SYSTEM')">Sistema</button>
+  </div>
+  <div class="log-panel-body" id="logPanelBody">
+    <div class="news-placeholder">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">Sin actividad registrada</div>
+      <div style="font-size:var(--text-xs)">La actividad de la aplicación aparecerá aquí</div>
+    </div>
+  </div>
+  <div class="log-panel-footer">
+    <span id="logTimestamp"></span>
+    <span style="opacity:.6">Log funcional en memoria</span>
+  </div>
+</div>
+
+<!-- MODAL: CONFIGURAR TELEGRAM -->
+<div class="detail-overlay" id="telegramConfigOverlay" onclick="if(event.target===this)closeTelegramConfigModal()">
+  <div class="detail-modal" style="max-width:440px">
+    <div class="detail-modal-header">
+      <h2 style="display:flex;align-items:center;gap:var(--space-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+        Configurar Telegram
+      </h2>
+      <button class="btn-ghost btn" onclick="closeTelegramConfigModal()">✕</button>
+    </div>
+    <div class="detail-modal-body" style="padding:var(--space-5) var(--space-6)">
+      <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);line-height:1.5">
+        Para recibir notificaciones de alertas por Telegram, necesitas configurar un bot:
+      </p>
+      <ol style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-5);padding-left:var(--space-4);line-height:1.8">
+        <li>Abre Telegram y busca <b>@BotFather</b></li>
+        <li>Envía <code>/newbot</code> y sigue las instrucciones → recibirás un <b>Token</b></li>
+        <li>Abre tu bot y envíale cualquier mensaje (ej: "hola")</li>
+        <li>Abre en el navegador: <code style="font-size:10px">https://api.telegram.org/bot{TOKEN}/getUpdates</code></li>
+        <li>Busca <code>"chat":{"id":XXXXXXX}</code> → ese es tu <b>Chat ID</b></li>
+      </ol>
+      <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+        <div>
+          <label style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1);display:block">Bot Token</label>
+          <input type="text" id="telegramBotTokenInput" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+                 style="width:100%;padding:var(--space-2) var(--space-3);background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-text);font-size:var(--text-sm);font-family:var(--font-mono)">
+        </div>
+        <div>
+          <label style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1);display:block">Chat ID</label>
+          <input type="text" id="telegramChatIdInput" placeholder="156014286"
+                 style="width:100%;padding:var(--space-2) var(--space-3);background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-text);font-size:var(--text-sm);font-family:var(--font-mono)">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:var(--space-2);margin-top:var(--space-5)">
+        <button class="btn btn-secondary btn-sm" onclick="closeTelegramConfigModal()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" id="telegramConfigSaveBtn" onclick="saveTelegramConfig()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+          Configurar y probar
+        </button>
+      </div>
+      <p id="telegramConfigError" style="display:none;font-size:var(--text-xs);color:var(--color-notification);margin-top:var(--space-3)"></p>
     </div>
   </div>
 </div>
@@ -820,12 +1017,12 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       <div style="margin-bottom:var(--space-6)">
         <div style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-4)">Rentabilidad por Periodos</div>
         <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr)" id="returnsGrid">
-          <div class="kpi-card" style="padding:var(--space-3) var(--space-4)"><div class="kpi-label" style="font-size:9px">Hoy</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retToday">—</div><div class="kpi-sub" id="retTodaySub"></div></div>
-          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('week')"><div class="kpi-label" style="font-size:9px">Semana</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retWeek">—</div><div class="kpi-sub" id="retWeekSub"></div></div>
-          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('month')"><div class="kpi-label" style="font-size:9px">Mes</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retMonth">—</div><div class="kpi-sub" id="retMonthSub"></div></div>
-          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('quarter')"><div class="kpi-label" style="font-size:9px">Trimestre</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retQuarter">—</div><div class="kpi-sub" id="retQuarterSub"></div></div>
-          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('ytd')"><div class="kpi-label" style="font-size:9px">YTD</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retYtd">—</div><div class="kpi-sub" id="retYtdSub"></div></div>
-          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('year')"><div class="kpi-label" style="font-size:9px">1 Año</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retYear">—</div><div class="kpi-sub" id="retYearSub"></div></div>
+          <div class="kpi-card" style="padding:var(--space-3) var(--space-4)"><div class="kpi-label" style="font-size:9px">Hoy</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retToday">—</div><div class="kpi-sub" id="retTodaySub">></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('week')"><div class="kpi-label" style="font-size:9px">Semana</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retWeek">—</div><div class="kpi-sub" id="retWeekSub">></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('month')"><div class="kpi-label" style="font-size:9px">Mes</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retMonth">—</div><div class="kpi-sub" id="retMonthSub">></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('quarter')"><div class="kpi-label" style="font-size:9px">Trimestre</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retQuarter">—</div><div class="kpi-sub" id="retQuarterSub">></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('ytd')"><div class="kpi-label" style="font-size:9px">YTD</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retYtd">—</div><div class="kpi-sub" id="retYtdSub">></div></div>
+          <div class="kpi-card ph-clickable" style="padding:var(--space-3) var(--space-4)" onclick="openPeriodHistory('year')"><div class="kpi-label" style="font-size:9px">1 Año</div><div class="kpi-value" style="font-size:var(--text-lg)" id="retYear">—</div><div class="kpi-sub" id="retYearSub">></div></div>
         </div>
       </div>
 
@@ -853,13 +1050,20 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         </div>
         <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
-            <div class="chart-title" style="margin-bottom:0">Evolución de Precios</div>
-            <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-              <button class="range-btn pd-range active" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
-              <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
-              <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
-              <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
-              <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
+            <div class="chart-title" style="margin-bottom:0">Evolución de Cartera</div>
+            <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+              <select class="form-input" id="pdTicker" onchange="loadPdHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
+                <option value="ALL">Toda la cartera</option>
+              </select>
+              <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
+                <button class="range-btn pd-range" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
+                <button class="range-btn pd-range" data-pdrange="1w" onclick="setPdRange('1w')">1S</button>
+                <button class="range-btn pd-range active" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
+                <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
+                <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
+                <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
+                <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
+              </div>
             </div>
           </div>
           <div style="position:relative;height:300px"><canvas id="pdHistChart"></canvas></div>
@@ -893,6 +1097,141 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <thead id="phTableHead"></thead>
         <tbody id="phTableBody"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: IMPORTAR OPERACIONES JSON -->
+<div id="importModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4);overflow-y:auto">
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:720px;box-shadow:var(--shadow-md);margin:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
+      <h2 style="font-size:var(--text-lg);font-weight:700;display:flex;align-items:center;gap:var(--space-2)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Importar Operaciones
+      </h2>
+      <button class="btn-ghost btn" onclick="closeImportModal()">✕</button>
+    </div>
+
+    <!-- Instrucciones -->
+    <div style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);margin-bottom:var(--space-5)">
+      <div style="font-size:var(--text-sm);font-weight:600;color:var(--color-primary);margin-bottom:var(--space-3);display:flex;align-items:center;gap:var(--space-2)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Instrucciones
+      </div>
+      <ol style="font-size:var(--text-xs);color:var(--color-text-muted);padding-left:var(--space-4);line-height:1.8;margin:0">
+        <li>Prepara un archivo <b>JSON</b> con un array de operaciones (compras y ventas).</li>
+        <li>Cada operación debe tener al menos: <code>ticker</code>, <code>date</code>, <code>shares</code>, <code>price</code> y <code>type</code>.</li>
+        <li>Los campos <code>name</code>, <code>yahooTicker</code>, <code>sector</code> y <code>color</code> son opcionales pero recomendados (se usan para crear la posición).</li>
+        <li>Si un ticker no existe en el portfolio, <b>se creará automáticamente</b> como nueva posición.</li>
+        <li>Las posiciones se recalculan automáticamente a partir de las operaciones importadas (shares, precio medio, etc.).</li>
+        <li>Pega el JSON abajo o sube un archivo <code>.json</code>.</li>
+      </ol>
+    </div>
+
+    <!-- Alerta Yahoo Ticker -->
+    <div style="background:oklch(from var(--color-notification) l c h / .1);border:2px solid var(--color-notification);border-radius:var(--radius-md);padding:var(--space-4);margin-bottom:var(--space-5);display:flex;align-items:flex-start;gap:var(--space-3)">
+      <div style="font-size:22px;flex-shrink:0;line-height:1">🚨</div>
+      <div>
+        <div style="font-size:var(--text-sm);font-weight:800;color:var(--color-notification);margin-bottom:var(--space-1)">¡Importante! Yahoo Ticker necesario para precios automáticos</div>
+        <div style="font-size:var(--text-xs);color:var(--color-notification);line-height:1.6;font-weight:500">Es <b>absolutamente recomendable</b> editar posteriormente las posiciones que no tengan el <code style="background:oklch(from var(--color-notification) l c h / .15);padding:1px 4px;border-radius:3px;font-weight:700">yahooTicker</code> correcto para que los precios puedan actualizarse automáticamente. Sin este campo, tendrás que actualizar los precios manualmente.</div>
+      </div>
+    </div>
+
+    <!-- Esquema JSON -->
+    <div style="margin-bottom:var(--space-5)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
+        <div style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em">Esquema y ejemplo del JSON</div>
+        <button class="btn btn-secondary btn-sm" onclick="copyImportSchema()" style="gap:var(--space-1);padding:var(--space-1) var(--space-2);font-size:10px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copiar ejemplo
+        </button>
+      </div>
+      <pre id="importSchemaExample" style="background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);font-size:11px;line-height:1.6;color:var(--color-text);font-family:monospace;overflow-x:auto;white-space:pre;margin:0;max-height:260px;overflow-y:auto">[
+  {
+    "ticker": "AAPL",           <span style="color:var(--color-text-faint)">// ✅ Obligatorio — Ticker del activo (máx. 10 chars)</span>
+    "date": "2024-01-15",       <span style="color:var(--color-text-faint)">// ✅ Obligatorio — Fecha en formato YYYY-MM-DD</span>
+    "shares": 10,               <span style="color:var(--color-text-faint)">// ✅ Obligatorio — Número de acciones (> 0)</span>
+    "price": 150.50,            <span style="color:var(--color-text-faint)">// ✅ Obligatorio — Precio por acción en € (> 0)</span>
+    "type": "BUY",              <span style="color:var(--color-text-faint)">// ✅ Obligatorio — "BUY" (compra) o "SELL" (venta)</span>
+    "name": "Apple Inc.",       <span style="color:var(--color-text-faint)">// ⭐ Opcional — Nombre del activo (para nuevas posiciones)</span>
+    "yahooTicker": "AAPL",      <span style="color:var(--color-text-faint)">// ⭐ Opcional — Ticker de Yahoo Finance (para precios)</span>
+    "sector": "Tecnología",     <span style="color:var(--color-text-faint)">// ⭐ Opcional — Sector o temática</span>
+    "color": "#5591c7"          <span style="color:var(--color-text-faint)">// ⭐ Opcional — Color en hex para gráficos</span>
+  },
+  {
+    "ticker": "AAPL",
+    "date": "2024-03-10",
+    "shares": 5,
+    "price": 165.00,
+    "type": "BUY"
+  },
+  {
+    "ticker": "AAPL",
+    "date": "2024-06-20",
+    "shares": 3,
+    "price": 195.00,
+    "type": "SELL"
+  },
+  {
+    "ticker": "MSFT",
+    "date": "2024-02-01",
+    "shares": 8,
+    "price": 380.25,
+    "type": "BUY",
+    "name": "Microsoft Corp.",
+    "yahooTicker": "MSFT",
+    "sector": "Tecnología",
+    "color": "#6daa45"
+  }
+]</pre>
+    </div>
+
+    <!-- Resumen de campos -->
+    <div style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-5)">
+      <div style="font-size:10px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-2)">Campos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-1) var(--space-4);font-size:11px;line-height:1.7">
+        <div><code style="color:var(--color-success);font-weight:700">ticker</code> <span style="color:var(--color-text-muted)">— Identificador del activo (ej: AAPL)</span></div>
+        <div><code style="color:var(--color-success);font-weight:700">date</code> <span style="color:var(--color-text-muted)">— Fecha YYYY-MM-DD (ej: 2024-01-15)</span></div>
+        <div><code style="color:var(--color-success);font-weight:700">shares</code> <span style="color:var(--color-text-muted)">— Nº de acciones (ej: 10)</span></div>
+        <div><code style="color:var(--color-success);font-weight:700">price</code> <span style="color:var(--color-text-muted)">— Precio por acción en € (ej: 150.50)</span></div>
+        <div><code style="color:var(--color-success);font-weight:700">type</code> <span style="color:var(--color-text-muted)">— "BUY" o "SELL"</span></div>
+        <div><code style="color:var(--color-primary)">name</code> <span style="color:var(--color-text-muted)">— Nombre legible (opcional)</span></div>
+        <div><code style="color:var(--color-primary)">yahooTicker</code> <span style="color:var(--color-text-muted)">— Yahoo ticker para precios (opcional)</span></div>
+        <div><code style="color:var(--color-primary)">sector</code> <span style="color:var(--color-text-muted)">— Sector / temática (opcional)</span></div>
+        <div><code style="color:var(--color-primary)">color</code> <span style="color:var(--color-text-muted)">— Color hex para gráficos (opcional)</span></div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div style="margin-bottom:var(--space-4)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
+        <label class="form-label" style="margin:0">Pega tu JSON o sube un archivo</label>
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer;gap:var(--space-1);padding:var(--space-1) var(--space-3);font-size:11px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Subir .json
+          <input type="file" id="importFileInput" accept=".json,application/json" onchange="handleImportFile(event)" style="display:none">
+        </label>
+      </div>
+      <textarea class="form-input" id="importJsonText" rows="8" placeholder='Pega aquí tu JSON con las operaciones...' style="resize:vertical;font-size:11px;line-height:1.5;font-family:monospace"></textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--space-2)">
+        <span id="importPreviewCount" style="font-size:10px;color:var(--color-text-faint)"></span>
+        <button class="btn btn-ghost btn-sm" onclick="validateImportJson()" style="font-size:10px;gap:var(--space-1)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Validar
+        </button>
+      </div>
+    </div>
+
+    <!-- Resultados de importación -->
+    <div id="importResultArea" style="display:none;margin-bottom:var(--space-4)"></div>
+
+    <!-- Botones -->
+    <div style="display:flex;justify-content:flex-end;gap:var(--space-3)">
+      <button class="btn btn-secondary" onclick="closeImportModal()">Cancelar</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="executeImport()" style="gap:var(--space-2)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Importar operaciones
+      </button>
     </div>
   </div>
 </div>
@@ -1006,21 +1345,24 @@ function renderAll() {
 }
 
 function renderKPIs() {
-  const ti = totalInvested();
-  const tv = totalValue();
-  const pl = totalPL();
-  const tiPriced = positions.filter(p => p.currentPrice).reduce((s, p) => s + calcInvested(p), 0);
+  const active = positions.filter(p => p.shares > 0);
+  const closed = positions.filter(p => p.shares <= 0);
+  const ti = active.reduce((s, p) => s + calcInvested(p), 0);
+  const tv = active.filter(p => p.currentPrice).length > 0 ? active.filter(p => p.currentPrice).reduce((s, p) => s + calcValue(p), 0) : null;
+  const tiPriced = active.filter(p => p.currentPrice).reduce((s, p) => s + calcInvested(p), 0);
+  const pl = tv !== null ? tv - tiPriced : null;
   const plPct = pl !== null && tiPriced > 0 ? (pl / tiPriced) * 100 : null;
 
   document.getElementById('kpiInvested').textContent = fmtEur(ti);
-  document.getElementById('kpiPositions').textContent = positions.length + ' posiciones';
+  const closedText = closed.length > 0 ? ` · ${closed.length} cerrada${closed.length > 1 ? 's' : ''}` : '';
+  document.getElementById('kpiPositions').textContent = `${active.length} activa${active.length !== 1 ? 's' : ''}${closedText}`;
   document.getElementById('kpiValue').textContent = tv !== null ? fmtEur(tv) : '— (sin precios)';
   document.getElementById('kpiPL').textContent = pl !== null ? fmtEur(pl) : '—';
   document.getElementById('kpiPL').className = 'kpi-value ' + (pl === null ? '' : pl >= 0 ? 'positive' : 'negative');
-  document.getElementById('kpiPLSub').textContent = plPct !== null ? fmtPct(plPct) + ' total' : 'Actualiza los precios';
+  document.getElementById('kpiPLSub').textContent = plPct !== null ? fmtPct(plPct) + ' no realizado' : 'Actualiza los precios';
 
-  // P&L diario: valor actual vs valor al cierre de ayer (previousClose)
-  const posWithClose = positions.filter(p => p.currentPrice && p.previousClose && p.previousClose > 0);
+  // P&L diario
+  const posWithClose = active.filter(p => p.currentPrice && p.previousClose && p.previousClose > 0);
   if (posWithClose.length > 0) {
     const valueNow = posWithClose.reduce((s, p) => s + p.shares * p.currentPrice, 0);
     const valueClose = posWithClose.reduce((s, p) => s + p.shares * p.previousClose, 0);
@@ -1032,26 +1374,66 @@ function renderKPIs() {
     document.getElementById('kpiPLDay').textContent = 'Hoy: sin datos de cierre';
   }
 
-  // DCA mensual
+  // P&L Realizado
+  const realizedPL = metrics && metrics.totalRealizedPL != null ? metrics.totalRealizedPL : 0;
+  const realizedEl = document.getElementById('kpiRealizedPL');
+  if (realizedPL !== 0) {
+    const rColor = realizedPL >= 0 ? 'var(--color-success)' : 'var(--color-notification)';
+    const rIcon = realizedPL >= 0 ? '✅' : '❌';
+    const totalPLCombined = (pl || 0) + realizedPL;
+    const tColor = totalPLCombined >= 0 ? 'var(--color-success)' : 'var(--color-notification)';
+    realizedEl.innerHTML = `<span style="color:${rColor};font-weight:600">Realizado: ${fmtEur(realizedPL)} ${rIcon}</span>` +
+      `<br><span style="font-weight:600;color:${tColor}">Total: ${fmtEur(totalPLCombined)}</span>`;
+  } else {
+    realizedEl.textContent = '';
+  }
+
+  // DCA mensual — solo COMPRAS (las ventas no son aportaciones DCA)
   const now = new Date();
   const curMonth = now.getFullYear() * 100 + (now.getMonth() + 1); // YYYYMM
-  let dcaThisMonth = 0;
-  let monthSet = new Set();
-  let dcaTotalAll = 0;
+  let dcaBuysThisMonth = 0;
+  let dcaSellsThisMonth = 0;
   dcaEntries.forEach(e => {
     const cost = e.shares * e.price;
-    dcaTotalAll += cost;
+    const isSell = e.type === 'SELL';
     const d = new Date(e.date + 'T12:00:00');
     const m = d.getFullYear() * 100 + (d.getMonth() + 1);
-    monthSet.add(m);
-    if (m === curMonth) dcaThisMonth += cost;
+    if (isSell) {
+      if (m === curMonth) dcaSellsThisMonth += cost;
+    } else {
+      if (m === curMonth) dcaBuysThisMonth += cost;
+    }
   });
-  const avgMonthly = monthSet.size > 0 ? dcaTotalAll / monthSet.size : 0;
-  document.getElementById('kpiDca').textContent = fmtEur(dcaThisMonth);
+
+  document.getElementById('kpiDca').textContent = fmtEur(dcaBuysThisMonth);
+
   const monthName = now.toLocaleString('es-ES', { month: 'long' });
-  document.getElementById('kpiDcaSub').textContent = dcaThisMonth > 0
-    ? `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} · Media: ${fmtEur(avgMonthly)}/mes`
-    : `Sin aportaciones en ${monthName}`;
+  const monthCapital = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  let dcaSubText = monthCapital;
+  if (dcaSellsThisMonth > 0) {
+    dcaSubText += ` · Ventas: ${fmtEur(dcaSellsThisMonth)}`;
+  }
+  document.getElementById('kpiDcaSub').textContent = dcaSubText;
+
+  // Progress bar con objetivo mensual desde localStorage
+  const dcaTarget = parseFloat(localStorage.getItem('dcaMonthlyTarget') || '0');
+  const progressWrap = document.getElementById('kpiDcaProgress');
+  const dcaCard = document.getElementById('kpiDcaCard');
+  if (dcaTarget > 0) {
+    progressWrap.style.display = '';
+    const pctRaw = (dcaBuysThisMonth / dcaTarget) * 100;
+    const pctBar = Math.min(pctRaw, 100);
+    const exceeded = pctRaw > 100;
+    const fill = document.getElementById('kpiDcaFill');
+    fill.style.width = pctBar.toFixed(1) + '%';
+    fill.style.background = exceeded ? 'var(--color-notification)' : pctBar >= 60 ? 'var(--color-primary)' : 'var(--color-gold)';
+    document.getElementById('kpiDcaPctLabel').textContent = pctRaw.toFixed(0) + '%';
+    document.getElementById('kpiDcaTargetLabel').textContent = `Obj: ${fmtEur(dcaTarget)}`;
+    dcaCard.classList.toggle('exceeded', exceeded);
+  } else {
+    progressWrap.style.display = 'none';
+    dcaCard.classList.remove('exceeded');
+  }
 
   // XIRR cartera
   const xirr = metrics && metrics.portfolioXirr;
@@ -1059,25 +1441,74 @@ function renderKPIs() {
   document.getElementById('kpiXirr').className = 'kpi-value ' + (xirr == null ? '' : xirr >= 0 ? 'positive' : 'negative');
 }
 
+// ===================== DCA TARGET POPOVER =====================
+function toggleDcaTargetPopover(event) {
+  const popover = document.getElementById('dcaTargetPopover');
+  // Si el click fue dentro del popover, no hacer nada
+  if (popover.contains(event.target)) return;
+  const isOpen = popover.classList.contains('open');
+  popover.classList.toggle('open');
+  if (!isOpen) {
+    const saved = localStorage.getItem('dcaMonthlyTarget') || '';
+    document.getElementById('dcaTargetInput').value = saved && parseFloat(saved) > 0 ? parseFloat(saved) : '';
+    setTimeout(() => document.getElementById('dcaTargetInput').focus(), 50);
+  }
+}
+
+function saveDcaTarget(event) {
+  event.stopPropagation();
+  const val = parseFloat(document.getElementById('dcaTargetInput').value);
+  if (val > 0) {
+    localStorage.setItem('dcaMonthlyTarget', val.toString());
+  } else {
+    localStorage.removeItem('dcaMonthlyTarget');
+  }
+  document.getElementById('dcaTargetPopover').classList.remove('open');
+  renderKPIs();
+}
+
+function clearDcaTarget(event) {
+  event.stopPropagation();
+  localStorage.removeItem('dcaMonthlyTarget');
+  document.getElementById('dcaTargetInput').value = '';
+  document.getElementById('dcaTargetPopover').classList.remove('open');
+  renderKPIs();
+}
+
+// Cerrar popover al hacer click fuera
+document.addEventListener('click', function(e) {
+  const card = document.getElementById('kpiDcaCard');
+  const popover = document.getElementById('dcaTargetPopover');
+  if (popover && !card.contains(e.target)) {
+    popover.classList.remove('open');
+  }
+});
+
 function renderTable() {
   const tbody = document.getElementById('positionsBody');
   tbody.innerHTML = '';
 
-  if (positions.length === 0) {
+  const active = positions.filter(p => p.shares > 0);
+  const closed = positions.filter(p => p.shares <= 0);
+
+  if (active.length === 0 && closed.length === 0) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:var(--space-12);color:var(--color-text-faint)">
       <div style="font-size:var(--text-lg);margin-bottom:var(--space-3)">📊</div>
       <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-2)">Sin posiciones aún</div>
       <div style="font-size:var(--text-sm)">Pulsa <strong>"Nueva posición"</strong> para empezar</div>
     </td></tr>`;
+    document.getElementById('closedPositionsSection').style.display = 'none';
     return;
   }
 
-  positions.forEach(pos => {
+  // ——— ACTIVE POSITIONS ———
+  active.forEach(pos => {
     const invested = calcInvested(pos);
     const value = calcValue(pos);
     const pl = calcPL(pos);
     const plPct = calcPLPct(pos);
     const posXirr = metrics && metrics.positionXirr ? metrics.positionXirr[pos.ticker] : null;
+    const realizedPL = metrics && metrics.positionRealizedPL ? metrics.positionRealizedPL[pos.ticker] : null;
     const dayChange = (pos.currentPrice && pos.previousClose && pos.previousClose > 0)
         ? ((pos.currentPrice - pos.previousClose) / pos.previousClose) * 100 : null;
     const detail = positionDetailsMap[pos.ticker];
@@ -1091,6 +1522,17 @@ function renderTable() {
       if (detail.notes) tooltipParts.push('📝 ' + (detail.notes.length > 80 ? detail.notes.substring(0, 80) + '…' : detail.notes));
     }
     const rowTooltip = tooltipParts.length > 0 ? tooltipParts.join('\n') : '';
+
+    // Realized P&L indicator for partial sales
+    let realizedTag = '';
+    if (realizedPL && realizedPL !== 0) {
+      const rColor = realizedPL >= 0 ? 'var(--color-success)' : 'var(--color-notification)';
+      const rIcon = realizedPL >= 0 ? '✅' : '❌';
+      // Count sell operations for this ticker
+      const sellOps = dcaEntries.filter(e => e.ticker === pos.ticker && e.type === 'SELL').length;
+      realizedTag = `<br><span style="font-size:9px;color:${rColor};opacity:.9" title="P&L realizado por ${sellOps} venta${sellOps !== 1 ? 's' : ''} parcial${sellOps !== 1 ? 'es' : ''}">${rIcon} ${fmtEur(realizedPL)} realiz. (${sellOps}v)</span>`;
+    }
+
     const tr = document.createElement('tr');
     if (rowTooltip) tr.title = rowTooltip;
     tr.innerHTML = `
@@ -1109,7 +1551,7 @@ function renderTable() {
       <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td>${fmtEur(invested)}</td>
       <td>${value !== null ? fmtEur(value) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
-      <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
+      <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span>${realizedTag}</td>
       <td class="${plClass(posXirr)}">${posXirr != null ? fmtPct(posXirr * 100) : '—'}</td>
       <td style="text-align:center;white-space:nowrap">
         <button class="btn-ghost btn btn-sm" onclick="openEditModal('${pos.ticker}')" title="Editar" style="padding:2px 6px">
@@ -1122,22 +1564,110 @@ function renderTable() {
     tbody.appendChild(tr);
   });
 
-  // Totals row
-  const ti = totalInvested();
-  const tv = totalValue();
-  const pl = totalPL();
-  const tiPriced = positions.filter(p => p.currentPrice).reduce((s, p) => s + calcInvested(p), 0);
-  const plPct = pl !== null && tiPriced > 0 ? (pl / tiPriced) * 100 : null;
-  const totalXirr = metrics ? metrics.portfolioXirr : null;
-  tbody.insertAdjacentHTML('beforeend', `
+  // Totals row (only active positions)
+  if (active.length > 0) {
+    const ti = active.reduce((s, p) => s + calcInvested(p), 0);
+    const tvActive = active.filter(p => p.currentPrice).length > 0 ? active.filter(p => p.currentPrice).reduce((s, p) => s + calcValue(p), 0) : null;
+    const tiPriced = active.filter(p => p.currentPrice).reduce((s, p) => s + calcInvested(p), 0);
+    const pl = tvActive !== null ? tvActive - tiPriced : null;
+    const plPct = pl !== null && tiPriced > 0 ? (pl / tiPriced) * 100 : null;
+    const totalXirr = metrics ? metrics.portfolioXirr : null;
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr style="background:var(--color-surface-offset);font-weight:700">
+        <td colspan="5" style="text-align:left;color:var(--color-text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">TOTAL CARTERA</td>
+        <td>${fmtEur(ti)}</td>
+        <td>${tvActive !== null ? fmtEur(tvActive) : '—'}</td>
+        <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
+        <td class="${plClass(totalXirr)}">${totalXirr != null ? fmtPct(totalXirr * 100) : '—'}</td>
+        <td></td>
+      </tr>`);
+  }
+
+  // ——— CLOSED POSITIONS ———
+  const closedSection = document.getElementById('closedPositionsSection');
+  if (closed.length === 0) {
+    closedSection.style.display = 'none';
+    return;
+  }
+
+  closedSection.style.display = '';
+  document.getElementById('closedPositionsTitle').textContent = `Posiciones cerradas (${closed.length})`;
+
+  const closedTbody = document.getElementById('closedBody');
+  closedTbody.innerHTML = '';
+
+  let totalClosedRealized = 0;
+  let totalClosedInvested = 0;
+  let totalClosedRecovered = 0;
+
+  closed.forEach(pos => {
+    const posXirr = metrics && metrics.positionXirr ? metrics.positionXirr[pos.ticker] : null;
+    const realizedPL = metrics && metrics.positionRealizedPL ? (metrics.positionRealizedPL[pos.ticker] || 0) : 0;
+    totalClosedRealized += realizedPL;
+
+    // Calculate total invested and recovered from DCA entries
+    const tickerDca = dcaEntries.filter(e => e.ticker === pos.ticker);
+    const buyEntries = tickerDca.filter(e => e.type !== 'SELL');
+    const sellEntries = tickerDca.filter(e => e.type === 'SELL');
+    const totalBought = buyEntries.reduce((s, e) => s + e.shares * e.price, 0);
+    const totalSold = sellEntries.reduce((s, e) => s + e.shares * e.price, 0);
+    const avgSellPrice = sellEntries.length > 0 ? sellEntries.reduce((s, e) => s + e.shares * e.price, 0) / sellEntries.reduce((s, e) => s + e.shares, 0) : 0;
+    totalClosedInvested += totalBought;
+    totalClosedRecovered += totalSold;
+
+    // Dates info
+    const sortedDca = [...tickerDca].sort((a, b) => a.date.localeCompare(b.date));
+    const firstDate = sortedDca.length > 0 ? new Date(sortedDca[0].date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+    const lastDate = sortedDca.length > 0 ? new Date(sortedDca[sortedDca.length - 1].date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="ticker-badge" style="cursor:pointer" onclick="openDetailModal('${pos.ticker}')">
+          <span class="ticker-dot" style="background:${pos.color || '#4f98a3'};opacity:.5"></span>
+          <div>
+            <div style="font-weight:700;opacity:.7">${pos.ticker}</div>
+            <div class="ticker-name" style="color:var(--color-text-faint);font-weight:400">${pos.name || ''}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span style="font-size:10px;color:var(--color-success)">▲ ${buyEntries.length}</span>
+        <span style="font-size:10px;color:var(--color-notification)">▼ ${sellEntries.length}</span>
+      </td>
+      <td>${fmtEur(pos.avgPrice, 4)}</td>
+      <td>${avgSellPrice > 0 ? fmtEur(avgSellPrice, 4) : '—'}</td>
+      <td>${fmtEur(totalBought)}</td>
+      <td>${fmtEur(totalSold)}</td>
+      <td class="${plClass(realizedPL)}" style="font-weight:700">${fmtEur(realizedPL)} ${realizedPL >= 0 ? '✅' : '❌'}<br><span style="font-size:10px;opacity:.8">${totalBought > 0 ? fmtPct((realizedPL / totalBought) * 100) : '—'}</span></td>
+      <td style="font-size:10px;color:var(--color-text-muted)">${firstDate}<br>→ ${lastDate}</td>
+      <td class="${plClass(posXirr)}">${posXirr != null ? fmtPct(posXirr * 100) : '—'}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn-ghost btn btn-sm" onclick="deletePosition('${pos.ticker}')" title="Eliminar" style="color:var(--color-notification);opacity:.5;padding:2px 6px" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </td>`;
+    closedTbody.appendChild(tr);
+  });
+
+  // Totals row for closed positions
+  closedTbody.insertAdjacentHTML('beforeend', `
     <tr style="background:var(--color-surface-offset);font-weight:700">
-      <td colspan="5" style="text-align:left;color:var(--color-text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">TOTAL CARTERA</td>
-      <td>${fmtEur(ti)}</td>
-      <td>${tv !== null ? fmtEur(tv) : '—'}</td>
-      <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
-      <td class="${plClass(totalXirr)}">${totalXirr != null ? fmtPct(totalXirr * 100) : '—'}</td>
+      <td colspan="4" style="text-align:left;color:var(--color-text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">TOTAL CERRADAS</td>
+      <td>${fmtEur(totalClosedInvested)}</td>
+      <td>${fmtEur(totalClosedRecovered)}</td>
+      <td class="${plClass(totalClosedRealized)}">${fmtEur(totalClosedRealized)} ${totalClosedRealized >= 0 ? '✅' : '❌'}<br><span style="font-size:10px;opacity:.8">${totalClosedInvested > 0 ? fmtPct((totalClosedRealized / totalClosedInvested) * 100) : '—'}</span></td>
       <td></td>
-    </tr>`);
+      <td></td>
+      <td></td>
+     </tr>`);
+}
+
+let closedPosOpen = false;
+function toggleClosedPositions() {
+  closedPosOpen = !closedPosOpen;
+  document.getElementById('closedPositionsBody').style.display = closedPosOpen ? '' : 'none';
+  document.getElementById('closedChevron').style.transform = closedPosOpen ? 'rotate(180deg)' : 'rotate(0deg)';
 }
 
 
@@ -1158,7 +1688,9 @@ function renderPieChart() {
   const ctx = document.getElementById('pieChart').getContext('2d');
   if (pieChartInst) pieChartInst.destroy();
 
-  if (positions.length === 0) {
+  const activePos = positions.filter(p => p.shares > 0);
+
+  if (activePos.length === 0) {
     pieChartInst = new Chart(ctx, {
       type: 'doughnut',
       data: { labels: ['Sin datos'], datasets: [{ data: [1], backgroundColor: ['var(--color-surface-dynamic)'], borderWidth: 0 }] },
@@ -1167,9 +1699,9 @@ function renderPieChart() {
     return;
   }
 
-  const data = positions.map(p => calcValue(p) ?? calcInvested(p));
-  const labels = positions.map(p => p.ticker);
-  const colors = positions.map(p => p.color || '#4f98a3');
+  const data = activePos.map(p => calcValue(p) ?? calcInvested(p));
+  const labels = activePos.map(p => p.ticker);
+  const colors = activePos.map(p => p.color || '#4f98a3');
 
   pieChartInst = new Chart(ctx, {
     type: 'doughnut',
@@ -1318,14 +1850,59 @@ async function apiDcaDelete(id) {
 }
 
 // ===================== DCA MODAL =====================
-function openDcaModal() {
+let dcaType = 'BUY';
+
+function setDcaType(type) {
+  dcaType = type;
+  const buyBtn = document.getElementById('dcaTypeBuy');
+  const sellBtn = document.getElementById('dcaTypeSell');
+  const title = document.getElementById('dcaModalTitle');
+  const priceLabel = document.getElementById('dcaPriceLabel');
+  const confirmBtn = document.getElementById('dcaConfirmBtn');
+
+  if (type === 'SELL') {
+    buyBtn.style.borderColor = 'var(--color-border)';
+    buyBtn.style.background = 'transparent';
+    buyBtn.style.color = 'var(--color-text-muted)';
+    sellBtn.style.borderColor = 'var(--color-notification)';
+    sellBtn.style.background = 'oklch(from var(--color-notification) l c h / .15)';
+    sellBtn.style.color = 'var(--color-notification)';
+    title.textContent = 'Registrar Venta';
+    priceLabel.textContent = 'Precio de Venta (€)';
+    confirmBtn.textContent = 'Confirmar Venta';
+    confirmBtn.style.background = 'var(--color-notification)';
+    confirmBtn.style.borderColor = 'var(--color-notification)';
+  } else {
+    sellBtn.style.borderColor = 'var(--color-border)';
+    sellBtn.style.background = 'transparent';
+    sellBtn.style.color = 'var(--color-text-muted)';
+    buyBtn.style.borderColor = 'var(--color-success)';
+    buyBtn.style.background = 'oklch(from var(--color-success) l c h / .15)';
+    buyBtn.style.color = 'var(--color-success)';
+    title.textContent = 'Registrar Compra';
+    priceLabel.textContent = 'Precio Pagado (€)';
+    confirmBtn.textContent = 'Confirmar Compra';
+    confirmBtn.style.background = '';
+    confirmBtn.style.borderColor = '';
+  }
+  updateDcaPreview();
+}
+
+function openDcaModal(type) {
+  dcaType = type || 'BUY';
   const sel = document.getElementById('dcaTicker');
-  sel.innerHTML = positions.map(p => `<option value="${p.ticker}">${p.ticker} – ${p.name}</option>`).join('');
+  // Show all positions for buying, only positions with shares > 0 for selling
+  const availablePositions = positions.filter(p => p.shares > 0 || dcaType === 'BUY');
+  sel.innerHTML = availablePositions.map(p => {
+    const closedTag = p.shares <= 0 ? ' [CERRADA]' : '';
+    return `<option value="${p.ticker}">${p.ticker} – ${p.name || p.ticker}${closedTag}</option>`;
+  }).join('');
   document.getElementById('dcaDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('dcaShares').value = '';
   document.getElementById('dcaPrice').value = '';
-  document.getElementById('dcaPreview').innerHTML = 'Rellena los campos para ver el nuevo precio medio.';
+  document.getElementById('dcaPreview').innerHTML = 'Rellena los campos para ver la vista previa.';
   document.getElementById('dcaModal').style.display = 'flex';
+  setDcaType(dcaType);
 }
 
 function closeDcaModal() { document.getElementById('dcaModal').style.display = 'none'; }
@@ -1337,18 +1914,45 @@ function updateDcaPreview() {
   const pos = positions.find(p => p.ticker === ticker);
   const preview = document.getElementById('dcaPreview');
   if (!pos || isNaN(shares) || shares <= 0 || isNaN(price) || price <= 0) {
-    preview.innerHTML = 'Rellena los campos para ver el nuevo precio medio.';
+    preview.innerHTML = 'Rellena los campos para ver la vista previa.';
     return;
   }
-  const oldCost = pos.shares * pos.avgPrice;
-  const newCost = shares * price;
-  const totalShares = pos.shares + shares;
-  const newAvg = (oldCost + newCost) / totalShares;
-  preview.innerHTML = `
-    <strong>Vista previa:</strong><br>
-    Coste operación: <strong>${fmtEur(newCost)}</strong><br>
-    Nuevo P.Medio: <strong>${fmtEur(newAvg, 4)}</strong> (antes: ${fmtEur(pos.avgPrice, 4)})<br>
-    Nuevas acciones totales: <strong>${fmtShares(totalShares)}</strong>`;
+
+  if (dcaType === 'SELL') {
+    // Vista previa de venta
+    if (shares > pos.shares + 0.000001) {
+      preview.innerHTML = `<span style="color:var(--color-notification)">⚠️ No puedes vender ${fmtShares(shares)} acc. — solo tienes ${fmtShares(pos.shares)}</span>`;
+      return;
+    }
+    const proceeds = shares * price;
+    const costBasis = shares * pos.avgPrice;
+    const pl = proceeds - costBasis;
+    const plPct = costBasis > 0 ? (pl / costBasis) * 100 : 0;
+    const remainingShares = pos.shares - shares;
+    const plClass = pl >= 0 ? 'color:var(--color-success)' : 'color:var(--color-notification)';
+    const plIcon = pl >= 0 ? '✅' : '❌';
+    const isFullClose = remainingShares <= 0.000001;
+    const saleTypeLabel = isFullClose ? '🔒 <strong>Cierre total de posición</strong>' : '📊 <strong>Venta parcial</strong>';
+    preview.innerHTML = `
+      <strong>Vista previa venta:</strong><br>
+      Tipo: ${saleTypeLabel}<br>
+      Importe bruto: <strong>${fmtEur(proceeds)}</strong><br>
+      Coste base: <strong>${fmtEur(costBasis)}</strong> (P.Medio: ${fmtEur(pos.avgPrice, 4)})<br>
+      P&L realizado: <strong style="${plClass}">${fmtEur(pl)} (${pl >= 0 ? '+' : ''}${plPct.toFixed(2)}%)</strong> ${plIcon}<br>
+      Acciones restantes: <strong>${fmtShares(remainingShares)}</strong>
+      ${isFullClose ? '<br><span style="color:var(--color-gold)">⚡ La posición pasará a "cerradas" tras esta operación</span>' : ''}`;
+  } else {
+    // Vista previa de compra (original)
+    const oldCost = pos.shares * pos.avgPrice;
+    const newCost = shares * price;
+    const totalShares = pos.shares + shares;
+    const newAvg = (oldCost + newCost) / totalShares;
+    preview.innerHTML = `
+      <strong>Vista previa compra:</strong><br>
+      Coste operación: <strong>${fmtEur(newCost)}</strong><br>
+      Nuevo P.Medio: <strong>${fmtEur(newAvg, 4)}</strong> (antes: ${fmtEur(pos.avgPrice, 4)})<br>
+      Nuevas acciones totales: <strong>${fmtShares(totalShares)}</strong>`;
+  }
 }
 
 async function executeDca() {
@@ -1361,8 +1965,9 @@ async function executeDca() {
     return;
   }
   try {
-    await apiDcaCreate({ ticker, shares, price, date });
-    showToast(`DCA ${ticker} registrado ✓ — ${fmtShares(shares)} acc. a ${fmtEur(price, 4)}`, 'success');
+    await apiDcaCreate({ ticker, shares, price, date, type: dcaType });
+    const typeLabel = dcaType === 'SELL' ? 'Venta' : 'Compra DCA';
+    showToast(`${typeLabel} ${ticker} registrada ✓ — ${fmtShares(shares)} acc. a ${fmtEur(price, 4)}`, 'success');
     await loadAll();
     closeDcaModal();
   } catch (e) {
@@ -1375,23 +1980,67 @@ function renderDcaHistory() {
   const tbody = document.getElementById('dcaBody');
   tbody.innerHTML = '';
   if (dcaEntries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:var(--space-8);color:var(--color-text-faint);font-size:var(--text-sm)">Sin operaciones DCA registradas aún.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:var(--space-8);color:var(--color-text-faint);font-size:var(--text-sm)">Sin operaciones DCA registradas aún.</td></tr>`;
     document.getElementById('dcaLoadMore').style.display = 'none';
     return;
   }
+
+  // Pre-calculate running shares per ticker to determine partial/full sale
+  const allSorted = [...dcaEntries].sort((a, b) => a.date.localeCompare(b.date));
+  const runningSharesMap = {};
+  const sharesAfterEntry = {};
+  allSorted.forEach(e => {
+    const current = runningSharesMap[e.ticker] || 0;
+    if (e.type === 'SELL') {
+      runningSharesMap[e.ticker] = current - e.shares;
+    } else {
+      runningSharesMap[e.ticker] = current + e.shares;
+    }
+    sharesAfterEntry[e.id] = Math.max(0, runningSharesMap[e.ticker]);
+  });
+
   const visible = dcaEntries.slice(0, dcaDisplayLimit);
   visible.forEach(entry => {
     const pos = positions.find(p => p.ticker === entry.ticker);
     const color = pos ? pos.color : '#4f98a3';
     const cost = entry.shares * entry.price;
+    const isSell = entry.type === 'SELL';
     const dateStr = new Date(entry.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    const typeBadge = isSell
+      ? '<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;background:oklch(from var(--color-notification) l c h / .12);color:var(--color-notification)">VENTA</span>'
+      : '<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;background:oklch(from var(--color-success) l c h / .12);color:var(--color-success)">COMPRA</span>';
+
+    // Calculate realized P&L for sell entries
+    let plCell = '<span style="color:var(--color-text-faint)">—</span>';
+    if (isSell && pos && pos.avgPrice > 0) {
+      const realizedPL = entry.shares * (entry.price - pos.avgPrice);
+      const plColor = realizedPL >= 0 ? 'var(--color-success)' : 'var(--color-notification)';
+      const plIcon = realizedPL >= 0 ? '✅' : '❌';
+      plCell = `<span style="color:${plColor};font-weight:600">${fmtEur(realizedPL)}</span> ${plIcon}`;
+    }
+
+    // State: partial sale, full close, first buy, accumulation
+    let stateCell = '';
+    const sharesAfter = sharesAfterEntry[entry.id];
+    if (isSell) {
+      if (sharesAfter !== undefined && sharesAfter <= 0.000001) {
+        stateCell = '<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;background:oklch(from var(--color-gold) l c h / .15);color:var(--color-gold)">🔒 CIERRE</span>';
+      } else {
+        stateCell = `<span style="font-size:10px;font-weight:600;color:var(--color-text-muted)" title="Quedan ${sharesAfter !== undefined ? fmtShares(sharesAfter) : '?'} acc.">📊 Parcial</span>`;
+      }
+    } else {
+      stateCell = '<span style="font-size:10px;color:var(--color-text-faint)">—</span>';
+    }
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="text-align:left">${dateStr}</td>
-      <td><span style="font-weight:700;color:${color}">${entry.ticker}</span></td>
+      <td><span style="font-weight:700;color:${color}">${entry.ticker}</span> ${typeBadge}</td>
       <td>${fmtShares(entry.shares)}</td>
       <td>${fmtEur(entry.price, 4)}</td>
-      <td>${fmtEur(cost)}</td>
+      <td style="${isSell ? 'color:var(--color-success)' : ''}">${isSell ? '+' : '-'}${fmtEur(cost)}</td>
+      <td>${plCell}</td>
+      <td>${stateCell}</td>
       <td style="text-align:center">
         <button class="btn-ghost btn btn-sm" onclick="deleteDca(${entry.id})" title="Eliminar" style="color:var(--color-notification);opacity:.5;padding:2px 6px" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -1399,6 +2048,29 @@ function renderDcaHistory() {
       </td>`;
     tbody.appendChild(tr);
   });
+
+  // Totals summary at bottom
+  const totalBuyCost = dcaEntries.filter(e => e.type !== 'SELL').reduce((s, e) => s + e.shares * e.price, 0);
+  const totalSellProceeds = dcaEntries.filter(e => e.type === 'SELL').reduce((s, e) => s + e.shares * e.price, 0);
+  const netInvested = totalBuyCost - totalSellProceeds;
+  const buyCount = dcaEntries.filter(e => e.type !== 'SELL').length;
+  const sellCount = dcaEntries.filter(e => e.type === 'SELL').length;
+
+  if (dcaEntries.length > 0) {
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr style="background:var(--color-surface-offset);font-weight:600;font-size:var(--text-xs)">
+        <td style="text-align:left;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em">
+          RESUMEN: ${buyCount} compras · ${sellCount} ventas
+        </td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="color:var(--color-text-muted)">Neto: ${fmtEur(netInvested)}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>`);
+  }
 
   // Botón "Ver más"
   const loadMoreBtn = document.getElementById('dcaLoadMore');
@@ -1461,20 +2133,20 @@ function showToast(msg, type = 'success') {
 })();
 
 
-// ===================== HISTORY CHART =====================
+// ===================== HISTORY CHART (MAIN — PRICE EVOLUTION) =====================
 let histChartInst = null;
 let currentRange = '1d';
 
 function setRange(range) {
   currentRange = range;
-  document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b.dataset.range === range));
+  document.querySelectorAll('.range-btn:not(.pd-range):not(.eq-range)').forEach(b => b.classList.toggle('active', b.dataset.range === range));
   loadHistory();
 }
 
 function populateHistTicker() {
   const sel = document.getElementById('histTicker');
   const current = sel.value;
-  sel.innerHTML = '<option value="ALL">Toda la cartera</option>' +
+  sel.innerHTML = '<option value="ALL">Todos los tickers</option>' +
     positions.map(p => `<option value="${p.ticker}">${p.ticker}</option>`).join('');
   if ([...sel.options].some(o => o.value === current)) sel.value = current;
 }
@@ -1500,83 +2172,69 @@ function renderHistoryChart(data, tickerFilter) {
   if (!data || data.length === 0) {
     histChartInst = new Chart(ctx, {
       type: 'line', data: { labels: [''], datasets: [{ data: [0], borderColor: 'transparent' }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: 'Sin datos de histórico para este rango', color: c.textMuted, font: { size: 13 } }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Sin datos de histórico para este rango', color: c.textMuted, font: { size: 13 } } } }
     });
     return;
   }
 
-  if (tickerFilter === 'ALL') {
-    renderPortfolioChart(data, c, ctx);
-  } else {
-    renderSingleTickerChart(data, tickerFilter, c, ctx);
-  }
-}
-
-function renderPortfolioChart(data, c, ctx) {
-  const tsMap = new Map();
-  data.forEach(entry => {
-    const ts = entry.timestamp;
-    if (!tsMap.has(ts)) tsMap.set(ts, {});
-    tsMap.get(ts)[entry.ticker] = entry.priceEur;
-  });
-
-  const timestamps = [...tsMap.keys()].sort();
-  const datasets = [];
-  const tickers = [...new Set(data.map(d => d.ticker))];
-
-  tickers.forEach(ticker => {
-    const pos = positions.find(p => p.ticker === ticker);
+  if (tickerFilter && tickerFilter !== 'ALL') {
+    // Single ticker — show just that price line
+    const pos = positions.find(p => p.ticker === tickerFilter);
     const color = pos ? pos.color : '#4f98a3';
-    const shares = pos ? pos.shares : 1;
-    const points = timestamps.map(ts => {
-      const prices = tsMap.get(ts);
-      const val = prices[ticker] != null ? prices[ticker] * shares : null;
-      return { x: new Date(ts), y: val };
+    const sorted = [...data].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    const points = sorted.map(d => ({ x: new Date(d.timestamp), y: d.priceEur }));
+    const datasets = [{
+      label: tickerFilter + ' (€)', data: points, borderColor: color, backgroundColor: color + '18',
+      borderWidth: 2.5, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
+      tension: 0.3, fill: true, spanGaps: true
+    }];
+    createLineChart(ctx, c, datasets);
+  } else {
+    // All tickers — show price lines per ticker
+    const tsMap = new Map();
+    data.forEach(entry => {
+      const ts = entry.timestamp;
+      if (!tsMap.has(ts)) tsMap.set(ts, {});
+      tsMap.get(ts)[entry.ticker] = entry.priceEur;
     });
-    datasets.push({
-      label: ticker, data: points, borderColor: color, backgroundColor: color + '18',
-      borderWidth: 2, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
-      tension: 0.3, fill: false, spanGaps: true
-    });
-  });
-
-  const totalPoints = timestamps.map(ts => {
-    const prices = tsMap.get(ts);
-    let sum = 0;
-    tickers.forEach(ticker => {
+    const timestamps = [...tsMap.keys()].sort();
+    const tickers = [...new Set(data.map(d => d.ticker))];
+    const datasets = tickers.map(ticker => {
       const pos = positions.find(p => p.ticker === ticker);
+      const color = pos ? pos.color : '#4f98a3';
       const shares = pos ? pos.shares : 1;
-      if (prices[ticker] != null) sum += prices[ticker] * shares;
+      const points = timestamps.map(ts => {
+        const prices = tsMap.get(ts);
+        const val = prices[ticker] != null ? prices[ticker] * shares : null;
+        return { x: new Date(ts), y: val };
+      });
+      return {
+        label: ticker, data: points, borderColor: color, backgroundColor: color + '18',
+        borderWidth: 2, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 4,
+        tension: 0.3, fill: false, spanGaps: true
+      };
     });
-    return { x: new Date(ts), y: sum };
-  });
-  datasets.unshift({
-    label: 'TOTAL', data: totalPoints, borderColor: c.text, backgroundColor: c.border + '30',
-    borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0.3, fill: true, spanGaps: true
-  });
+    const totalPoints = timestamps.map(ts => {
+      const prices = tsMap.get(ts);
+      let sum = 0;
+      let hasAny = false;
+      tickers.forEach(ticker => {
+        const pos = positions.find(p => p.ticker === ticker);
+        const shares = pos ? pos.shares : 1;
+        if (prices[ticker] != null) {
+          sum += prices[ticker] * shares;
+          hasAny = true;
+        }
+      });
+      return { x: new Date(ts), y: hasAny ? sum : null };
+    });
+    datasets.unshift({
+      label: 'TOTAL', data: totalPoints, borderColor: c.text, backgroundColor: c.border + '30',
+      borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0.3, fill: true, spanGaps: true
+    });
 
-  createLineChart(ctx, c, datasets);
-}
-
-function renderSingleTickerChart(data, ticker, c, ctx) {
-  const pos = positions.find(p => p.ticker === ticker);
-  const color = pos ? pos.color : '#4f98a3';
-  const sorted = [...data].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-  const points = sorted.map(d => ({ x: new Date(d.timestamp), y: d.priceEur }));
-
-  const datasets = [{
-    label: ticker + ' (€)', data: points, borderColor: color, backgroundColor: color + '18',
-    borderWidth: 2.5, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
-    tension: 0.3, fill: true, spanGaps: true
-  }];
-
-  createLineChart(ctx, c, datasets);
+    createLineChart(ctx, c, datasets);
+  }
 }
 
 function getTimeUnit() {
@@ -1653,7 +2311,7 @@ function createLineChart(ctx, c, datasets) {
         y: {
           ticks: {
             color: c.textMuted, font: { size: 10 },
-            callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €'
+            callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €'
           },
           grid: { color: c.border + '40' }
         }
@@ -1834,7 +2492,7 @@ function renderWatchlist() {
   if (watchlistItems.length === 0) {
     body.innerHTML = `
       <div class="news-placeholder">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
         <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">Watchlist vacía</div>
         <div style="font-size:var(--text-xs)">Pulsa <strong>+</strong> para añadir un ticker</div>
       </div>`;
@@ -1894,7 +2552,7 @@ function renderNewsItems(items) {
   if (!items || items.length === 0) {
     return `<div class="news-placeholder">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-      <div style="font-weight:600;color:var(--color-text-muted)">No se encontraron noticias</div>
+      <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">No se encontraron noticias</div>
       <div style="font-size:var(--text-xs)">Inténtalo de nuevo más tarde</div>
     </div>`;
   }
@@ -2433,11 +3091,127 @@ function persistSeenAlerts() {
   localStorage.setItem('seenAlertKeys', JSON.stringify([...seenAlertKeys]));
 }
 
+// ===================== TELEGRAM =====================
+let telegramConfigured = false;
+
+async function checkTelegramStatus() {
+  try {
+    const resp = await fetch(`${BASE}/api/telegram/status`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const statusText = document.getElementById('telegramStatusText');
+    const testBtn = document.getElementById('telegramTestBtn');
+    telegramConfigured = data.enabled;
+    if (data.enabled) {
+      statusText.innerHTML = '<span style="color:var(--color-success)">● Telegram activo</span>';
+      testBtn.disabled = false;
+      testBtn.style.opacity = '1';
+      testBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg> Probar Telegram';
+    } else {
+      statusText.innerHTML = '<span style="color:var(--color-text-faint)">○ Telegram no configurado</span>';
+      testBtn.disabled = false;
+      testBtn.style.opacity = '1';
+      testBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg> Configurar';
+    }
+  } catch (e) { /* silencioso */ }
+}
+
+async function testTelegram() {
+  if (!telegramConfigured) {
+    openTelegramConfigModal();
+    return;
+  }
+  const btn = document.getElementById('telegramTestBtn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="news-spinner" style="width:12px;height:12px;border-width:2px"></span> Enviando...';
+  try {
+    const resp = await fetch(`${BASE}/api/telegram/test`, { method: 'POST' });
+    const data = await resp.json();
+    if (data.success) {
+      btn.innerHTML = '✅ ¡Enviado!';
+      btn.style.borderColor = 'var(--color-success)';
+      btn.style.color = 'var(--color-success)';
+      showToast('Mensaje de prueba enviado a Telegram ✓', 'success');
+    } else {
+      btn.innerHTML = '❌ Error';
+      btn.style.borderColor = 'var(--color-notification)';
+      btn.style.color = 'var(--color-notification)';
+      showToast(data.message || 'Error al enviar', 'error');
+    }
+  } catch (e) {
+    btn.innerHTML = '❌ Error';
+    showToast('Error conectando con el servidor', 'error');
+  }
+  setTimeout(() => {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }, 3000);
+}
+
+function openTelegramConfigModal() {
+  document.getElementById('telegramConfigOverlay').classList.add('open');
+  document.getElementById('telegramBotTokenInput').value = '';
+  document.getElementById('telegramChatIdInput').value = '';
+  document.getElementById('telegramConfigError').style.display = 'none';
+  setTimeout(() => document.getElementById('telegramBotTokenInput').focus(), 100);
+}
+
+function closeTelegramConfigModal() {
+  document.getElementById('telegramConfigOverlay').classList.remove('open');
+}
+
+async function saveTelegramConfig() {
+  const botToken = document.getElementById('telegramBotTokenInput').value.trim();
+  const chatId = document.getElementById('telegramChatIdInput').value.trim();
+  const errEl = document.getElementById('telegramConfigError');
+  const saveBtn = document.getElementById('telegramConfigSaveBtn');
+
+  if (!botToken || !chatId) {
+    errEl.textContent = 'Debes rellenar ambos campos.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+  const originalBtnText = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="news-spinner" style="width:12px;height:12px;border-width:2px"></span> Configurando...';
+
+  try {
+    const resp = await fetch(`${BASE}/api/telegram/configure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ botToken, chatId })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showToast('✅ Telegram configurado y mensaje de prueba enviado', 'success');
+      telegramConfigured = true;
+      closeTelegramConfigModal();
+      checkTelegramStatus();
+    } else {
+      errEl.textContent = data.message || 'Error al configurar. Revisa los datos.';
+      errEl.style.display = 'block';
+    }
+  } catch (e) {
+    errEl.textContent = 'Error conectando con el servidor.';
+    errEl.style.display = 'block';
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.innerHTML = originalBtnText;
+}
+
 function toggleAlertPanel() {
   alertsPanelOpen = !alertsPanelOpen;
   document.getElementById('alertPanel').classList.toggle('open', alertsPanelOpen);
   if (alertsPanelOpen) {
-    // Marcar todas las alertas actuales como vistas
+    // Cerrar log panel si está abierto
+    if (logPanelOpen) { logPanelOpen = false; document.getElementById('logPanel').classList.remove('open'); }
+    // Marcar todas las alertas actuales como vistas inmediatamente
     currentAlerts.forEach(a => seenAlertKeys.add(`${a.ticker}|${a.type}`));
     persistSeenAlerts();
     updateAlertBadge();
@@ -2708,7 +3482,7 @@ function renderPeriodHistoryChart(entries, period) {
   if (!entries || entries.length === 0) {
     phChartInst = new Chart(ctx, {
       type: 'bar', data: { labels: [''], datasets: [{ data: [0], backgroundColor: 'transparent' }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Sin datos para este periodo', color: c.textMuted, font: { size: 13 } } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Sin datos para este periodo', color: c.textMuted } } }
     });
     return;
   }
@@ -2757,7 +3531,7 @@ function renderPeriodHistoryChart(entries, period) {
         x: {
           ticks: {
             color: c.textMuted,
-            font: { size: entries.length > 20 ? 8 : 9 },
+            font: { size: 10 },
             maxRotation: 50,
             minRotation: 0,
             autoSkip: false
@@ -2835,11 +3609,12 @@ function renderEquityChart(data) {
   const valuePoints = data.map(s => ({ x: new Date(s.date + 'T12:00:00'), y: s.totalValue }));
   const investedPoints = data.map(s => ({ x: new Date(s.date + 'T12:00:00'), y: s.totalInvested }));
 
+  const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
   const datasets = [
     {
       label: 'Valor de Mercado',
       data: valuePoints,
-      borderColor: 'var(--color-primary)',
+      borderColor: primaryColor,
       backgroundColor: 'transparent',
       borderWidth: 2.5,
       pointRadius: valuePoints.length > 30 ? 0 : 3,
@@ -2926,11 +3701,12 @@ function openPortfolioDetail() {
   document.getElementById('portfolioDetailOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  // Populate summary KPIs
-  const ti = totalInvested();
-  const tv = totalValue();
-  const pl = totalPL();
-  const tiPriced = positions.filter(p => p.currentPrice).reduce((s, p) => s + calcInvested(p), 0);
+  // Populate summary KPIs (only active positions)
+  const active = positions.filter(p => p.shares > 0);
+  const ti = active.reduce((s, p) => s + calcInvested(p), 0);
+  const tv = active.filter(p => p.currentPrice).length > 0 ? active.filter(p => p.currentPrice).reduce((s, p) => s + calcValue(p), 0) : null;
+  const tiPriced = active.filter(p => p.currentPrice).reduce((s, p) => s + calcInvested(p), 0);
+  const pl = tv !== null ? tv - tiPriced : null;
   const plPct = pl !== null && tiPriced > 0 ? (pl / tiPriced) * 100 : null;
   const xirr = metrics && metrics.portfolioXirr;
 
@@ -2948,6 +3724,7 @@ function openPortfolioDetail() {
   loadReturns();
   loadEquityCurve();
   renderPdPieChart();
+  populatePdTicker();
   loadPdHistory();
 }
 
@@ -2961,10 +3738,11 @@ function renderPdPieChart() {
   const c = getChartColors();
   const ctx = document.getElementById('pdPieChart').getContext('2d');
   if (pdPieInst) pdPieInst.destroy();
-  if (positions.length === 0) return;
-  const data = positions.map(p => calcValue(p) ?? calcInvested(p));
-  const labels = positions.map(p => p.ticker);
-  const colors = positions.map(p => p.color || '#4f98a3');
+  const activePos = positions.filter(p => p.shares > 0);
+  if (activePos.length === 0) return;
+  const data = activePos.map(p => calcValue(p) ?? calcInvested(p));
+  const labels = activePos.map(p => p.ticker);
+  const colors = activePos.map(p => p.color || '#4f98a3');
   pdPieInst = new Chart(ctx, {
     type: 'doughnut',
     data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: 'transparent', borderWidth: 0, hoverOffset: 6 }] },
@@ -2982,23 +3760,35 @@ function renderPdPieChart() {
   });
 }
 
-// Secondary history chart for detail screen
+// Secondary history chart for detail screen — PORTFOLIO EVOLUTION
 function setPdRange(range) {
   pdHistRange = range;
   document.querySelectorAll('.pd-range').forEach(b => b.classList.toggle('active', b.dataset.pdrange === range));
   loadPdHistory();
 }
 
+function populatePdTicker() {
+  const sel = document.getElementById('pdTicker');
+  const current = sel.value;
+  sel.innerHTML = '<option value="ALL">Toda la cartera</option>' +
+    positions.map(p => `<option value="${p.ticker}">${p.ticker}</option>`).join('');
+  if ([...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
 async function loadPdHistory() {
+  const ticker = document.getElementById('pdTicker').value;
+  const url = ticker === 'ALL'
+    ? `${BASE}/api/prices/history?range=${pdHistRange}`
+    : `${BASE}/api/prices/history/${encodeURIComponent(ticker)}?range=${pdHistRange}`;
   try {
-    const resp = await fetch(`${BASE}/api/prices/history?range=${pdHistRange}`);
+    const resp = await fetch(url);
     if (!resp.ok) return;
     const data = await resp.json();
-    renderPdHistChart(data);
+    renderPdHistChart(data, ticker);
   } catch (e) { /* silencioso */ }
 }
 
-function renderPdHistChart(data) {
+function renderPdHistChart(data, tickerFilter) {
   const c = getChartColors();
   const ctx = document.getElementById('pdHistChart').getContext('2d');
   if (pdHistInst) pdHistInst.destroy();
@@ -3009,31 +3799,479 @@ function renderPdHistChart(data) {
     });
     return;
   }
-  // Render per-ticker lines
+
+  if (tickerFilter === 'ALL') {
+    renderPdPortfolioChart(data, c, ctx);
+  } else {
+    renderPdSingleTickerChart(data, tickerFilter, c, ctx);
+  }
+}
+
+function renderPdPortfolioChart(data, c, ctx) {
   const tsMap = new Map();
-  data.forEach(entry => { const ts = entry.timestamp; if (!tsMap.has(ts)) tsMap.set(ts, {}); tsMap.get(ts)[entry.ticker] = entry.priceEur; });
+  data.forEach(entry => {
+    const ts = entry.timestamp;
+    if (!tsMap.has(ts)) tsMap.set(ts, {});
+    tsMap.get(ts)[entry.ticker] = entry.priceEur;
+  });
   const timestamps = [...tsMap.keys()].sort();
   const tickers = [...new Set(data.map(d => d.ticker))];
-  const datasets = tickers.map(ticker => {
+
+  // Carry-forward: mantener último precio conocido por ticker
+  const lastKnown = {};
+  timestamps.forEach(ts => {
+    const prices = tsMap.get(ts);
+    tickers.forEach(ticker => {
+      if (prices[ticker] != null) {
+        lastKnown[ticker] = prices[ticker];
+      } else if (lastKnown[ticker] != null) {
+        prices[ticker] = lastKnown[ticker];
+      }
+    });
+  });
+
+  const datasets = [];
+  tickers.forEach(ticker => {
     const pos = positions.find(p => p.ticker === ticker);
     const color = pos ? pos.color : '#4f98a3';
-    const points = timestamps.map(ts => ({ x: new Date(ts), y: tsMap.get(ts)[ticker] != null ? tsMap.get(ts)[ticker] : null }));
-    return { label: ticker, data: points, borderColor: color, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3, fill: false, spanGaps: true };
+    const shares = pos ? pos.shares : 1;
+    const points = timestamps.map(ts => {
+      const prices = tsMap.get(ts);
+      const val = prices[ticker] != null ? prices[ticker] * shares : null;
+      return { x: new Date(ts), y: val };
+    });
+    datasets.push({
+      label: ticker, data: points, borderColor: color, backgroundColor: color + '18',
+      borderWidth: 2, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
+      tension: 0.3, fill: false, spanGaps: true
+    });
   });
+
+  const totalPoints = timestamps.map(ts => {
+    const prices = tsMap.get(ts);
+    let sum = 0;
+    let hasAny = false;
+    tickers.forEach(ticker => {
+      const pos = positions.find(p => p.ticker === ticker);
+      const shares = pos ? pos.shares : 1;
+      if (prices[ticker] != null) {
+        sum += prices[ticker] * shares;
+        hasAny = true;
+      }
+    });
+    return { x: new Date(ts), y: hasAny ? sum : null };
+  });
+  datasets.unshift({
+    label: 'TOTAL', data: totalPoints, borderColor: c.text, backgroundColor: c.border + '30',
+    borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0.3, fill: true, spanGaps: true
+  });
+
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
     options: {
       responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { type: 'time', time: { tooltipFormat: 'dd MMM yyyy' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
-        y: { ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €' }, grid: { color: c.border + '40' } }
+        x: { type: 'time', time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
+        y: { ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
-        legend: { position: 'top', labels: { color: c.text, font: { size: 10 }, boxWidth: 10, boxHeight: 10, padding: 8 } },
-        tooltip: { backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` } }
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` }
+        }
       }
     }
   });
+}
+
+function renderPdSingleTickerChart(data, ticker, c, ctx) {
+  const pos = positions.find(p => p.ticker === ticker);
+  const color = pos ? pos.color : '#4f98a3';
+  const shares = pos ? pos.shares : 1;
+  const sorted = [...data].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  const points = sorted.map(d => ({ x: new Date(d.timestamp), y: d.priceEur * shares }));
+
+  const datasets = [{
+    label: ticker + ' – Valor (€)', data: points, borderColor: color, backgroundColor: color + '18',
+    borderWidth: 2.5, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
+    tension: 0.3, fill: true, spanGaps: true
+  }];
+
+  pdHistInst = new Chart(ctx, {
+    type: 'line', data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { type: 'time', time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
+        y: { ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` }
+        }
+      }
+    }
+  });
+}
+
+// ===================== ACTIVITY LOG =====================
+let logPanelOpen = false;
+let activityLogEntries = [];
+let logFilter = 'ALL';
+let lastLogCount = 0;
+
+function toggleLogPanel() {
+  logPanelOpen = !logPanelOpen;
+  document.getElementById('logPanel').classList.toggle('open', logPanelOpen);
+  // Cerrar panel de alertas si está abierto
+  if (logPanelOpen && alertsPanelOpen) { alertsPanelOpen = false; document.getElementById('alertPanel').classList.remove('open'); }
+  if (logPanelOpen) {
+    loadActivityLog();
+    // Marcar como visto
+    lastLogCount = activityLogEntries.length;
+    updateLogBadge();
+  }
+}
+
+function setLogFilter(filter) {
+  logFilter = filter;
+  document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.logfilter === filter));
+  renderActivityLog();
+}
+
+async function loadActivityLog() {
+  try {
+    const url = logFilter === 'ALL'
+      ? `${BASE}/api/activity-log?limit=200`
+      : `${BASE}/api/activity-log?category=${logFilter}&limit=200`;
+    const resp = await fetch(url);
+    if (!resp.ok) return;
+    activityLogEntries = await resp.json();
+    renderActivityLog();
+    updateLogBadge();
+    document.getElementById('logTimestamp').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    console.error('Error cargando activity log:', e);
+  }
+}
+
+function updateLogBadge() {
+  // No badge — log entries are not alerts
+}
+
+function logTimeAgo(ts) {
+  if (!ts) return '';
+  const date = new Date(ts);
+  const diffMin = Math.round((Date.now() - date.getTime()) / 60000);
+  if (diffMin < 1) return 'ahora';
+  if (diffMin < 60) return diffMin + ' min';
+  if (diffMin < 1440) return Math.floor(diffMin / 60) + 'h ' + (diffMin % 60) + 'min';
+  return Math.floor(diffMin / 1440) + 'd';
+}
+
+function logLevelColor(level) {
+  switch ((level || '').toUpperCase()) {
+    case 'SUCCESS': return 'success';
+    case 'ERROR': return 'error';
+    case 'WARNING': return 'warning';
+    default: return 'info';
+  }
+}
+
+function logCategoryLabel(cat) {
+  switch ((cat || '').toUpperCase()) {
+    case 'PRICE': return 'Precio';
+    case 'TELEGRAM': return 'Telegram';
+    case 'WATCHLIST': return 'Watchlist';
+    case 'DCA': return 'DCA';
+    case 'SNAPSHOT': return 'Snapshot';
+    case 'ALERT': return 'Alerta';
+    case 'SYSTEM': return 'Sistema';
+    default: return cat;
+  }
+}
+
+function renderActivityLog() {
+  const body = document.getElementById('logPanelBody');
+  const countEl = document.getElementById('logPanelCount');
+
+  // Filtrar si hay filtro activo
+  const filtered = logFilter === 'ALL' ? activityLogEntries : activityLogEntries.filter(e => e.category === logFilter);
+  countEl.textContent = filtered.length > 0 ? `(${filtered.length})` : '';
+
+  if (filtered.length === 0) {
+    body.innerHTML = `
+      <div class="news-placeholder">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">Sin actividad${logFilter !== 'ALL' ? ' en ' + logCategoryLabel(logFilter) : ''}</div>
+        <div style="font-size:var(--text-xs)">La actividad de la aplicación aparecerá aquí</div>
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map(entry => {
+    const lev = logLevelColor(entry.level);
+    const timeAgo = logTimeAgo(entry.timestamp);
+    const timeStr = entry.timestamp ? new Date(entry.timestamp).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+    return `
+    <div class="log-item ${lev}">
+      <div class="log-icon">${entry.icon || '📋'}</div>
+      <div class="log-text">
+        <div class="log-msg">${entry.message || ''}</div>
+        <div class="log-meta">
+          <span class="log-cat">${logCategoryLabel(entry.category)}</span>
+          ${entry.ticker ? '<span style="font-weight:600;color:var(--color-primary)">' + entry.ticker + '</span>' : ''}
+          <span title="${timeStr}">hace ${timeAgo}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===================== IMPORT OPERATIONS =====================
+function openImportModal() {
+  document.getElementById('importJsonText').value = '';
+  document.getElementById('importPreviewCount').textContent = '';
+  document.getElementById('importResultArea').style.display = 'none';
+  document.getElementById('importResultArea').innerHTML = '';
+  document.getElementById('importFileInput').value = '';
+  document.getElementById('importConfirmBtn').disabled = false;
+  document.getElementById('importModal').style.display = 'flex';
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').style.display = 'none';
+}
+
+function copyImportSchema() {
+  const schema = `[
+  {
+    "ticker": "AAPL",
+    "date": "2024-01-15",
+    "shares": 10,
+    "price": 150.50,
+    "type": "BUY",
+    "name": "Apple Inc.",
+    "yahooTicker": "AAPL",
+    "sector": "Tecnología",
+    "color": "#5591c7"
+  },
+  {
+    "ticker": "AAPL",
+    "date": "2024-03-10",
+    "shares": 5,
+    "price": 165.00,
+    "type": "BUY"
+  },
+  {
+    "ticker": "AAPL",
+    "date": "2024-06-20",
+    "shares": 3,
+    "price": 195.00,
+    "type": "SELL"
+  }
+]`;
+  navigator.clipboard.writeText(schema).then(() => {
+    showToast('Ejemplo copiado al portapapeles ✓', 'success');
+  }).catch(() => {
+    showToast('No se pudo copiar', 'error');
+  });
+}
+
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('importJsonText').value = e.target.result;
+    validateImportJson();
+  };
+  reader.readAsText(file);
+}
+
+function parseImportJson() {
+  const raw = document.getElementById('importJsonText').value.trim();
+  if (!raw) return null;
+
+  let data;
+  try {
+    // Try to extract JSON from possible markdown code blocks
+    let jsonStr = raw;
+    const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
+    data = JSON.parse(jsonStr);
+  } catch (e) {
+    return { error: 'JSON inválido: ' + e.message };
+  }
+
+  // Accept both array and { operations: [...] }
+  if (data && !Array.isArray(data) && Array.isArray(data.operations)) {
+    data = data.operations;
+  }
+
+  if (!Array.isArray(data)) {
+    return { error: 'El JSON debe ser un array de operaciones o un objeto con clave "operations".' };
+  }
+
+  return data;
+}
+
+function validateImportJson() {
+  const result = parseImportJson();
+  const countEl = document.getElementById('importPreviewCount');
+  const resultArea = document.getElementById('importResultArea');
+
+  if (!result) {
+    countEl.textContent = '';
+    resultArea.style.display = 'none';
+    return;
+  }
+
+  if (result.error) {
+    countEl.innerHTML = `<span style="color:var(--color-notification)">❌ ${result.error}</span>`;
+    resultArea.style.display = 'none';
+    return;
+  }
+
+  const ops = result;
+  const tickers = [...new Set(ops.map(o => (o.ticker || '???').toUpperCase()))];
+  const buys = ops.filter(o => !o.type || o.type.toUpperCase() === 'BUY').length;
+  const sells = ops.filter(o => o.type && o.type.toUpperCase() === 'SELL').length;
+  const savingsPlans = ops.filter(o => o.type && o.type.toUpperCase() === 'SAVINGS_PLAN').length;
+
+  // Detect errors
+  const issues = [];
+  ops.forEach((op, i) => {
+    if (!op.ticker) issues.push(`Operación ${i + 1}: falta "ticker"`);
+    if (!op.date) issues.push(`Operación ${i + 1}: falta "date"`);
+    if (!op.shares || op.shares <= 0) issues.push(`Operación ${i + 1}: "shares" inválido`);
+    if (!op.price || op.price <= 0) issues.push(`Operación ${i + 1}: "price" inválido`);
+    if (op.type && !['BUY','SELL','SAVINGS_PLAN','SAVING','PLAN'].includes(op.type.toUpperCase())) issues.push(`Operación ${i + 1}: "type" debe ser BUY, SELL o SAVINGS_PLAN`);
+  });
+
+  let html = `<span style="color:var(--color-success)">✓ ${ops.length} operaciones</span> — ${buys} compras, ${sells} ventas${savingsPlans > 0 ? ', ' + savingsPlans + ' planes ahorro (→ compra)' : ''} — ${tickers.length} ticker(s): ${tickers.join(', ')}`;
+
+  if (issues.length > 0) {
+    html += `<br><span style="color:var(--color-notification)">⚠️ ${issues.length} problema(s) detectado(s)</span>`;
+    resultArea.style.display = 'block';
+    resultArea.innerHTML = `
+      <div style="background:oklch(from var(--color-notification) l c h / .08);border:1px solid oklch(from var(--color-notification) l c h / .2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:11px;color:var(--color-notification);max-height:120px;overflow-y:auto">
+        ${issues.map(i => `<div>• ${i}</div>`).join('')}
+      </div>`;
+  } else {
+    resultArea.style.display = 'block';
+    resultArea.innerHTML = `
+      <div style="background:oklch(from var(--color-success) l c h / .08);border:1px solid oklch(from var(--color-success) l c h / .2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:11px;color:var(--color-success)">
+        ✅ JSON válido y listo para importar. Se procesarán ${ops.length} operaciones de ${tickers.length} ticker(s).
+      </div>`;
+  }
+
+  countEl.innerHTML = html;
+}
+
+async function executeImport() {
+  const result = parseImportJson();
+
+  if (!result || result.error) {
+    showToast(result ? result.error : 'Pega o sube un JSON primero', 'error');
+    return;
+  }
+
+  const ops = result;
+  if (ops.length === 0) {
+    showToast('El JSON no contiene operaciones', 'error');
+    return;
+  }
+
+  // Confirm
+  const tickers = [...new Set(ops.map(o => (o.ticker || '').toUpperCase()))];
+  if (!confirm(`¿Importar ${ops.length} operaciones de ${tickers.length} ticker(s)?\n\nTickers: ${tickers.join(', ')}\n\nSe crearán automáticamente las posiciones que no existan.`)) {
+    return;
+  }
+
+  const btn = document.getElementById('importConfirmBtn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="news-spinner" style="width:14px;height:14px;border-width:2px"></span> Importando…';
+
+  const resultArea = document.getElementById('importResultArea');
+
+  try {
+    const resp = await fetch(`${BASE}/api/dca/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ops)
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al importar');
+    }
+
+    const data = await resp.json();
+
+    // Show result
+    let resultHtml = `
+      <div style="background:oklch(from var(--color-success) l c h / .08);border:1px solid oklch(from var(--color-success) l c h / .2);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--text-sm)">
+        <div style="font-weight:700;color:var(--color-success);margin-bottom:var(--space-2);display:flex;align-items:center;gap:var(--space-2)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Importación completada
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2);margin-bottom:var(--space-2)">
+          <div style="text-align:center;padding:var(--space-2);background:var(--color-surface);border-radius:var(--radius-sm)">
+            <div style="font-size:var(--text-lg);font-weight:700;color:var(--color-primary)">${data.operationsImported}</div>
+            <div style="font-size:10px;color:var(--color-text-muted)">Operaciones</div>
+          </div>
+          <div style="text-align:center;padding:var(--space-2);background:var(--color-surface);border-radius:var(--radius-sm)">
+            <div style="font-size:var(--text-lg);font-weight:700;color:var(--color-success)">${data.positionsCreated}</div>
+            <div style="font-size:10px;color:var(--color-text-muted)">Posiciones nuevas</div>
+          </div>
+          <div style="text-align:center;padding:var(--space-2);background:var(--color-surface);border-radius:var(--radius-sm)">
+            <div style="font-size:var(--text-lg);font-weight:700;color:var(--color-text)">${data.totalOperations}</div>
+            <div style="font-size:10px;color:var(--color-text-muted)">Total en JSON</div>
+          </div>
+        </div>`;
+
+    if (data.warnings && data.warnings.length > 0) {
+      resultHtml += `
+        <div style="margin-top:var(--space-2);font-size:11px;color:var(--color-gold)">
+          <strong>⚠️ Avisos (${data.warnings.length}):</strong><br>
+          ${data.warnings.map(w => `• ${w}`).join('<br>')}
+        </div>`;
+    }
+    if (data.errors && data.errors.length > 0) {
+      resultHtml += `
+        <div style="margin-top:var(--space-2);font-size:11px;color:var(--color-notification)">
+          <strong>❌ Errores (${data.errors.length}):</strong><br>
+          ${data.errors.map(e => `• ${e}`).join('<br>')}
+        </div>`;
+    }
+
+    resultHtml += '</div>';
+    resultArea.style.display = 'block';
+    resultArea.innerHTML = resultHtml;
+
+    showToast(`✅ ${data.operationsImported} operaciones importadas, ${data.positionsCreated} posiciones nuevas`, 'success');
+
+    // Reload all data
+    await loadAll();
+
+    // Update button to close
+    btn.innerHTML = '✓ Importado — Cerrar';
+    btn.disabled = false;
+    btn.onclick = closeImportModal;
+
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+    resultArea.style.display = 'block';
+    resultArea.innerHTML = `
+      <div style="background:oklch(from var(--color-notification) l c h / .08);border:1px solid oklch(from var(--color-notification) l c h / .2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);color:var(--color-notification)">
+        ❌ ${e.message}
+      </div>`;
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
 
 // ===================== INIT =====================
@@ -3051,14 +4289,17 @@ async function loadAll() {
     renderAll();
     loadWatchlist();
     loadAlerts();
+    loadActivityLog();
   } catch (e) {
     showToast('Error conectando con el servidor', 'error');
   }
 }
 
 loadAll();
+checkTelegramStatus();
 // Polling cada 90s para recoger actualizaciones automáticas de precios
 setInterval(() => loadAll(), 90000);
 </script>
 </body>
 </html>
+

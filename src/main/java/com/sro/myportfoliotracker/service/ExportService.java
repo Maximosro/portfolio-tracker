@@ -49,18 +49,24 @@ public class ExportService {
                 .collect(Collectors.toMap(PositionDetail::getTicker, d -> d));
         List<AlertDto> alerts = alertService.checkAlerts();
 
+        // Separar posiciones activas y cerradas
+        List<Position> activePositions = positions.stream().filter(p -> p.getShares() > 0).toList();
+        List<Position> closedPositions = positions.stream().filter(p -> p.getShares() <= 0).toList();
+
         StringBuilder sb = new StringBuilder();
 
         appendHeader(sb);
-        appendExecutiveSummary(sb, positions, metrics);
+        appendExecutiveSummary(sb, positions, activePositions, closedPositions, metrics, dcaEntries);
         appendActiveAlerts(sb, alerts);
-        appendPositionsDetail(sb, positions, metrics);
-        appendOperationalDetail(sb, positions, detailMap);
-        appendAllocationAnalysis(sb, positions, detailMap);
+        appendPositionsDetail(sb, activePositions, metrics);
+        appendClosedPositionsDetail(sb, closedPositions, dcaEntries, metrics);
+        appendSalesOperationsDetail(sb, dcaEntries, positions, metrics);
+        appendOperationalDetail(sb, activePositions, detailMap);
+        appendAllocationAnalysis(sb, activePositions, detailMap);
         appendDcaHistory(sb, dcaEntries, positions);
         appendDcaAnalytics(sb, dcaEntries, positions);
-        appendPriceEvolution(sb, positions);
-        appendRiskAnalysis(sb, positions, metrics);
+        appendPriceEvolution(sb, activePositions);
+        appendRiskAnalysis(sb, activePositions, metrics);
         appendContextNotes(sb, positions);
 
         return sb.toString();
@@ -87,36 +93,53 @@ public class ExportService {
 
     // ───────────────────── RESUMEN EJECUTIVO ─────────────────────
 
-    private void appendExecutiveSummary(StringBuilder sb, List<Position> positions, PortfolioMetricsDto metrics) {
-        double totalInvested = positions.stream().mapToDouble(p -> p.getShares() * p.getAvgPrice()).sum();
-        double totalValue = positions.stream()
+    private void appendExecutiveSummary(StringBuilder sb, List<Position> positions,
+                                        List<Position> activePositions, List<Position> closedPositions,
+                                        PortfolioMetricsDto metrics, List<DcaEntry> dcaEntries) {
+        // Solo posiciones activas para el cálculo de mercado
+        double totalInvested = activePositions.stream().mapToDouble(p -> p.getShares() * p.getAvgPrice()).sum();
+        double totalValue = activePositions.stream()
                 .filter(p -> p.getCurrentPrice() != null)
                 .mapToDouble(p -> p.getShares() * p.getCurrentPrice())
                 .sum();
-        double investedPriced = positions.stream()
+        double investedPriced = activePositions.stream()
                 .filter(p -> p.getCurrentPrice() != null)
                 .mapToDouble(p -> p.getShares() * p.getAvgPrice())
                 .sum();
-        double totalPL = totalValue - investedPriced;
-        double totalPLPct = investedPriced > 0 ? (totalPL / investedPriced) * 100 : 0;
-        long positionsWithPrice = positions.stream().filter(p -> p.getCurrentPrice() != null).count();
+        double unrealizedPL = totalValue - investedPriced;
+        double unrealizedPLPct = investedPriced > 0 ? (unrealizedPL / investedPriced) * 100 : 0;
+        long positionsWithPrice = activePositions.stream().filter(p -> p.getCurrentPrice() != null).count();
+
+        // P&L realizado total (ventas parciales + cierres)
+        double totalRealizedPL = metrics.totalRealizedPL() != null ? metrics.totalRealizedPL() : 0.0;
+
+        // Total de operaciones de venta
+        long totalSellOps = dcaEntries.stream().filter(e -> "SELL".equals(e.getType())).count();
+        long totalBuyOps = dcaEntries.stream().filter(e -> !"SELL".equals(e.getType())).count();
 
         sb.append("## 1. Resumen Ejecutivo\n\n");
         sb.append("| Métrica | Valor |\n");
         sb.append("|---------|-------|\n");
-        sb.append(String.format("| **Nº de posiciones** | %d |\n", positions.size()));
-        sb.append(String.format("| **Posiciones con precio actualizado** | %d de %d |\n", positionsWithPrice, positions.size()));
-        sb.append(String.format("| **Capital total invertido** | %s |\n", fmtEur(totalInvested)));
+        sb.append(String.format("| **Posiciones activas** | %d |\n", activePositions.size()));
+        sb.append(String.format("| **Posiciones cerradas** | %d |\n", closedPositions.size()));
+        sb.append(String.format("| **Total posiciones** | %d |\n", positions.size()));
+        sb.append(String.format("| **Posiciones con precio actualizado** | %d de %d activas |\n", positionsWithPrice, activePositions.size()));
+        sb.append(String.format("| **Capital invertido (activas)** | %s |\n", fmtEur(totalInvested)));
         sb.append(String.format("| **Valor actual de mercado** | %s |\n", fmtEur(totalValue)));
-        sb.append(String.format("| **Ganancia/Pérdida total** | %s (%s) |\n", fmtEur(totalPL), fmtPct(totalPLPct)));
+        sb.append(String.format("| **P&L no realizado (activas)** | %s (%s) |\n", fmtEur(unrealizedPL), fmtPct(unrealizedPLPct)));
+        sb.append(String.format("| **P&L realizado (ventas)** | %s %s |\n", fmtEur(totalRealizedPL),
+                totalRealizedPL >= 0 ? "✅" : "❌"));
+        sb.append(String.format("| **P&L total (realizado + no realizado)** | %s |\n", fmtEur(unrealizedPL + totalRealizedPL)));
+        sb.append(String.format("| **Operaciones de compra** | %d |\n", totalBuyOps));
+        sb.append(String.format("| **Operaciones de venta** | %d |\n", totalSellOps));
         sb.append(String.format("| **XIRR (TIR anualizada) cartera** | %s |\n",
                 metrics.portfolioXirr() != null ? fmtPct(metrics.portfolioXirr() * 100) : "N/D"));
         sb.append("\n");
 
-        // Mejor y peor posición
+        // Mejor y peor posición activa
         Position best = null, worst = null;
         double bestPct = Double.NEGATIVE_INFINITY, worstPct = Double.POSITIVE_INFINITY;
-        for (Position p : positions) {
+        for (Position p : activePositions) {
             if (p.getCurrentPrice() == null) continue;
             double inv = p.getShares() * p.getAvgPrice();
             double val = p.getShares() * p.getCurrentPrice();
@@ -125,10 +148,10 @@ public class ExportService {
             if (pct < worstPct) { worstPct = pct; worst = p; }
         }
         if (best != null) {
-            sb.append(String.format("- 🏆 **Mejor posición:** %s (%s) → %s\n", best.getTicker(), best.getName(), fmtPct(bestPct)));
+            sb.append(String.format("- 🏆 **Mejor posición activa:** %s (%s) → %s\n", best.getTicker(), best.getName(), fmtPct(bestPct)));
         }
         if (worst != null) {
-            sb.append(String.format("- 📉 **Peor posición:** %s (%s) → %s\n", worst.getTicker(), worst.getName(), fmtPct(worstPct)));
+            sb.append(String.format("- 📉 **Peor posición activa:** %s (%s) → %s\n", worst.getTicker(), worst.getName(), fmtPct(worstPct)));
         }
         sb.append("\n");
     }
@@ -232,10 +255,201 @@ public class ExportService {
         sb.append("\n");
     }
 
+    // ───────────────────── POSICIONES CERRADAS ─────────────────────
+
+    private void appendClosedPositionsDetail(StringBuilder sb, List<Position> closedPositions,
+                                              List<DcaEntry> dcaEntries, PortfolioMetricsDto metrics) {
+        sb.append("## 3b. Posiciones Cerradas\n\n");
+
+        if (closedPositions.isEmpty()) {
+            sb.append("✅ **No hay posiciones cerradas.** Todas las posiciones están activas.\n\n");
+            return;
+        }
+
+        Map<String, List<DcaEntry>> dcaByTicker = dcaEntries.stream()
+                .collect(Collectors.groupingBy(DcaEntry::getTicker));
+
+        sb.append(String.format("Total de posiciones cerradas: **%d**\n\n", closedPositions.size()));
+        sb.append("| Ticker | Nombre | Sector | P.Medio Compra (€) | P.Medio Venta (€) | Total Invertido (€) | Total Recuperado (€) | P&L Realizado (€) | P&L (%) | XIRR |\n");
+        sb.append("|--------|--------|--------|--------------------|--------------------|---------------------|----------------------|--------------------|---------|------|\n");
+
+        double sumInvested = 0, sumRecovered = 0, sumRealizedPL = 0;
+
+        for (Position p : closedPositions) {
+            List<DcaEntry> tickerDca = dcaByTicker.getOrDefault(p.getTicker(), Collections.emptyList());
+            List<DcaEntry> buys = tickerDca.stream().filter(e -> !"SELL".equals(e.getType())).toList();
+            List<DcaEntry> sells = tickerDca.stream().filter(e -> "SELL".equals(e.getType())).toList();
+
+            double totalBought = buys.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
+            double totalSold = sells.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
+            double buyShares = buys.stream().mapToDouble(DcaEntry::getShares).sum();
+            double sellShares = sells.stream().mapToDouble(DcaEntry::getShares).sum();
+            double avgBuyPrice = buyShares > 0 ? totalBought / buyShares : 0;
+            double avgSellPrice = sellShares > 0 ? totalSold / sellShares : 0;
+
+            double realizedPL = metrics.positionRealizedPL() != null
+                    ? metrics.positionRealizedPL().getOrDefault(p.getTicker(), 0.0) : 0.0;
+            double plPct = totalBought > 0 ? (realizedPL / totalBought) * 100 : 0;
+            Double xirr = metrics.positionXirr() != null ? metrics.positionXirr().get(p.getTicker()) : null;
+
+            sumInvested += totalBought;
+            sumRecovered += totalSold;
+            sumRealizedPL += realizedPL;
+
+            String result = realizedPL >= 0 ? "✅" : "❌";
+
+            sb.append(String.format("| **%s** | %s | %s | %s | %s | %s | %s | %s %s | %s | %s |\n",
+                    p.getTicker(),
+                    nvl(p.getName()),
+                    nvl(p.getSector()),
+                    fmtNum(avgBuyPrice, 4),
+                    avgSellPrice > 0 ? fmtNum(avgSellPrice, 4) : "—",
+                    fmtEur(totalBought),
+                    fmtEur(totalSold),
+                    fmtEur(realizedPL), result,
+                    fmtPct(plPct),
+                    xirr != null ? fmtPct(xirr * 100) : "N/D"));
+        }
+
+        // Total row
+        double totalPLPct = sumInvested > 0 ? (sumRealizedPL / sumInvested) * 100 : 0;
+        sb.append(String.format("| **TOTAL** | | | | | **%s** | **%s** | **%s** | **%s** | |\n",
+                fmtEur(sumInvested), fmtEur(sumRecovered), fmtEur(sumRealizedPL), fmtPct(totalPLPct)));
+        sb.append("\n");
+
+        // Detail per closed position
+        for (Position p : closedPositions) {
+            List<DcaEntry> tickerDca = dcaByTicker.getOrDefault(p.getTicker(), Collections.emptyList());
+            if (tickerDca.isEmpty()) continue;
+
+            sb.append(String.format("#### %s — %s (cerrada)\n\n", p.getTicker(), nvl(p.getName())));
+            sb.append("| Fecha | Operación | Acciones | Precio (€) | Importe (€) |\n");
+            sb.append("|-------|-----------|----------|------------|-------------|\n");
+
+            tickerDca.stream().sorted(Comparator.comparing(DcaEntry::getDate)).forEach(e -> {
+                boolean isSell = "SELL".equals(e.getType());
+                double cost = e.getShares() * e.getPrice();
+                sb.append(String.format("| %s | %s | %s | %s | %s |\n",
+                        e.getDate().format(DATE_FMT),
+                        isSell ? "🔴 Venta" : "🟢 Compra",
+                        fmtNum(e.getShares(), 6),
+                        fmtNum(e.getPrice(), 4),
+                        isSell ? "-" + fmtEur(cost) : fmtEur(cost)));
+            });
+            sb.append("\n");
+        }
+    }
+
+    // ───────────────────── OPERACIONES DE VENTA DETALLADAS ─────────────────────
+
+    private void appendSalesOperationsDetail(StringBuilder sb, List<DcaEntry> dcaEntries,
+                                              List<Position> positions, PortfolioMetricsDto metrics) {
+        List<DcaEntry> sellOps = dcaEntries.stream()
+                .filter(e -> "SELL".equals(e.getType()))
+                .sorted(Comparator.comparing(DcaEntry::getDate))
+                .toList();
+
+        sb.append("## 4. Detalle de Operaciones de Venta\n\n");
+
+        if (sellOps.isEmpty()) {
+            sb.append("*Sin operaciones de venta registradas.*\n\n");
+            return;
+        }
+
+        Map<String, Position> posMap = positions.stream()
+                .collect(Collectors.toMap(Position::getTicker, p -> p, (a, b) -> a));
+
+        // Calcular acciones acumuladas para saber si fue venta parcial o cierre
+        Map<String, Double> runningSharesForSales = new HashMap<>();
+        List<DcaEntry> allSorted = dcaEntries.stream()
+                .sorted(Comparator.comparing(DcaEntry::getDate).thenComparing(e -> "SELL".equals(e.getType()) ? 1 : 0))
+                .toList();
+
+        Map<Long, Double> sharesAfterOp = new HashMap<>();
+        for (DcaEntry e : allSorted) {
+            double current = runningSharesForSales.getOrDefault(e.getTicker(), 0.0);
+            if ("SELL".equals(e.getType())) {
+                current -= e.getShares();
+            } else {
+                current += e.getShares();
+            }
+            runningSharesForSales.put(e.getTicker(), current);
+            if (e.getId() != null) {
+                sharesAfterOp.put(e.getId(), Math.max(0, current));
+            }
+        }
+
+        sb.append(String.format("Total de ventas: **%d** operaciones\n\n", sellOps.size()));
+        sb.append("| Fecha | Ticker | Tipo Venta | Acciones Vendidas | P.Venta (€) | Importe (€) | P.Medio Compra (€) | P&L Realizado (€) | P&L (%) | Acc. Restantes |\n");
+        sb.append("|-------|--------|------------|-------------------|-------------|-------------|---------------------|--------------------|---------|-----------------|\n");
+
+        double totalSalesProceeds = 0;
+        double totalSalesRealized = 0;
+
+        for (DcaEntry sell : sellOps) {
+            double proceeds = sell.getShares() * sell.getPrice();
+            Position pos = posMap.get(sell.getTicker());
+            double avgBuyPrice = pos != null && pos.getAvgPrice() != null ? pos.getAvgPrice() : 0;
+            double costBasis = sell.getShares() * avgBuyPrice;
+            double realizedPL = proceeds - costBasis;
+            double plPct = costBasis > 0 ? (realizedPL / costBasis) * 100 : 0;
+
+            Double sharesRemaining = sell.getId() != null ? sharesAfterOp.get(sell.getId()) : null;
+            String saleType = sharesRemaining != null && sharesRemaining <= 0.000001 ? "🔒 Cierre total" : "📊 Parcial";
+            String remaining = sharesRemaining != null ? fmtNum(sharesRemaining, 2) : "—";
+            String result = realizedPL >= 0 ? "✅" : "❌";
+
+            totalSalesProceeds += proceeds;
+            totalSalesRealized += realizedPL;
+
+            sb.append(String.format("| %s | **%s** | %s | %s | %s | %s | %s | %s %s | %s | %s |\n",
+                    sell.getDate().format(DATE_FMT),
+                    sell.getTicker(),
+                    saleType,
+                    fmtNum(sell.getShares(), 6),
+                    fmtNum(sell.getPrice(), 4),
+                    fmtEur(proceeds),
+                    fmtNum(avgBuyPrice, 4),
+                    fmtEur(realizedPL), result,
+                    fmtPct(plPct),
+                    remaining));
+        }
+
+        // Total row
+        String totalResult = totalSalesRealized >= 0 ? "✅" : "❌";
+        sb.append(String.format("| | **TOTAL** | | | | **%s** | | **%s** %s | | |\n",
+                fmtEur(totalSalesProceeds), fmtEur(totalSalesRealized), totalResult));
+        sb.append("\n");
+
+        // Summary by ticker
+        sb.append("### Resumen de ventas por ticker\n\n");
+        sb.append("| Ticker | Nº Ventas | Total Vendido (€) | P&L Total Realizado (€) | Resultado |\n");
+        sb.append("|--------|-----------|--------------------|-------------------------|-----------|\n");
+
+        Map<String, List<DcaEntry>> sellsByTicker = sellOps.stream()
+                .collect(Collectors.groupingBy(DcaEntry::getTicker));
+
+        for (Map.Entry<String, List<DcaEntry>> entry : sellsByTicker.entrySet()) {
+            String ticker = entry.getKey();
+            List<DcaEntry> sells = entry.getValue();
+            Position pos = posMap.get(ticker);
+            double avgBuy = pos != null && pos.getAvgPrice() != null ? pos.getAvgPrice() : 0;
+
+            double totalSold = sells.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
+            double totalCostBasis = sells.stream().mapToDouble(e -> e.getShares() * avgBuy).sum();
+            double totalPL = totalSold - totalCostBasis;
+            String result = totalPL >= 0 ? "✅ Ganancia" : "❌ Pérdida";
+
+            sb.append(String.format("| **%s** | %d | %s | %s | %s |\n",
+                    ticker, sells.size(), fmtEur(totalSold), fmtEur(totalPL), result));
+        }
+        sb.append("\n");
+    }
+
     // ───────────────────── DETALLE OPERATIVO ─────────────────────
 
     private void appendOperationalDetail(StringBuilder sb, List<Position> positions, Map<String, PositionDetail> detailMap) {
-        sb.append("## 4. Detalle Operativo por Posición\n\n");
+        sb.append("## 5. Detalle Operativo por Posición\n\n");
 
         boolean hasAny = positions.stream().anyMatch(p -> detailMap.containsKey(p.getTicker()));
         if (!hasAny) {
@@ -312,7 +526,7 @@ public class ExportService {
     // ───────────────────── DISTRIBUCIÓN/ASIGNACIÓN ─────────────────────
 
     private void appendAllocationAnalysis(StringBuilder sb, List<Position> positions, Map<String, PositionDetail> detailMap) {
-        sb.append("## 5. Distribución de Cartera (Allocation)\n\n");
+        sb.append("## 6. Distribución de Cartera (Allocation)\n\n");
 
         double totalValue = positions.stream()
                 .mapToDouble(p -> p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice() : p.getShares() * p.getAvgPrice())
@@ -368,29 +582,88 @@ public class ExportService {
     // ───────────────────── HISTORIAL DCA ─────────────────────
 
     private void appendDcaHistory(StringBuilder sb, List<DcaEntry> dcaEntries, List<Position> positions) {
-        sb.append("## 6. Historial Completo de Compras (DCA)\n\n");
+        sb.append("## 7. Historial Completo de Operaciones (DCA)\n\n");
 
         if (dcaEntries.isEmpty()) {
-            sb.append("*Sin operaciones DCA registradas.*\n\n");
+            sb.append("*Sin operaciones registradas.*\n\n");
             return;
         }
 
-        sb.append(String.format("Total de operaciones DCA: **%d**\n\n", dcaEntries.size()));
-        sb.append("| Fecha | Ticker | Acciones | Precio (€) | Coste (€) |\n");
-        sb.append("|-------|--------|----------|------------|----------|\n");
+        Map<String, Position> posMap = positions.stream()
+                .collect(Collectors.toMap(Position::getTicker, p -> p, (a, b) -> a));
+
+        sb.append(String.format("Total de operaciones: **%d**\n\n", dcaEntries.size()));
+        sb.append("| Fecha | Ticker | Tipo | Acciones | Precio (€) | Importe (€) | P&L Realizado | Observación |\n");
+        sb.append("|-------|--------|------|----------|------------|-------------|---------------|-------------|\n");
+
+        // Ordenar por fecha para calcular estado de posición en cada venta
+        List<DcaEntry> sorted = dcaEntries.stream()
+                .sorted(Comparator.comparing(DcaEntry::getDate))
+                .toList();
+
+        // Calcular acciones acumuladas por ticker para determinar si una venta es parcial o cierre
+        Map<String, Double> runningShares = new HashMap<>();
 
         double totalDcaCost = 0;
-        for (DcaEntry e : dcaEntries) {
+        double totalRealizedInHistory = 0;
+
+        for (DcaEntry e : sorted) {
             double cost = e.getShares() * e.getPrice();
-            totalDcaCost += cost;
-            sb.append(String.format("| %s | %s | %s | %s | %s |\n",
+            boolean isSell = "SELL".equals(e.getType());
+
+            // Track running shares
+            double currentShares = runningShares.getOrDefault(e.getTicker(), 0.0);
+            if (isSell) {
+                currentShares -= e.getShares();
+            } else {
+                currentShares += e.getShares();
+            }
+            runningShares.put(e.getTicker(), currentShares);
+
+            String typeIcon;
+            String plStr = "—";
+            String observation = "—";
+
+            if (isSell) {
+                typeIcon = "🔴 VENTA";
+                totalDcaCost -= cost;
+
+                // Calculate realized P&L for this sale using the avg buy price
+                Position pos = posMap.get(e.getTicker());
+                if (pos != null && pos.getAvgPrice() != null && pos.getAvgPrice() > 0) {
+                    double realizedPL = e.getShares() * (e.getPrice() - pos.getAvgPrice());
+                    totalRealizedInHistory += realizedPL;
+                    plStr = fmtEur(realizedPL) + (realizedPL >= 0 ? " ✅" : " ❌");
+                }
+
+                // Determine if partial sale or full closure
+                if (currentShares <= 0.000001) {
+                    observation = "🔒 Cierre total";
+                } else {
+                    observation = String.format("📊 Venta parcial (quedan %s acc.)", fmtNum(Math.max(0, currentShares), 2));
+                }
+            } else {
+                typeIcon = "🟢 COMPRA";
+                totalDcaCost += cost;
+                if (Math.abs(runningShares.getOrDefault(e.getTicker(), 0.0) - e.getShares()) < 0.000001) {
+                    observation = "🆕 Apertura";
+                } else {
+                    observation = String.format("📈 Acum. %s acc.", fmtNum(currentShares, 2));
+                }
+            }
+
+            sb.append(String.format("| %s | %s | %s | %s | %s | %s | %s | %s |\n",
                     e.getDate().format(DATE_FMT),
                     e.getTicker(),
+                    typeIcon,
                     fmtNum(e.getShares(), 6),
                     fmtNum(e.getPrice(), 4),
-                    fmtEur(cost)));
+                    isSell ? "-" + fmtEur(cost) : fmtEur(cost),
+                    plStr,
+                    observation));
         }
-        sb.append(String.format("| | | | **TOTAL** | **%s** |\n", fmtEur(totalDcaCost)));
+        sb.append(String.format("| | | | | **NETO** | **%s** | **%s** | |\n", fmtEur(totalDcaCost),
+                totalRealizedInHistory != 0 ? fmtEur(totalRealizedInHistory) : "—"));
         sb.append("\n");
     }
 
@@ -399,7 +672,7 @@ public class ExportService {
     private void appendDcaAnalytics(StringBuilder sb, List<DcaEntry> dcaEntries, List<Position> positions) {
         if (dcaEntries.isEmpty()) return;
 
-        sb.append("## 7. Análisis de la Estrategia DCA\n\n");
+        sb.append("## 8. Análisis de la Estrategia DCA\n\n");
 
         // Agrupar por ticker
         Map<String, List<DcaEntry>> byTicker = dcaEntries.stream()
@@ -448,7 +721,7 @@ public class ExportService {
     // ───────────────────── EVOLUCIÓN DE PRECIOS ─────────────────────
 
     private void appendPriceEvolution(StringBuilder sb, List<Position> positions) {
-        sb.append("## 8. Evolución de Precios (Resumen)\n\n");
+        sb.append("## 9. Evolución de Precios (Resumen)\n\n");
 
         Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
         Instant oneMonthAgo = Instant.now().minus(30, ChronoUnit.DAYS);
@@ -514,7 +787,7 @@ public class ExportService {
     // ───────────────────── ANÁLISIS DE RIESGO ─────────────────────
 
     private void appendRiskAnalysis(StringBuilder sb, List<Position> positions, PortfolioMetricsDto metrics) {
-        sb.append("## 9. Indicadores de Riesgo y Concentración\n\n");
+        sb.append("## 10. Indicadores de Riesgo y Concentración\n\n");
 
         double totalValue = positions.stream()
                 .mapToDouble(p -> p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice() : p.getShares() * p.getAvgPrice())
@@ -575,7 +848,7 @@ public class ExportService {
     // ───────────────────── NOTAS DE CONTEXTO ─────────────────────
 
     private void appendContextNotes(StringBuilder sb, List<Position> positions) {
-        sb.append("## 10. Contexto y Notas para el Análisis\n\n");
+        sb.append("## 11. Contexto y Notas para el Análisis\n\n");
         sb.append("""
                 - Todos los precios están expresados en **EUR**. Las posiciones cotizadas en otras divisas (USD, GBP, GBp)
                   se convierten automáticamente usando tipos de cambio actualizados.

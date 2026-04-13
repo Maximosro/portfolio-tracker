@@ -1,5 +1,7 @@
 package com.sro.myportfoliotracker.controller;
 
+import com.sro.myportfoliotracker.dto.ImportOperationDto;
+import com.sro.myportfoliotracker.dto.ImportResultDto;
 import com.sro.myportfoliotracker.model.DcaEntry;
 import com.sro.myportfoliotracker.service.DcaService;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,20 @@ public class DcaController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Importación masiva de operaciones desde JSON.
+     * Crea posiciones que no existan y registra todas las operaciones.
+     */
+    @PostMapping("/import")
+    public ResponseEntity<?> importOperations(@RequestBody List<ImportOperationDto> operations) {
+        try {
+            ImportResultDto result = dcaService.importBulk(operations);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }
