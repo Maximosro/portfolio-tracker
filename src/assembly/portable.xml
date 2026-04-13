@@ -31,15 +31,13 @@
             <fileMode>0755</fileMode>
         </fileSet>
 
-        <!-- Carpeta data con la BD y seeds -->
+        <!-- Carpeta data vacía (la BD se crea al arrancar) -->
         <fileSet>
             <directory>data</directory>
             <outputDirectory>/data</outputDirectory>
-            <includes>
-                <include>portfolio.db</include>
-                <include>seed.sql</include>
-                <include>price_history_seed.sql</include>
-            </includes>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
 </assembly>

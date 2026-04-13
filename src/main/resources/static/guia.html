@@ -87,6 +87,9 @@ details .details-body{padding:0 1.2rem 1rem;color:#b0b3be;font-size:.9rem}
 .badge-info{background:#15283a;color:#5fb8c4}
 .badge-success{background:#1a2a1a;color:#6daa45}
 
+/* ══════════ CODE ══════════ */
+code{background:#1a1d27;padding:.15rem .4rem;border-radius:.3rem;font-size:.85em;color:#7ec8d4;border:1px solid #2a2d38}
+
 /* ══════════ RESPONSIVE ══════════ */
 .menu-btn{display:none;position:fixed;top:1rem;left:1rem;z-index:200;background:#1a1d27;border:1px solid #2a2d38;color:#5fb8c4;border-radius:.5rem;padding:.4rem .7rem;font-size:1.3rem}
 @media(max-width:860px){
@@ -124,16 +127,22 @@ section:nth-child(4){animation-delay:.15s}
     <div class="nav-section">Funcionalidades</div>
     <a href="#dashboard"><span class="nav-icon">📈</span> Panel principal</a>
     <a href="#posiciones"><span class="nav-icon">💼</span> Posiciones</a>
+    <a href="#cerradas"><span class="nav-icon">🔒</span> Posiciones cerradas</a>
     <a href="#dca"><span class="nav-icon">🔄</span> Compras (DCA)</a>
+    <a href="#dca-target"><span class="nav-icon">🎯</span> Objetivo mensual DCA</a>
+    <a href="#importar"><span class="nav-icon">📥</span> Importar operaciones</a>
     <a href="#detalle-operativo"><span class="nav-icon">⚙️</span> Detalle operativo</a>
     <a href="#precios"><span class="nav-icon">💰</span> Precios en tiempo real</a>
     <a href="#alertas"><span class="nav-icon">🔔</span> Alertas</a>
     <a href="#metricas"><span class="nav-icon">📊</span> Métricas y rentabilidad</a>
+    <a href="#detalle-cartera"><span class="nav-icon">📋</span> Detalle de cartera</a>
     <a href="#evolucion"><span class="nav-icon">📉</span> Evolución patrimonial</a>
     <a href="#watchlist"><span class="nav-icon">👁️</span> Watchlist</a>
     <a href="#noticias"><span class="nav-icon">📰</span> Noticias</a>
     <a href="#exportar"><span class="nav-icon">📄</span> Exportar informes</a>
+    <a href="#ia"><span class="nav-icon">🤖</span> Asistente IA</a>
     <a href="#telegram"><span class="nav-icon">✈️</span> Telegram</a>
+    <a href="#tema"><span class="nav-icon">🌙</span> Tema claro / oscuro</a>
     <a href="#actividad"><span class="nav-icon">📋</span> Registro actividad</a>
 
     <div class="nav-section">Referencia</div>
@@ -179,6 +188,16 @@ section:nth-child(4){animation-delay:.15s}
       <h4>Privada</h4>
       <p>Funciona en tu propio ordenador. Tus datos nunca salen de tu equipo.</p>
     </div>
+    <div class="card">
+      <div class="card-icon">🤖</div>
+      <h4>IA integrada</h4>
+      <p>Genera prompts para analizar posiciones con Claude o ChatGPT e importa las respuestas automáticamente.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📥</div>
+      <h4>Importación masiva</h4>
+      <p>Importa todo tu historial de operaciones desde un archivo JSON. Migra tu cartera en segundos.</p>
+    </div>
   </div>
 
   <div class="tip-box">
@@ -222,6 +241,11 @@ section:nth-child(4){animation-delay:.15s}
       <p>Tu <strong>ganancia o pérdida</strong>. Se calcula como: (Valor actual) − (Lo que invertiste). Si es positivo, estás ganando; si es negativo, estás perdiendo.</p>
     </div>
     <div class="card">
+      <div class="card-icon">✅</div>
+      <h4>P&L Realizado</h4>
+      <p>La ganancia o pérdida que ya has <strong>materializado</strong> vendiendo acciones. Se calcula como: (Precio venta − Precio medio) × Acciones vendidas. Es dinero real que has ganado o perdido.</p>
+    </div>
+    <div class="card">
       <div class="card-icon">🎯</div>
       <h4>XIRR (Rentabilidad anualizada)</h4>
       <p>La rentabilidad <em>real</em> de tu inversión teniendo en cuenta cuándo compraste y cuánto. Es como el "interés anual" que estás obteniendo. Un 8% de XIRR significa que ganas un ~8% al año.</p>
@@ -246,24 +270,30 @@ section:nth-child(4){animation-delay:.15s}
     Al abrir la aplicación, lo primero que verás es el <strong>panel de resumen</strong>. Aquí tienes una vista rápida de toda tu cartera:
   </p>
 
-  <h3>🔢 Cifras principales</h3>
+  <h3>🔢 Cifras principales (KPIs)</h3>
+  <p>La fila de tarjetas superiores muestra los cinco indicadores más importantes de un vistazo:</p>
   <ul>
-    <li><strong>Valor total:</strong> Lo que valen ahora mismo todas tus inversiones sumadas (en euros).</li>
-    <li><strong>Total invertido:</strong> El dinero total que has puesto de tu bolsillo.</li>
-    <li><strong>Ganancia/Pérdida (P&L):</strong> La diferencia. <span class="badge badge-success">Verde = Ganancia</span> <span class="badge badge-danger">Rojo = Pérdida</span></li>
+    <li><strong>Capital Invertido:</strong> El dinero total que has puesto de tu bolsillo, junto al número de posiciones activas.</li>
+    <li><strong>Valor Actual:</strong> Lo que valen ahora mismo todas tus inversiones sumadas (en euros), basado en precios de mercado.</li>
+    <li><strong>Ganancia/Pérdida (P&L):</strong> La diferencia entre valor actual e invertido. <span class="badge badge-success">Verde = Ganancia</span> <span class="badge badge-danger">Rojo = Pérdida</span>. Incluye la variación del día y el P&L realizado de las ventas.</li>
+    <li><strong>Invertido este Mes:</strong> Cuánto has invertido en el mes actual. Si tienes un objetivo mensual configurado, muestra una barra de progreso.</li>
     <li><strong>XIRR:</strong> Tu rentabilidad anualizada. Es el indicador más fiable de cómo va tu inversión a largo plazo.</li>
   </ul>
 
   <h3>📊 Gráficos</h3>
   <ul>
-    <li><strong>Gráfico de tarta:</strong> Muestra qué porcentaje de tu cartera ocupa cada inversión. Te ayuda a ver si tienes todo el dinero concentrado en un solo sitio (que es más arriesgado) o bien repartido.</li>
-    <li><strong>Gráfico de evolución:</strong> Una línea temporal que muestra cómo ha ido cambiando el valor de tu cartera a lo largo del tiempo.</li>
+    <li><strong>Gráfico de tarta (Distribución de Cartera):</strong> Muestra qué porcentaje de tu cartera ocupa cada inversión. Te ayuda a ver si tienes todo el dinero concentrado en un solo sitio (que es más arriesgado) o bien repartido.</li>
+    <li><strong>Gráfico de evolución de precios:</strong> Una línea temporal que muestra cómo ha ido cambiando el precio de tus activos. Puedes seleccionar un ticker concreto o ver todos, y cambiar el rango temporal (1D, 1S, 1M, 3M, 6M, 1A, Año en curso, Todo).</li>
   </ul>
 
   <h3>📋 Tabla de posiciones</h3>
   <p>
     Debajo verás una tabla con cada una de tus inversiones, mostrando el ticker, nombre, número de participaciones,
-    precio medio de compra, precio actual, la variación del día y tu ganancia/pérdida para esa posición.
+    precio medio de compra, precio actual, la variación del día, capital invertido, valor actual, tu ganancia/pérdida
+    y la TIR (rentabilidad anualizada) para esa posición.
+  </p>
+  <p>
+    Si has realizado ventas parciales, verás un indicador de <strong>P&L realizado</strong> junto a cada posición, mostrando cuánto has ganado o perdido con las ventas ya ejecutadas.
   </p>
 
   <div class="info-box">
@@ -311,7 +341,13 @@ section:nth-child(4){animation-delay:.15s}
     <div class="step">
       <div class="step-body">
         <h4>Asigna un sector (opcional)</h4>
-        <p>Por ejemplo: "Tecnología", "Renta Variable Global", "Mercados Emergentes". Útil para ver la diversificación de tu cartera.</p>
+        <p>Por ejemplo: "Tecnología", "Renta Variable Global", "Mercados Emergentes". Útil para ver la diversificación y para buscar noticias relevantes.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Elige un color (opcional)</h4>
+        <p>Un color para identificar esta posición en los gráficos de tarta y evolución.</p>
       </div>
     </div>
   </div>
@@ -329,22 +365,52 @@ section:nth-child(4){animation-delay:.15s}
   </div>
 </section>
 
-<!-- ────────── DCA ────────── -->
-<section id="dca">
-  <h2>🔄 Historial de compras (DCA)</h2>
+<!-- ────────── POSICIONES CERRADAS ────────── -->
+<section id="cerradas">
+  <h2>🔒 Posiciones cerradas</h2>
   <p>
-    Aquí registras <strong>cada compra (o venta)</strong> que haces. La aplicación usa este historial para calcular automáticamente
-    tu precio medio de compra, el número de participaciones y la rentabilidad real de la inversión.
+    Cuando vendes <strong>todas</strong> las participaciones de una posición (es decir, sus acciones llegan a 0),
+    esa posición aparece automáticamente en la sección <strong>"Posiciones cerradas"</strong>, debajo de la tabla principal.
   </p>
 
-  <h3>📝 Registrar una compra</h3>
-  <p>Cada vez que inviertas dinero, añade una entrada con:</p>
+  <h3>📊 ¿Qué información muestran?</h3>
   <ul>
-    <li><strong>Ticker:</strong> El activo que compraste (debe existir ya como posición).</li>
-    <li><strong>Fecha:</strong> Cuándo hiciste la compra.</li>
-    <li><strong>Participaciones:</strong> Cuántas participaciones compraste.</li>
-    <li><strong>Precio:</strong> El precio unitario al que compraste (en euros).</li>
-    <li><strong>Tipo:</strong> <span class="badge badge-success">COMPRA</span> o <span class="badge badge-danger">VENTA</span>.</li>
+    <li><strong>Ticker y nombre:</strong> Identificación del activo ya vendido.</li>
+    <li><strong>Operaciones:</strong> Número total de compras y ventas realizadas.</li>
+    <li><strong>Precio medio de compra:</strong> El precio promedio al que compraste las acciones.</li>
+    <li><strong>Precio medio de venta:</strong> El precio promedio al que vendiste las acciones.</li>
+    <li><strong>Total invertido:</strong> Cuánto dinero pusiste en total en esa posición.</li>
+    <li><strong>Total recuperado:</strong> Cuánto dinero recuperaste con las ventas.</li>
+    <li><strong>P&L Realizado:</strong> La ganancia o pérdida real, con su porcentaje. <span class="badge badge-success">✅ = Ganancia</span> <span class="badge badge-danger">❌ = Pérdida</span></li>
+    <li><strong>Período:</strong> Desde la primera compra hasta la última venta.</li>
+    <li><strong>TIR:</strong> La rentabilidad anualizada de esa inversión cerrada.</li>
+  </ul>
+
+  <div class="info-box">
+    <span class="box-icon">ℹ️</span>
+    <div>
+      La sección de posiciones cerradas aparece plegada por defecto y solo se muestra si tienes alguna posición con 0 acciones.
+      Haz clic en la cabecera para expandirla o plegarla. Es un buen historial para revisar tus inversiones pasadas y aprender de ellas.
+    </div>
+  </div>
+</section>
+
+<!-- ────────── DCA ────────── -->
+<section id="dca">
+  <h2>🔄 Historial de compras y ventas (DCA)</h2>
+  <p>
+    Aquí registras <strong>cada compra o venta</strong> que haces. La aplicación usa este historial para calcular automáticamente
+    tu precio medio de compra, el número de participaciones, la rentabilidad real y el P&L realizado de las ventas.
+  </p>
+
+  <h3>📝 Registrar una operación</h3>
+  <p>Cada vez que inviertas dinero o vendas, añade una entrada con:</p>
+  <ul>
+    <li><strong>Tipo:</strong> <span class="badge badge-success">🟢 COMPRA</span> o <span class="badge badge-danger">🔴 VENTA</span>. El botón cambia de color según el tipo seleccionado.</li>
+    <li><strong>Ticker:</strong> El activo que compraste o vendiste (debe existir ya como posición).</li>
+    <li><strong>Nº Acciones:</strong> Cuántas participaciones compraste o vendiste.</li>
+    <li><strong>Precio:</strong> El precio unitario en euros. En ventas, se etiqueta como "Precio de venta".</li>
+    <li><strong>Fecha:</strong> Cuándo hiciste la operación.</li>
   </ul>
 
   <div class="tip-box">
@@ -356,18 +422,120 @@ section:nth-child(4){animation-delay:.15s}
     </div>
   </div>
 
-  <h3>📊 ¿Qué puedo ver?</h3>
+  <h3>📊 ¿Qué puedo ver en la tabla?</h3>
   <ul>
     <li>El historial completo de todas las compras y ventas, ordenado por fecha.</li>
-    <li>El filtro por ticker para ver solo las compras de una inversión concreta.</li>
-    <li>El resumen de cuánto dinero has invertido en total y en cada mes.</li>
+    <li>El <strong>coste total</strong> de cada operación (acciones × precio).</li>
+    <li>El <strong>P&L Realizado</strong> de cada venta (cuánto ganaste o perdiste respecto a tu precio medio de compra).</li>
+    <li>El <strong>estado</strong> de la posición tras la operación (activa o cerrada).</li>
+    <li>Paginación con botón <strong>"Ver más"</strong> para historiales largos.</li>
   </ul>
 
   <div class="info-box">
     <span class="box-icon">ℹ️</span>
     <div>
-      <strong>Ejemplo:</strong> Si compraste 5 participaciones de VUAA a 80€ en enero y luego 3 participaciones a 75€ en febrero,
-      la app calculará automáticamente que tienes 8 participaciones a un precio medio de 78,125€.
+      <strong>Vista previa:</strong> Al rellenar los campos de una nueva operación, la app te muestra en tiempo real el nuevo precio medio
+      resultante antes de confirmar. Así puedes comprobar el impacto antes de guardar.
+    </div>
+  </div>
+</section>
+
+<!-- ────────── OBJETIVO MENSUAL DCA ────────── -->
+<section id="dca-target">
+  <h2>🎯 Objetivo mensual de inversión (DCA Target)</h2>
+  <p>
+    Puedes configurar un <strong>objetivo mensual de inversión</strong>. Por ejemplo, si tu plan es invertir 2.000€ al mes,
+    puedes definirlo y la aplicación te mostrará el progreso visual de cuánto llevas invertido ese mes.
+  </p>
+
+  <h3>📊 ¿Cómo funciona?</h3>
+  <ul>
+    <li>Haz clic en la tarjeta <strong>"Invertido este Mes"</strong> del panel principal.</li>
+    <li>Se abrirá un pequeño formulario donde puedes introducir tu objetivo mensual en euros.</li>
+    <li>Al guardar, aparecerá una <strong>barra de progreso</strong> debajo de la cifra, mostrando el porcentaje completado.</li>
+    <li>Si superas el objetivo, la tarjeta cambia de estilo para indicar que lo has excedido.</li>
+    <li>También puedes quitar el objetivo para volver al modo sin barra de progreso.</li>
+  </ul>
+
+  <div class="tip-box">
+    <span class="box-icon">💡</span>
+    <div>
+      <strong>Consejo:</strong> Definir un objetivo mensual te ayuda a mantener la disciplina DCA.
+      La barra de progreso te recuerda visualmente si ya has hecho tus aportaciones del mes.
+    </div>
+  </div>
+</section>
+
+<!-- ────────── IMPORTAR OPERACIONES ────────── -->
+<section id="importar">
+  <h2>📥 Importar operaciones (JSON)</h2>
+  <p>
+    La aplicación permite <strong>importar masivamente</strong> todas tus operaciones desde un archivo JSON.
+    Esto es ideal para <strong>migrar tu historial</strong> desde un Excel u otra aplicación, o para empezar
+    con datos ya existentes sin tener que añadir cada compra una a una.
+  </p>
+
+  <h3>📋 ¿Qué hace la importación?</h3>
+  <ul>
+    <li><strong>Crea posiciones automáticamente:</strong> Si un ticker del JSON no existe en tu cartera, se crea como nueva posición con los datos proporcionados (nombre, yahoo ticker, sector, color).</li>
+    <li><strong>Registra todas las operaciones:</strong> Cada compra y venta del JSON se añade al historial DCA.</li>
+    <li><strong>Recalcula todo:</strong> Las participaciones y precios medios se recalculan automáticamente a partir de las operaciones importadas.</li>
+  </ul>
+
+  <h3>📄 Formato del archivo JSON</h3>
+  <p>El archivo debe ser un array de objetos con estos campos:</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Campo</th><th>Obligatorio</th><th>Descripción</th><th>Ejemplo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>ticker</code></td><td>✅ Sí</td><td>Código del activo</td><td>"VUAA"</td></tr>
+        <tr><td><code>date</code></td><td>✅ Sí</td><td>Fecha en formato YYYY-MM-DD</td><td>"2024-03-15"</td></tr>
+        <tr><td><code>shares</code></td><td>✅ Sí</td><td>Número de participaciones</td><td>5.5</td></tr>
+        <tr><td><code>price</code></td><td>✅ Sí</td><td>Precio unitario en euros</td><td>82.30</td></tr>
+        <tr><td><code>type</code></td><td>✅ Sí</td><td>Tipo de operación</td><td>"BUY" o "SELL"</td></tr>
+        <tr><td><code>name</code></td><td>❌ Opcional</td><td>Nombre del activo</td><td>"Vanguard S&P 500"</td></tr>
+        <tr><td><code>yahooTicker</code></td><td>❌ Opcional</td><td>Yahoo Finance ticker</td><td>"VUAA.L"</td></tr>
+        <tr><td><code>sector</code></td><td>❌ Opcional</td><td>Sector temático</td><td>"Renta Variable USA"</td></tr>
+        <tr><td><code>color</code></td><td>❌ Opcional</td><td>Color en hex</td><td>"#4f98a3"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>🚀 ¿Cómo importar?</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-body">
+        <h4>Abre el importador</h4>
+        <p>En la sección "Historial de Operaciones", pulsa el botón <strong>"Importar JSON"</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Sube tu archivo o pega el JSON</h4>
+        <p>Puedes arrastrar un archivo <code>.json</code> o pegar el contenido directamente en el cuadro de texto.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Revisa y confirma</h4>
+        <p>La app te muestra un resumen previo con el número de operaciones detectadas. Pulsa <strong>"Importar"</strong> para ejecutar.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Resultado</h4>
+        <p>Tras la importación, verás un resumen con: posiciones creadas, operaciones importadas, advertencias y errores (si los hubo).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <span class="box-icon">⚠️</span>
+    <div>
+      <strong>Importante:</strong> La importación <strong>no borra datos existentes</strong>, solo añade las nuevas operaciones.
+      Si importas las mismas operaciones dos veces, se duplicarán. Verifica tu JSON antes de importar.
     </div>
   </div>
 </section>
@@ -377,8 +545,17 @@ section:nth-child(4){animation-delay:.15s}
   <h2>⚙️ Detalle operativo por posición</h2>
   <p>
     Cada posición puede tener configuración avanzada que te ayuda a gestionar el riesgo y tener un plan claro
-    para cada inversión. Piensa en ello como "las reglas del juego" que te pones a ti mismo.
+    para cada inversión. Haz clic en el nombre de una posición para abrir su <strong>panel de detalle</strong>,
+    que tiene varias pestañas:
   </p>
+
+  <h3>📑 Pestañas del detalle</h3>
+  <ul>
+    <li><strong>Resumen:</strong> Estadísticas principales, peso en cartera vs objetivo, nivel de riesgo y estrategia.</li>
+    <li><strong>Límites:</strong> Stop-loss, take-profit, trailing stop, DCA target, alertas de precio. Con indicadores visuales de distancia al precio actual.</li>
+    <li><strong>Notas:</strong> Espacio libre para apuntar tu análisis, motivos de entrada, niveles técnicos, catalizadores pendientes, etc. (hasta 2.000 caracteres).</li>
+    <li><strong>🤖 IA:</strong> Generador de prompts para análisis con inteligencia artificial e importación automática de respuestas.</li>
+  </ul>
 
   <div class="table-wrap">
     <table>
@@ -439,6 +616,15 @@ section:nth-child(4){animation-delay:.15s}
       </tbody>
     </table>
   </div>
+
+  <div class="info-box">
+    <span class="box-icon">ℹ️</span>
+    <div>
+      En la pestaña <strong>Límites</strong>, debajo de cada campo verás <strong>indicadores de distancia</strong>
+      que te muestran a qué porcentaje de distancia está el precio actual respecto a cada nivel configurado.
+      Así sabes de un vistazo si estás lejos o cerca de tus límites.
+    </div>
+  </div>
 </section>
 
 <!-- ────────── PRECIOS ────────── -->
@@ -452,7 +638,7 @@ section:nth-child(4){animation-delay:.15s}
   <h3>⏰ ¿Con qué frecuencia se actualizan?</h3>
   <ul>
     <li><strong>Cada 30 minutos</strong> de forma automática, 24/7.</li>
-    <li>También puedes forzar una actualización manual con el botón <strong>"Actualizar precios"</strong>.</li>
+    <li>También puedes forzar una actualización manual con el botón <strong>"Actualizar precios"</strong> (icono de refresco).</li>
     <li>A <strong>medianoche</strong>, la app guarda el precio de cierre del día para poder calcular la variación del día siguiente.</li>
   </ul>
 
@@ -466,7 +652,8 @@ section:nth-child(4){animation-delay:.15s}
   <h3>📉 Historial de precios</h3>
   <p>Cada vez que se actualiza un precio, se guarda en el historial. Esto permite:</p>
   <ul>
-    <li>Ver <strong>gráficos de evolución</strong> del precio de cada activo.</li>
+    <li>Ver <strong>gráficos de evolución</strong> del precio de cada activo o de todos a la vez.</li>
+    <li>Seleccionar un <strong>ticker específico</strong> en el desplegable del gráfico.</li>
     <li>Consultar la variación a 7 días, 30 días, 90 días, etc.</li>
     <li>Ver el precio mínimo y máximo en un rango de tiempo.</li>
   </ul>
@@ -475,7 +662,8 @@ section:nth-child(4){animation-delay:.15s}
     <span class="box-icon">ℹ️</span>
     <div>
       Los <strong>rangos temporales</strong> disponibles para las gráficas son:
-      <strong>1 día</strong>, <strong>1 semana</strong>, <strong>1 mes</strong>, <strong>3 meses</strong>, <strong>6 meses</strong>, <strong>1 año</strong>, <strong>Año en curso (YTD)</strong> y <strong>Todo</strong>.
+      <strong>1D</strong> (1 día), <strong>1S</strong> (1 semana), <strong>1M</strong> (1 mes), <strong>3M</strong>, <strong>6M</strong>,
+      <strong>1A</strong> (1 año), <strong>ActY</strong> (Año en curso / YTD) y <strong>Todo</strong>.
     </div>
   </div>
 </section>
@@ -485,7 +673,7 @@ section:nth-child(4){animation-delay:.15s}
   <h2>🔔 Sistema de alertas</h2>
   <p>
     Las alertas son <strong>avisos automáticos</strong> que la aplicación genera cuando algo importante ocurre con tus inversiones.
-    No necesitas estar pendiente: la app lo vigila por ti.
+    No necesitas estar pendiente: la app lo vigila por ti. Se accede pulsando el icono de campana 🔔 en la cabecera.
   </p>
 
   <h3>🚨 Tipos de alertas</h3>
@@ -496,37 +684,37 @@ section:nth-child(4){animation-delay:.15s}
       </thead>
       <tbody>
         <tr>
-          <td><strong>Stop-Loss</strong></td>
+          <td><strong>🛑 Stop-Loss</strong></td>
           <td>El precio ha caído hasta (o por debajo de) tu límite de pérdida.</td>
           <td><span class="badge badge-danger">CRÍTICA</span> si lo alcanza, <span class="badge badge-warning">AVISO</span> si está a menos del 5%.</td>
         </tr>
         <tr>
-          <td><strong>Take-Profit</strong></td>
+          <td><strong>🎯 Take-Profit</strong></td>
           <td>El precio ha subido hasta (o por encima de) tu objetivo de ganancia.</td>
           <td><span class="badge badge-danger">CRÍTICA</span> si lo alcanza, <span class="badge badge-info">INFO</span> si está cerca.</td>
         </tr>
         <tr>
-          <td><strong>Trailing Stop</strong></td>
+          <td><strong>📉 Trailing Stop</strong></td>
           <td>La caída desde tu precio medio supera el porcentaje que configuraste.</td>
           <td><span class="badge badge-warning">AVISO</span></td>
         </tr>
         <tr>
-          <td><strong>DCA Target</strong></td>
+          <td><strong>💰 DCA Target</strong></td>
           <td>El precio ha bajado a tu objetivo de compra → ¡Oportunidad de comprar más!</td>
           <td><span class="badge badge-info">INFO</span></td>
         </tr>
         <tr>
-          <td><strong>Alerta Precio ↑</strong></td>
+          <td><strong>📈 Alerta Precio ↑</strong></td>
           <td>El precio ha superado el umbral superior que configuraste.</td>
           <td><span class="badge badge-warning">AVISO</span></td>
         </tr>
         <tr>
-          <td><strong>Alerta Precio ↓</strong></td>
+          <td><strong>📉 Alerta Precio ↓</strong></td>
           <td>El precio ha caído por debajo del umbral inferior que configuraste.</td>
           <td><span class="badge badge-warning">AVISO</span></td>
         </tr>
         <tr>
-          <td><strong>Peso desviado</strong></td>
+          <td><strong>⚖️ Peso desviado</strong></td>
           <td>El porcentaje que ocupa esta posición en tu cartera se ha desviado ≥5 puntos del objetivo.</td>
           <td><span class="badge badge-warning">AVISO</span> si ≥5pp, <span class="badge badge-info">INFO</span> si ≥10pp.</td>
         </tr>
@@ -539,6 +727,7 @@ section:nth-child(4){animation-delay:.15s}
     <div>
       Las alertas que ya has visto se <strong>recuerdan</strong> y no vuelven a aparecer al recargar la página.
       Si conectas Telegram, las alertas críticas y de aviso también te llegan al móvil.
+      En la parte inferior del panel de alertas hay una <strong>leyenda completa</strong> con todos los tipos y severidades.
     </div>
   </div>
 </section>
@@ -561,6 +750,18 @@ section:nth-child(4){animation-delay:.15s}
     </div>
   </div>
 
+  <h3>✅ P&L Realizado</h3>
+  <p>
+    Cuando vendes acciones, la app calcula el <strong>beneficio o pérdida realizado</strong> de cada venta.
+    Se calcula como: <strong>(Precio de venta − Precio medio de compra) × Acciones vendidas</strong>.
+  </p>
+  <ul>
+    <li>Se muestra en la tarjeta de P&L del dashboard como "P&L Realizado" junto al P&L no realizado.</li>
+    <li>En la tabla de posiciones, junto a cada posición que ha tenido ventas.</li>
+    <li>En la tabla de historial DCA, en la columna "P&L Realizado" de cada venta.</li>
+    <li>En las posiciones cerradas, como el P&L total realizado con porcentaje.</li>
+  </ul>
+
   <h3>📅 Rentabilidad por periodos</h3>
   <p>La app te muestra cuánto has ganado o perdido en diferentes marcos de tiempo:</p>
   <div class="table-wrap">
@@ -582,6 +783,43 @@ section:nth-child(4){animation-delay:.15s}
     <div>
       Los retornos están <strong>ajustados por DCA</strong>: si invertiste dinero nuevo durante el periodo,
       ese dinero no cuenta como "ganancia". Solo cuentan los cambios reales de mercado.
+    </div>
+  </div>
+</section>
+
+<!-- ────────── DETALLE DE CARTERA ────────── -->
+<section id="detalle-cartera">
+  <h2>📋 Detalle de cartera</h2>
+  <p>
+    Accede a la pantalla completa de <strong>Detalle de Cartera</strong> pulsando el botón
+    <strong>"Detalle"</strong> en la cabecera de la aplicación (icono de gráfico con lupa).
+    Esta vista ofrece un análisis profundo de la evolución de tu patrimonio.
+  </p>
+
+  <h3>📊 ¿Qué incluye?</h3>
+  <ul>
+    <li><strong>KPIs resumidos:</strong> Capital invertido, valor actual, P&L total y XIRR anualizada, todo de un vistazo.</li>
+    <li><strong>Rentabilidad por periodos:</strong> Tarjetas clicables para cada periodo (Hoy, Semana, Mes, Trimestre, YTD, 1 Año). Haz clic en una para ver el desglose detallado.</li>
+    <li><strong>Gráfico de patrimonio:</strong> Curva de equity que compara el <strong>Valor de mercado</strong> vs <strong>Capital invertido</strong> a lo largo del tiempo, con rangos seleccionables (1M, 3M, 6M, 1A, YTD, Todo).</li>
+    <li><strong>Distribución de cartera:</strong> Gráfico de tarta con los pesos de cada posición.</li>
+    <li><strong>Evolución de cartera:</strong> Gráfico de líneas por ticker y rango temporal.</li>
+  </ul>
+
+  <h3>📈 Historial por periodo (desglose)</h3>
+  <p>
+    Al hacer clic en cualquier tarjeta de periodo (Semana, Mes, etc.), se abre un <strong>modal de historial</strong> con:
+  </p>
+  <ul>
+    <li><strong>Rentabilidad total</strong> del periodo en porcentaje y euros.</li>
+    <li>Un <strong>gráfico de barras</strong> mostrando la variación día a día (o semana a semana, según el periodo).</li>
+    <li>Una <strong>tabla detallada</strong> con: fecha, valor de mercado, capital invertido, P&L, variación absoluta y porcentual.</li>
+  </ul>
+
+  <div class="info-box">
+    <span class="box-icon">ℹ️</span>
+    <div>
+      La agrupación temporal se adapta automáticamente: para periodos cortos (semana, mes) verás datos diarios;
+      para trimestre y YTD, datos semanales; y para 1 año, datos mensuales. Así la tabla siempre es manejable.
     </div>
   </div>
 </section>
@@ -617,14 +855,16 @@ section:nth-child(4){animation-delay:.15s}
   <p>
     La <strong>watchlist</strong> es para activos que <strong>NO tienes comprados todavía</strong> pero que quieres vigilar.
     Es como tener una lista de deseos de inversiones que te interesan.
+    Se accede pulsando el icono del ojo 👁️ en la parte inferior derecha de la pantalla.
   </p>
 
   <h3>¿Qué puedes hacer?</h3>
   <ul>
-    <li><strong>Añadir activos</strong> con su ticker y ticker de Yahoo para seguir su precio.</li>
+    <li><strong>Añadir activos</strong> con su ticker, ticker de Yahoo, nombre y notas.</li>
     <li>Ver la <strong>variación diaria, semanal y mensual</strong> de cada activo.</li>
-    <li><strong>Actualizar precios</strong> manualmente con un botón.</li>
+    <li><strong>Actualizar precios</strong> manualmente con el botón de refresco.</li>
     <li>Añadir <strong>notas</strong> sobre por qué te interesa ese activo.</li>
+    <li><strong>Editar o eliminar</strong> items de la watchlist.</li>
   </ul>
 
   <div class="tip-box">
@@ -642,6 +882,7 @@ section:nth-child(4){animation-delay:.15s}
   <p>
     La aplicación busca automáticamente <strong>noticias recientes relacionadas con tus inversiones</strong> usando Google News.
     Para cada posición de tu cartera, muestra las noticias más relevantes de los últimos 3 días.
+    Se accede pulsando el icono de periódico 📰 en la parte inferior derecha.
   </p>
 
   <h3>🔍 ¿Cómo funciona?</h3>
@@ -650,6 +891,7 @@ section:nth-child(4){animation-delay:.15s}
     <li>Filtra automáticamente para mostrar solo <strong>noticias financieras relevantes</strong> (bolsa, mercados, resultados, etc.).</li>
     <li>Muestra la <strong>fuente</strong> y la <strong>fecha</strong> de cada noticia, con enlace al artículo original.</li>
     <li>Se obtienen hasta <strong>2 noticias por activo</strong>.</li>
+    <li>Puedes <strong>actualizar</strong> las noticias pulsando el botón de refresco.</li>
   </ul>
 
   <div class="info-box">
@@ -699,6 +941,57 @@ section:nth-child(4){animation-delay:.15s}
   </div>
 </section>
 
+<!-- ────────── ASISTENTE IA ────────── -->
+<section id="ia">
+  <h2>🤖 Asistente IA (Análisis por posición)</h2>
+  <p>
+    Cada posición tiene una pestaña <strong>"🤖 IA"</strong> en su detalle operativo.
+    Esta funcionalidad te ayuda a utilizar inteligencia artificial (Claude, ChatGPT, etc.)
+    para analizar cada inversión y obtener recomendaciones operativas personalizadas.
+  </p>
+
+  <h3>🧠 ¿Cómo funciona?</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-body">
+        <h4>Genera el prompt</h4>
+        <p>Pulsa <strong>"Generar prompt para Claude"</strong>. La app recopilará automáticamente todos los datos de la posición
+        (precio actual, precio medio, participaciones, sector, historial DCA, límites actuales, etc.) y creará un prompt
+        optimizado para que la IA te ayude.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Copia y envía a la IA</h4>
+        <p>Pulsa <strong>"Copiar"</strong> para copiar el prompt al portapapeles. Pégalo en Claude, ChatGPT u otro asistente de IA.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Recibe un JSON con recomendaciones</h4>
+        <p>La IA te devolverá un JSON con propuestas de: stop-loss, take-profit, DCA target, alertas de precio,
+        nivel de riesgo, estrategia y notas de seguimiento.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Importa la respuesta</h4>
+        <p>Pega el JSON en el campo <strong>"Importar respuesta de Claude"</strong> y pulsa <strong>"Importar y rellenar"</strong>.
+        Se rellenarán automáticamente todos los campos del detalle operativo. Revisa y pulsa <strong>Guardar</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <span class="box-icon">💡</span>
+    <div>
+      <strong>Consejo:</strong> El prompt generado incluye todos los datos de la posición (precio medio, actual, historial de compras,
+      sector, etc.), por lo que la IA tiene el contexto necesario para darte recomendaciones informadas.
+      Puedes editar los valores importados antes de guardar si quieres ajustarlos.
+    </div>
+  </div>
+</section>
+
 <!-- ────────── TELEGRAM ────────── -->
 <section id="telegram">
   <h2>✈️ Notificaciones por Telegram</h2>
@@ -725,16 +1018,26 @@ section:nth-child(4){animation-delay:.15s}
     <div class="step">
       <div class="step-body">
         <h4>Obtén tu Chat ID</h4>
-        <p>Envía un mensaje a tu nuevo bot, luego busca <strong>@userinfobot</strong> en Telegram y te dirá tu <strong>Chat ID</strong> (un número).</p>
+        <p>Envía un mensaje a tu nuevo bot (ej: "hola"), luego abre en el navegador:
+        <code style="font-size:.8em">https://api.telegram.org/bot{TOKEN}/getUpdates</code>.
+        Busca <code>"chat":{"id":XXXXXXX}</code> — ese número es tu <strong>Chat ID</strong>.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-body">
         <h4>Configúralo en la app</h4>
-        <p>En la sección de Telegram de la aplicación, introduce el token del bot y el Chat ID. La app enviará un mensaje de prueba para verificar que funciona.</p>
+        <p>En el panel de alertas (🔔), abajo hay un botón <strong>"Probar Telegram"</strong>.
+        Si no está configurado, pulsa <strong>"Configurar"</strong>, introduce el Bot Token y el Chat ID.
+        La app enviará automáticamente un mensaje de prueba para verificar que funciona.</p>
       </div>
     </div>
   </div>
+
+  <h3>⚙️ Opciones adicionales</h3>
+  <ul>
+    <li><strong>Enviar mensaje personalizado:</strong> Puedes enviar mensajes manuales por Telegram desde la API.</li>
+    <li><strong>Desactivar:</strong> Puedes desactivar Telegram sin borrar la configuración, y reactivarlo cuando quieras.</li>
+  </ul>
 
   <div class="info-box">
     <span class="box-icon">ℹ️</span>
@@ -745,12 +1048,31 @@ section:nth-child(4){animation-delay:.15s}
   </div>
 </section>
 
+<!-- ────────── TEMA CLARO / OSCURO ────────── -->
+<section id="tema">
+  <h2>🌙 Tema claro / oscuro</h2>
+  <p>
+    La aplicación soporta <strong>dos temas visuales</strong>: oscuro (por defecto) y claro.
+    Puedes cambiar entre ellos pulsando el icono de <strong>luna 🌙</strong> (o sol ☀️) en la esquina superior derecha de la cabecera.
+  </p>
+
+  <h3>🎨 ¿Cómo funciona?</h3>
+  <ul>
+    <li>El <strong>tema oscuro</strong> es el predeterminado: fondos oscuros con texto claro. Ideal para usar de noche o en entornos con poca luz.</li>
+    <li>El <strong>tema claro</strong> usa fondos claros con texto oscuro. Ideal para uso diurno o con mucha luz ambiental.</li>
+    <li>Tu selección se <strong>guarda en el navegador</strong> (localStorage), por lo que se recuerda entre sesiones.</li>
+    <li>El cambio es <strong>instantáneo</strong>, sin recargar la página.</li>
+    <li>Todos los gráficos, tablas y paneles se adaptan automáticamente al tema seleccionado.</li>
+  </ul>
+</section>
+
 <!-- ────────── REGISTRO DE ACTIVIDAD ────────── -->
 <section id="actividad">
   <h2>📋 Registro de actividad</h2>
   <p>
     La aplicación lleva un <strong>registro interno</strong> de todo lo que ocurre: actualizaciones de precios,
     snapshots, mensajes de Telegram, errores, etc. Es como un "diario" de la aplicación.
+    Se accede pulsando el icono de documento 📄 en la cabecera.
   </p>
 
   <h3>¿Para qué sirve?</h3>
@@ -758,8 +1080,29 @@ section:nth-child(4){animation-delay:.15s}
     <li>Verificar que los precios se están actualizando correctamente.</li>
     <li>Ver si hubo algún error al conectar con Yahoo Finance o Telegram.</li>
     <li>Consultar cuándo se tomaron las fotos (snapshots) del portfolio.</li>
-    <li>Puedes filtrar por categoría: <strong>PRICE</strong>, <strong>SNAPSHOT</strong>, <strong>TELEGRAM</strong>, etc.</li>
+    <li>Seguir la actividad de DCA, alertas, watchlist y sistema.</li>
   </ul>
+
+  <h3>🔍 Filtros disponibles</h3>
+  <p>Puedes filtrar los registros por categoría usando los botones de la parte superior:</p>
+  <ul>
+    <li><strong>Todo:</strong> Todas las entradas sin filtrar.</li>
+    <li><strong>Precios:</strong> Actualizaciones de precios (PRICE).</li>
+    <li><strong>Telegram:</strong> Mensajes enviados por Telegram.</li>
+    <li><strong>Watchlist:</strong> Actualizaciones de la lista de seguimiento.</li>
+    <li><strong>DCA:</strong> Operaciones de compra y venta registradas.</li>
+    <li><strong>Snapshots:</strong> Fotos del portfolio tomadas automáticamente.</li>
+    <li><strong>Alertas:</strong> Alertas generadas y notificadas.</li>
+    <li><strong>Sistema:</strong> Eventos del sistema (arranque, errores, etc.).</li>
+  </ul>
+
+  <div class="tip-box">
+    <span class="box-icon">💡</span>
+    <div>
+      Puedes <strong>borrar el log</strong> completo si se ha acumulado demasiada información.
+      El log se mantiene en memoria, por lo que se reinicia cada vez que la aplicación se reinicia.
+    </div>
+  </div>
 </section>
 
 <!-- ────────── GLOSARIO ────────── -->
@@ -794,10 +1137,14 @@ section:nth-child(4){animation-delay:.15s}
     </div>
     <div class="glossary-term">
       <dt>P&L (Profit & Loss)</dt>
-      <dd>Ganancia o Pérdida. Se calcula como: (valor actual) − (lo que invertiste).</dd>
+      <dd>Ganancia o Pérdida no realizada. Se calcula como: (valor actual) − (lo que invertiste). Refleja lo que ganarías/perderías si vendieras ahora.</dd>
     </div>
     <div class="glossary-term">
-      <dt>XIRR</dt>
+      <dt>P&L Realizado</dt>
+      <dd>Ganancia o Pérdida materializada por ventas ejecutadas. Se calcula como: (precio venta − precio medio) × acciones vendidas.</dd>
+    </div>
+    <div class="glossary-term">
+      <dt>XIRR / TIR</dt>
       <dd>Tasa interna de retorno extendida. La rentabilidad anualizada real, teniendo en cuenta fechas y montos exactos de cada inversión.</dd>
     </div>
     <div class="glossary-term">
@@ -835,6 +1182,14 @@ section:nth-child(4){animation-delay:.15s}
     <div class="glossary-term">
       <dt>Rebalanceo</dt>
       <dd>Ajustar los pesos de tu cartera para que vuelvan a tu distribución objetivo (por ejemplo, vendiendo lo que ha subido mucho y comprando lo que ha bajado).</dd>
+    </div>
+    <div class="glossary-term">
+      <dt>Equity Curve</dt>
+      <dd>Gráfico de evolución patrimonial que compara el valor de mercado de tu cartera con el capital invertido a lo largo del tiempo.</dd>
+    </div>
+    <div class="glossary-term">
+      <dt>Posición cerrada</dt>
+      <dd>Inversión en la que has vendido todas las participaciones (acciones = 0). Se mueve a la sección de posiciones cerradas con su P&L realizado.</dd>
     </div>
   </dl>
 </section>
@@ -928,8 +1283,9 @@ section:nth-child(4){animation-delay:.15s}
   <details>
     <summary>¿Puedo registrar ventas?</summary>
     <div class="details-body">
-      <p>Sí. Al crear una entrada DCA, selecciona el tipo <strong>VENTA</strong> en lugar de COMPRA.
-      Esto restará las participaciones vendidas y ajustará los cálculos.</p>
+      <p>Sí. Al crear una entrada DCA, selecciona el tipo <strong>🔴 VENTA</strong> en lugar de 🟢 COMPRA.
+      Esto restará las participaciones vendidas, ajustará los cálculos y mostrará el P&L realizado de la venta.
+      Si vendes todas las participaciones, la posición pasará a "cerradas".</p>
     </div>
   </details>
 
@@ -941,6 +1297,38 @@ section:nth-child(4){animation-delay:.15s}
         <li><span class="badge badge-warning">AVISO (amarillo)</span> → Presta atención. Algo se acerca a un límite.</li>
         <li><span class="badge badge-info">INFO (azul)</span> → Informativo. Oportunidad u observación sin urgencia.</li>
       </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Cómo importo mi historial de operaciones?</summary>
+    <div class="details-body">
+      <p>En la sección "Historial de Operaciones", pulsa <strong>"Importar JSON"</strong>. Prepara un archivo JSON con un array de operaciones
+      que incluya al menos: <code>ticker</code>, <code>date</code>, <code>shares</code>, <code>price</code> y <code>type</code>.
+      Las posiciones que no existan se crearán automáticamente. Consulta la sección <a href="#importar" style="color:#5fb8c4">"Importar operaciones"</a> para más detalle.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Cómo funciona el asistente de IA?</summary>
+    <div class="details-body">
+      <p>Abre el detalle de cualquier posición y ve a la pestaña <strong>🤖 IA</strong>. La app genera un prompt con todos los datos de la posición
+      que puedes copiar y enviar a Claude o ChatGPT. La IA te devolverá un JSON con recomendaciones de límites operativos que puedes importar
+      directamente para rellenar el detalle de la posición. Consulta la sección <a href="#ia" style="color:#5fb8c4">"Asistente IA"</a> para más detalle.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Puedo llevarme la app a otro PC?</summary>
+    <div class="details-body">
+      <p>Sí. El proyecto genera un archivo <code>PortfolioTracker-dist.zip</code> que contiene todo lo necesario:</p>
+      <ul>
+        <li>El JAR ejecutable (<code>PortfolioTracker.jar</code>)</li>
+        <li>Scripts de arranque (<code>start.bat</code>, <code>start.sh</code>)</li>
+        <li>Scripts de servicio (<code>install-service.bat</code>, <code>uninstall-service.bat</code>)</li>
+        <li>La carpeta <code>data/</code> con tu base de datos y seeds SQL</li>
+      </ul>
+      <p>Solo necesitas Java 21+ instalado en el PC de destino. Descomprime y ejecuta <code>start.bat</code>.</p>
     </div>
   </details>
 </section>
@@ -986,6 +1374,13 @@ section:nth-child(4){animation-delay:.15s}
     Si quieres hacer una <strong>copia de seguridad</strong>, simplemente copia ese archivo a un lugar seguro.
   </p>
 
+  <h3>📦 Distribución portátil</h3>
+  <p>
+    El proyecto genera un archivo <code>PortfolioTracker-dist.zip</code> que es completamente portátil.
+    Contiene el JAR ejecutable, los scripts de arranque/servicio y la carpeta de datos.
+    Para migrar a otro PC, solo necesitas copiar ese ZIP y tener Java 21+ instalado.
+  </p>
+
   <div class="warn-box">
     <span class="box-icon">⚠️</span>
     <div>
@@ -1000,6 +1395,7 @@ section:nth-child(4){animation-delay:.15s}
   <p>📊 Portfolio Tracker — Guía de usuario</p>
   <p style="margin-top:.3rem">Desarrollado por <strong style="color:#5fb8c4">Maximosro</strong></p>
   <p style="margin-top:.3rem">Aplicación personal de seguimiento de inversiones · Spring Boot + SQLite · 100% privada</p>
+  <p style="margin-top:.3rem;font-size:.75rem;color:#444">Versión actualizada — Abril 2026</p>
 </div>
 
 </main>
