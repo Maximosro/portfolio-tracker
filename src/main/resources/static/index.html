@@ -379,14 +379,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
             <select class="form-input" id="histTicker" onchange="loadHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-              <button class="range-btn active" data-range="1d" onclick="setRange('1d')">1D</button>
+              <button class="range-btn" data-range="1d" onclick="setRange('1d')">1D</button>
               <button class="range-btn" data-range="1w" onclick="setRange('1w')">1S</button>
               <button class="range-btn" data-range="1m" onclick="setRange('1m')">1M</button>
               <button class="range-btn" data-range="3m" onclick="setRange('3m')">3M</button>
               <button class="range-btn" data-range="6m" onclick="setRange('6m')">6M</button>
               <button class="range-btn" data-range="1y" onclick="setRange('1y')">1A</button>
               <button class="range-btn" data-range="ytd" onclick="setRange('ytd')">ActY</button>
-              <button class="range-btn" data-range="all" onclick="setRange('all')">Todo</button>
+              <button class="range-btn active" data-range="all" onclick="setRange('all')">Todo</button>
             </div>
           </div>
         </div>
@@ -403,11 +403,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
               <button class="range-btn pd-range" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
               <button class="range-btn pd-range" data-pdrange="1w" onclick="setPdRange('1w')">1S</button>
-              <button class="range-btn pd-range active" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
+              <button class="range-btn pd-range" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
               <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
               <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
               <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
-              <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
+              <button class="range-btn pd-range active" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
             </div>
           </div>
         </div>
@@ -2133,7 +2133,7 @@ function showToast(msg, type = 'success') {
 
 // ===================== HISTORY CHART (MAIN — PRICE EVOLUTION) =====================
 let histChartInst = null;
-let currentRange = '1d';
+let currentRange = 'all';
 
 function setRange(range) {
   currentRange = range;
@@ -2185,7 +2185,7 @@ function renderHistoryChart(data, tickerFilter) {
     const datasets = [{
       label: tickerFilter + ' (€)', data: points, borderColor: color, backgroundColor: color + '18',
       borderWidth: 2.5, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
-      tension: 0.3, fill: true, spanGaps: true
+      tension: 0, fill: true, spanGaps: true
     }];
     createLineChart(ctx, c, datasets);
   } else {
@@ -2210,7 +2210,7 @@ function renderHistoryChart(data, tickerFilter) {
       return {
         label: ticker, data: points, borderColor: color, backgroundColor: color + '18',
         borderWidth: 2, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 4,
-        tension: 0.3, fill: false, spanGaps: true
+        tension: 0, fill: false, spanGaps: true
       };
     });
     const totalPoints = timestamps.map(ts => {
@@ -2229,7 +2229,7 @@ function renderHistoryChart(data, tickerFilter) {
     });
     datasets.unshift({
       label: 'TOTAL', data: totalPoints, borderColor: c.text, backgroundColor: c.border + '30',
-      borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0.3, fill: true, spanGaps: true
+      borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0, fill: true, spanGaps: true
     });
 
     createLineChart(ctx, c, datasets);
@@ -3707,7 +3707,7 @@ function renderEquityChart(data) {
 // ===================== PORTFOLIO DETAIL SCREEN =====================
 let pdPieInst = null;
 let pdHistInst = null;
-let pdHistRange = '1m';
+let pdHistRange = 'all';
 
 function openPortfolioDetail() {
   document.getElementById('portfolioDetailOverlay').classList.add('open');
@@ -3817,13 +3817,15 @@ function renderPdHistChart(data, tickerFilter) {
   }
 }
 
-function padPointsFrom2025(points) {
-  if (pdHistRange !== 'all') return points;
-  const ORIGIN = new Date('2025-01-01T12:00:00');
+function padPointsFromRangeStart(points) {
+  // En "Todo" no rellenar — mostrar datos reales desde su inicio
+  if (pdHistRange === 'all') return points;
   if (points.length === 0) return points;
+  const bounds = getPdRangeBounds();
+  const rangeStart = bounds.min;
   const first = points[0];
-  if (first.x > ORIGIN) {
-    points.unshift({ x: ORIGIN, y: first.y });
+  if (first.x > rangeStart) {
+    points.unshift({ x: rangeStart, y: first.y });
   }
   return points;
 }
@@ -3851,7 +3853,7 @@ function getPdRangeBounds() {
       min = new Date(now); min.setFullYear(min.getFullYear() - 1); min.setHours(0, 0, 0, 0);
       return { min, max: now };
     case 'all':
-      return { min: new Date('2025-01-01'), max: now };
+      return { min: undefined, max: undefined };
     default:
       min = new Date(now); min.setMonth(min.getMonth() - 1); min.setHours(0, 0, 0, 0);
       return { min, max: now };
@@ -3896,7 +3898,7 @@ function renderPdPortfolioChart(data, c, ctx) {
     });
     return { x: new Date(ts), y: hasAny ? sum : null };
   });
-  totalPoints = padPointsFrom2025(totalPoints);
+  totalPoints = padPointsFromRangeStart(totalPoints);
 
   const datasets = [{
     label: 'Cartera Total', data: totalPoints, borderColor: c.text, backgroundColor: c.border + '30',
@@ -3930,7 +3932,7 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
   const shares = pos ? pos.shares : 1;
   const sorted = [...data].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
   let points = sorted.map(d => ({ x: new Date(d.timestamp), y: d.priceEur * shares }));
-  points = padPointsFrom2025(points);
+  points = padPointsFromRangeStart(points);
 
   const datasets = [{
     label: ticker + ' – Valor (€)', data: points, borderColor: color, backgroundColor: color + '18',

@@ -159,30 +159,7 @@ public class AlertService {
                 }
             }
 
-            // TARGET WEIGHT: alertar si el peso actual se desvía significativamente del objetivo
-            if (detail.getTargetWeightPct() != null && detail.getTargetWeightPct() > 0) {
-                double totalPortfolioValue = positions.stream()
-                        .filter(p -> p.getCurrentPrice() != null && p.getCurrentPrice() > 0)
-                        .mapToDouble(p -> p.getShares() * p.getCurrentPrice())
-                        .sum();
-                if (totalPortfolioValue > 0) {
-                    double posValue = pos.getShares() * price;
-                    double actualWeight = (posValue / totalPortfolioValue) * 100;
-                    double deviation = actualWeight - detail.getTargetWeightPct();
-                    double absDev = Math.abs(deviation);
-                    if (absDev >= 5) {
-                        String direction = deviation > 0 ? "sobrepondera" : "infrapondera";
-                        String severity = absDev >= 10 ? "WARNING" : "INFO";
-                        alerts.add(AlertDto.builder()
-                                .ticker(ticker).name(name).color(color)
-                                .type("WEIGHT_DEVIATION").severity(severity)
-                                .message("Peso actual (" + fmt(actualWeight) + "%) " + direction + " vs objetivo (" + fmt(detail.getTargetWeightPct()) + "%). Desviación: " + (deviation > 0 ? "+" : "") + fmt(deviation) + "pp")
-                                .currentPrice(price).limitPrice(detail.getTargetWeightPct())
-                                .distancePct(round2(deviation))
-                                .build());
-                    }
-                }
-            }
+            // TARGET WEIGHT: no genera alertas, solo informativo en el detalle de posición
         }
 
         // Ordenar: DANGER primero, luego WARNING, luego INFO
