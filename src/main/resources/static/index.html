@@ -371,18 +371,12 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
     <!-- CHARTS ROW -->
     <div style="display:flex;gap:var(--space-6);margin-bottom:var(--space-6);flex-wrap:wrap">
-      <!-- PIE CHART — 30% -->
-      <div class="chart-card" style="flex:0 0 28%;min-width:280px;margin-bottom:0">
-        <div class="chart-title">Distribución de Cartera</div>
-        <div style="position:relative;height:300px"><canvas id="pieChart"></canvas></div>
-      </div>
-      <!-- PRICE CHART — 70% -->
+      <!-- PRICE CHART — 50% -->
       <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
           <div class="chart-title" style="margin-bottom:0">Evolución de Precios</div>
           <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="histTicker" onchange="loadHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
-              <option value="ALL">Todos los tickers</option>
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
               <button class="range-btn active" data-range="1d" onclick="setRange('1d')">1D</button>
@@ -397,6 +391,27 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
           </div>
         </div>
         <div style="position:relative;height:300px"><canvas id="historyChart"></canvas></div>
+      </div>
+      <!-- PORTFOLIO EVOLUTION CHART — 50% -->
+      <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
+          <div class="chart-title" style="margin-bottom:0">Evolución de Cartera</div>
+          <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+            <select class="form-input" id="pdTicker" onchange="loadPdHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
+              <option value="ALL">Toda la cartera</option>
+            </select>
+            <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
+              <button class="range-btn pd-range" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
+              <button class="range-btn pd-range" data-pdrange="1w" onclick="setPdRange('1w')">1S</button>
+              <button class="range-btn pd-range active" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
+              <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
+              <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
+              <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
+              <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
+            </div>
+          </div>
+        </div>
+        <div style="position:relative;height:300px"><canvas id="pdHistChart"></canvas></div>
       </div>
     </div>
 
@@ -1026,47 +1041,27 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         </div>
       </div>
 
-      <!-- Equity Curve -->
-      <div class="chart-card" style="margin-bottom:var(--space-6)">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
-          <div class="chart-title" style="margin-bottom:0">📈 Patrimonio — Valor vs Capital Invertido</div>
-          <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-            <button class="range-btn eq-range" data-eqrange="1m" onclick="setEquityRange('1m')">1M</button>
-            <button class="range-btn eq-range active" data-eqrange="3m" onclick="setEquityRange('3m')">3M</button>
-            <button class="range-btn eq-range" data-eqrange="6m" onclick="setEquityRange('6m')">6M</button>
-            <button class="range-btn eq-range" data-eqrange="1y" onclick="setEquityRange('1y')">1A</button>
-            <button class="range-btn eq-range" data-eqrange="ytd" onclick="setEquityRange('ytd')">YTD</button>
-            <button class="range-btn eq-range" data-eqrange="all" onclick="setEquityRange('all')">Todo</button>
-          </div>
-        </div>
-        <div style="position:relative;height:400px"><canvas id="equityChart"></canvas></div>
-      </div>
-
-      <!-- Distribución + evolución en esta pantalla también -->
+      <!-- Patrimonio + Distribución en la misma fila -->
       <div style="display:flex;gap:var(--space-6);flex-wrap:wrap">
-        <div class="chart-card" style="flex:0 0 35%;min-width:280px;margin-bottom:0">
-          <div class="chart-title">Distribución de Cartera</div>
-          <div style="position:relative;height:300px"><canvas id="pdPieChart"></canvas></div>
-        </div>
+        <!-- Equity Curve — 65% -->
         <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
-            <div class="chart-title" style="margin-bottom:0">Evolución de Cartera</div>
-            <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
-              <select class="form-input" id="pdTicker" onchange="loadPdHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
-                <option value="ALL">Toda la cartera</option>
-              </select>
-              <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-                <button class="range-btn pd-range" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
-                <button class="range-btn pd-range" data-pdrange="1w" onclick="setPdRange('1w')">1S</button>
-                <button class="range-btn pd-range active" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
-                <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
-                <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
-                <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
-                <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
-              </div>
+            <div class="chart-title" style="margin-bottom:0">📈 Patrimonio — Valor vs Capital Invertido</div>
+            <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
+              <button class="range-btn eq-range" data-eqrange="1m" onclick="setEquityRange('1m')">1M</button>
+              <button class="range-btn eq-range active" data-eqrange="3m" onclick="setEquityRange('3m')">3M</button>
+              <button class="range-btn eq-range" data-eqrange="6m" onclick="setEquityRange('6m')">6M</button>
+              <button class="range-btn eq-range" data-eqrange="1y" onclick="setEquityRange('1y')">1A</button>
+              <button class="range-btn eq-range" data-eqrange="ytd" onclick="setEquityRange('ytd')">YTD</button>
+              <button class="range-btn eq-range" data-eqrange="all" onclick="setEquityRange('all')">Todo</button>
             </div>
           </div>
-          <div style="position:relative;height:300px"><canvas id="pdHistChart"></canvas></div>
+          <div style="position:relative;height:350px"><canvas id="equityChart"></canvas></div>
+        </div>
+        <!-- Distribución de Cartera — 35% -->
+        <div class="chart-card" style="flex:0 0 30%;min-width:280px;margin-bottom:0">
+          <div class="chart-title">Distribución de Cartera</div>
+          <div style="position:relative;height:350px"><canvas id="pdPieChart"></canvas></div>
         </div>
       </div>
 
@@ -1338,10 +1333,11 @@ function priceAge(ts) {
 function renderAll() {
   renderKPIs();
   renderTable();
-  renderPieChart();
   renderDcaHistory();
   populateHistTicker();
   loadHistory();
+  populatePdTicker();
+  loadPdHistory();
 }
 
 function renderKPIs() {
@@ -1685,7 +1681,9 @@ function getChartColors() {
 
 function renderPieChart() {
   const c = getChartColors();
-  const ctx = document.getElementById('pieChart').getContext('2d');
+  const el = document.getElementById('pieChart');
+  if (!el) return;
+  const ctx = el.getContext('2d');
   if (pieChartInst) pieChartInst.destroy();
 
   const activePos = positions.filter(p => p.shares > 0);
@@ -2146,9 +2144,10 @@ function setRange(range) {
 function populateHistTicker() {
   const sel = document.getElementById('histTicker');
   const current = sel.value;
-  sel.innerHTML = '<option value="ALL">Todos los tickers</option>' +
-    positions.map(p => `<option value="${p.ticker}">${p.ticker}</option>`).join('');
+  const active = positions.filter(p => p.shares > 0);
+  sel.innerHTML = active.map(p => `<option value="${p.ticker}">${p.ticker}</option>`).join('');
   if ([...sel.options].some(o => o.value === current)) sel.value = current;
+  else if (active.length > 0) sel.value = active[0].ticker;
 }
 
 async function loadHistory() {
@@ -2284,9 +2283,20 @@ function getRangeBounds() {
   }
 }
 
+function calcYBounds10(datasets) {
+  let allY = [];
+  datasets.forEach(ds => ds.data.forEach(p => { if (p.y != null) allY.push(p.y); }));
+  if (allY.length === 0) return {};
+  const minY = Math.min(...allY);
+  const maxY = Math.max(...allY);
+  const range = maxY - minY || maxY * 0.1 || 1;
+  return { min: Math.max(0, minY - range * 0.1), max: maxY + range * 0.1 };
+}
+
 function createLineChart(ctx, c, datasets) {
   const tu = getTimeUnit();
   const bounds = getRangeBounds();
+  const yBounds = calcYBounds10(datasets);
 
   histChartInst = new Chart(ctx, {
     type: 'line',
@@ -2309,6 +2319,8 @@ function createLineChart(ctx, c, datasets) {
           grid: { color: c.border + '40' }
         },
         y: {
+          min: yBounds.min,
+          max: yBounds.max,
           ticks: {
             color: c.textMuted, font: { size: 10 },
             callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €'
@@ -3724,8 +3736,6 @@ function openPortfolioDetail() {
   loadReturns();
   loadEquityCurve();
   renderPdPieChart();
-  populatePdTicker();
-  loadPdHistory();
 }
 
 function closePortfolioDetail() {
@@ -3771,7 +3781,7 @@ function populatePdTicker() {
   const sel = document.getElementById('pdTicker');
   const current = sel.value;
   sel.innerHTML = '<option value="ALL">Toda la cartera</option>' +
-    positions.map(p => `<option value="${p.ticker}">${p.ticker}</option>`).join('');
+    positions.filter(p => p.shares > 0).map(p => `<option value="${p.ticker}">${p.ticker}</option>`).join('');
   if ([...sel.options].some(o => o.value === current)) sel.value = current;
 }
 
@@ -3807,6 +3817,47 @@ function renderPdHistChart(data, tickerFilter) {
   }
 }
 
+function padPointsFrom2025(points) {
+  if (pdHistRange !== 'all') return points;
+  const ORIGIN = new Date('2025-01-01T12:00:00');
+  if (points.length === 0) return points;
+  const first = points[0];
+  if (first.x > ORIGIN) {
+    points.unshift({ x: ORIGIN, y: first.y });
+  }
+  return points;
+}
+
+function getPdRangeBounds() {
+  const now = new Date();
+  let min;
+  switch (pdHistRange) {
+    case '1d':
+      min = new Date(now); min.setHours(0, 0, 0, 0);
+      return { min, max: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59) };
+    case '1w':
+      min = new Date(now); min.setDate(min.getDate() - 7); min.setHours(0, 0, 0, 0);
+      return { min, max: now };
+    case '1m':
+      min = new Date(now); min.setMonth(min.getMonth() - 1); min.setHours(0, 0, 0, 0);
+      return { min, max: now };
+    case '3m':
+      min = new Date(now); min.setMonth(min.getMonth() - 3); min.setHours(0, 0, 0, 0);
+      return { min, max: now };
+    case '6m':
+      min = new Date(now); min.setMonth(min.getMonth() - 6); min.setHours(0, 0, 0, 0);
+      return { min, max: now };
+    case '1y':
+      min = new Date(now); min.setFullYear(min.getFullYear() - 1); min.setHours(0, 0, 0, 0);
+      return { min, max: now };
+    case 'all':
+      return { min: new Date('2025-01-01'), max: now };
+    default:
+      min = new Date(now); min.setMonth(min.getMonth() - 1); min.setHours(0, 0, 0, 0);
+      return { min, max: now };
+  }
+}
+
 function renderPdPortfolioChart(data, c, ctx) {
   const tsMap = new Map();
   data.forEach(entry => {
@@ -3830,24 +3881,8 @@ function renderPdPortfolioChart(data, c, ctx) {
     });
   });
 
-  const datasets = [];
-  tickers.forEach(ticker => {
-    const pos = positions.find(p => p.ticker === ticker);
-    const color = pos ? pos.color : '#4f98a3';
-    const shares = pos ? pos.shares : 1;
-    const points = timestamps.map(ts => {
-      const prices = tsMap.get(ts);
-      const val = prices[ticker] != null ? prices[ticker] * shares : null;
-      return { x: new Date(ts), y: val };
-    });
-    datasets.push({
-      label: ticker, data: points, borderColor: color, backgroundColor: color + '18',
-      borderWidth: 2, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
-      tension: 0.3, fill: false, spanGaps: true
-    });
-  });
-
-  const totalPoints = timestamps.map(ts => {
+  // Solo línea total — sumatorio de todos los tickers
+  let totalPoints = timestamps.map(ts => {
     const prices = tsMap.get(ts);
     let sum = 0;
     let hasAny = false;
@@ -3861,18 +3896,23 @@ function renderPdPortfolioChart(data, c, ctx) {
     });
     return { x: new Date(ts), y: hasAny ? sum : null };
   });
-  datasets.unshift({
-    label: 'TOTAL', data: totalPoints, borderColor: c.text, backgroundColor: c.border + '30',
-    borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0.3, fill: true, spanGaps: true
-  });
+  totalPoints = padPointsFrom2025(totalPoints);
+
+  const datasets = [{
+    label: 'Cartera Total', data: totalPoints, borderColor: c.text, backgroundColor: c.border + '30',
+    borderWidth: 2.5, pointRadius: totalPoints.length > 50 ? 0 : 3, pointHoverRadius: 5, tension: 0, fill: true, spanGaps: true
+  }];
+
+  const yBounds = calcYBounds10(datasets);
+  const xBounds = getPdRangeBounds();
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
     options: {
       responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { type: 'time', time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
-        y: { ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
+        x: { type: 'time', min: xBounds.min, max: xBounds.max, time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
+        y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
         legend: { display: false },
@@ -3889,21 +3929,25 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
   const color = pos ? pos.color : '#4f98a3';
   const shares = pos ? pos.shares : 1;
   const sorted = [...data].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-  const points = sorted.map(d => ({ x: new Date(d.timestamp), y: d.priceEur * shares }));
+  let points = sorted.map(d => ({ x: new Date(d.timestamp), y: d.priceEur * shares }));
+  points = padPointsFrom2025(points);
 
   const datasets = [{
     label: ticker + ' – Valor (€)', data: points, borderColor: color, backgroundColor: color + '18',
     borderWidth: 2.5, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
-    tension: 0.3, fill: true, spanGaps: true
+    tension: 0, fill: true, spanGaps: true
   }];
+
+  const yBounds = calcYBounds10(datasets);
+  const xBounds = getPdRangeBounds();
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
     options: {
       responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { type: 'time', time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
-        y: { ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
+        x: { type: 'time', min: xBounds.min, max: xBounds.max, time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
+        y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
         legend: { display: false },
