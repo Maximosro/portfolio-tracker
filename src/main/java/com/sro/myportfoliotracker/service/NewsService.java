@@ -50,8 +50,10 @@ public class NewsService {
     private static final int NEWS_PER_ETF = 2;
 
     public List<NewsItem> fetchNews() {
-        List<Position> positions = positionRepository.findAll();
-        log.info("=== Inicio búsqueda de noticias para {} posiciones ===", positions.size());
+        List<Position> positions = positionRepository.findAll().stream()
+                .filter(p -> p.getShares() > 0)  // Excluir posiciones cerradas
+                .toList();
+        log.info("=== Inicio búsqueda de noticias para {} posiciones activas ===", positions.size());
 
         if (positions.isEmpty()) {
             return Collections.emptyList();

@@ -1,10 +1,17 @@
 package com.sro.myportfoliotracker.controller;
 
+import com.sro.myportfoliotracker.model.TelegramChannelMessage;
+import com.sro.myportfoliotracker.service.TelegramChannelService;
 import com.sro.myportfoliotracker.service.TelegramService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -18,6 +25,13 @@ import java.util.Map;
 public class TelegramController {
 
     private final TelegramService telegramService;
+    private final TelegramChannelService channelService;
+
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("d MMM, HH:mm")
+            .withZone(ZoneId.of("Europe/Madrid"))
+            .withLocale(new Locale("es", "ES"));
+
+    // ── Bot de notificaciones (existente) ─────────────────────────────
 
     /**
      * Devuelve el estado de la configuración de Telegram.
@@ -146,5 +160,44 @@ public class TelegramController {
             return ResponseEntity.ok(Map.of("success", true, "message", "Telegram desactivado"));
         }
     }
-}
 
+    // ── Canal @ultimominutoOTC ─────────────────────────────────────────
+
+    /**
+     * Devuelve los últimos mensajes del canal suscrito.
+     */
+    @GetMapping("/channel/messages")
+    public ResponseEntity<?> getChannelMessages() {
+        try {
+            List<TelegramChannelMessage> messages = channelService.getRecentMessages();
+
+            List<Map<String, Object>> items = messages.stream().map(m -> Map.<String, Object>of(
+                    "messageId", m.getMessageId(),
+                    "channelTitle", m.getChannelTitle() != null ? m.getChannelTitle() : "",
+                    "text", m.getText() != null ? m.getText() : "",
+                    "date", m.getDateEpoch() != null ? DATE_FMT.format(Instant.ofEpochSecond(m.getDateEpoch())) : "",
+                    "dateEpoch", m.getDateEpoch() != null ? m.getDateEpoch() : 0
+            )).toList();
+
+            return ResponseEntity.ok(Map.of(
+                    "items", items,
+                    "channel", TelegramChannelService.CHANNEL_USERNAME
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("items", List.of(), "channel", TelegramChannelService.CHANNEL_USERNAME));
+        }
+    }
+
+    /**
+     * Fuerza un polling inmediato al canal (sin esperar al scheduled).
+     */
+    @PostMapping("/channel/poll")
+    public ResponseEntity<?> pollNow() {
+        try {
+            channelService.pollChannelMessages();
+            return ResponseEntity.ok(Map.of("success", true, "messageCount", channelService.getRecentMessages().size()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("success", false, "message", "Error: " + e.getMessage()));
+        }
+    }
+}
