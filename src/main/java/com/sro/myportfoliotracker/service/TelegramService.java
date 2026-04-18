@@ -221,10 +221,10 @@ public class TelegramService {
                 String key = alert.getTicker() + "|" + alert.getType() + "|" + alert.getSeverity();
                 currentKeys.add(key);
 
-                // Solo notificar si es nueva o si no se ha notificado en las últimas 6 horas
-                Instant lastNotified = notifiedAlerts.get(key);
-                if (lastNotified != null && Instant.now().getEpochSecond() - lastNotified.getEpochSecond() < 6 * 3600) {
-                    continue; // Ya notificada recientemente
+                // Solo notificar si es nueva (no se ha notificado antes).
+                // Cuando la alerta desaparezca se limpia del mapa, así si vuelve se notifica de nuevo.
+                if (notifiedAlerts.containsKey(key)) {
+                    continue; // Ya notificada, no repetir
                 }
 
                 // Solo notificar alertas DANGER y WARNING (no INFO, para no spammear)
