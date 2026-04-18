@@ -2,11 +2,10 @@ package com.sro.myportfoliotracker.service;
 
 import com.sro.myportfoliotracker.dto.AlertDto;
 import com.sro.myportfoliotracker.dto.PortfolioMetricsDto;
-import com.sro.myportfoliotracker.model.DcaEntry;
-import com.sro.myportfoliotracker.model.Position;
-import com.sro.myportfoliotracker.model.PositionDetail;
-import com.sro.myportfoliotracker.model.PriceHistory;
+import com.sro.myportfoliotracker.model.*;
 import com.sro.myportfoliotracker.repository.DcaEntryRepository;
+import com.sro.myportfoliotracker.repository.InvestmentPlanRepository;
+import com.sro.myportfoliotracker.repository.PlannedCashFlowRepository;
 import com.sro.myportfoliotracker.repository.PositionRepository;
 import com.sro.myportfoliotracker.repository.PriceHistoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +34,8 @@ public class ExportService {
     private final PortfolioMetricsService metricsService;
     private final PositionDetailService positionDetailService;
     private final AlertService alertService;
+    private final InvestmentPlanRepository investmentPlanRepository;
+    private final PlannedCashFlowRepository plannedCashFlowRepository;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -57,8 +58,10 @@ public class ExportService {
 
         appendHeader(sb);
         appendExecutiveSummary(sb, positions, activePositions, closedPositions, metrics, dcaEntries);
+        appendInvestmentPlan(sb, dcaEntries);
+        appendPlannedCashFlows(sb);
         appendActiveAlerts(sb, alerts);
-        appendPositionsDetail(sb, activePositions, metrics);
+        appendPositionsDetail(sb, activePositions, metrics, dcaEntries);
         appendClosedPositionsDetail(sb, closedPositions, dcaEntries, metrics);
         appendSalesOperationsDetail(sb, dcaEntries, positions, metrics);
         appendOperationalDetail(sb, activePositions, detailMap);
@@ -154,6 +157,148 @@ public class ExportService {
             sb.append(String.format("- 📉 **Peor posición activa:** %s (%s) → %s\n", worst.getTicker(), worst.getName(), fmtPct(worstPct)));
         }
         sb.append("\n");
+
+        // Antigüedad de posiciones (fecha primera compra desde DCA)
+        Map<String, LocalDate> firstBuyByTicker = dcaEntries.stream()
+                .filter(e -> !"SELL".equals(e.getType()))
+                .collect(Collectors.groupingBy(DcaEntry::getTicker,
+                        Collectors.collectingAndThen(
+                                Collectors.minBy(Comparator.comparing(DcaEntry::getDate)),
+                                opt -> opt.map(DcaEntry::getDate).orElse(null))));
+
+        List<Map.Entry<String, LocalDate>> activeFirstBuys = firstBuyByTicker.entrySet().stream()
+                .filter(e -> e.getValue() != null && activePositions.stream().anyMatch(p -> p.getTicker().equals(e.getKey())))
+                .sorted(Map.Entry.comparingByValue())
+                .toList();
+
+        if (!activeFirstBuys.isEmpty()) {
+            Map.Entry<String, LocalDate> oldest = activeFirstBuys.getFirst();
+            Map.Entry<String, LocalDate> newest = activeFirstBuys.getLast();
+            long avgDays = (long) activeFirstBuys.stream()
+                    .mapToLong(e -> ChronoUnit.DAYS.between(e.getValue(), LocalDate.now()))
+                    .average().orElse(0);
+            sb.append(String.format("- 📅 **Posición más antigua:** %s (desde %s, hace %d días)\n",
+                    oldest.getKey(), oldest.getValue().format(DATE_FMT), ChronoUnit.DAYS.between(oldest.getValue(), LocalDate.now())));
+            sb.append(String.format("- 🆕 **Posición más reciente:** %s (desde %s, hace %d días)\n",
+                    newest.getKey(), newest.getValue().format(DATE_FMT), ChronoUnit.DAYS.between(newest.getValue(), LocalDate.now())));
+            sb.append(String.format("- ⏱️ **Antigüedad media de posiciones activas:** %d días\n", avgDays));
+        }
+        sb.append("\n");
+    }
+
+    // ───────────────────── PLAN DE INVERSIÓN ─────────────────────
+
+    private void appendInvestmentPlan(StringBuilder sb, List<DcaEntry> dcaEntries) {
+        sb.append("## 1b. Plan de Inversión Mensual\n\n");
+
+        InvestmentPlan plan = investmentPlanRepository.findById(1L).orElse(null);
+
+        if (plan == null || plan.getMonthlyBudget() == null || plan.getMonthlyBudget() <= 0) {
+            sb.append("⚠️ **No hay plan de inversión mensual configurado.**\n\n");
+        } else {
+            sb.append(String.format("| Concepto | Valor |\n"));
+            sb.append("|----------|-------|\n");
+            sb.append(String.format("| **Aportación mensual** | %s |\n", fmtEur(plan.getMonthlyBudget())));
+            sb.append(String.format("| **Tipo** | %s |\n", plan.getBudgetType() != null ? plan.getBudgetType() : "FIJO"));
+            if (plan.getNotes() != null && !plan.getNotes().isBlank()) {
+                sb.append(String.format("| **Notas** | %s |\n", plan.getNotes()));
+            }
+            if (plan.getUpdatedAt() != null) {
+                sb.append(String.format("| **Última actualización** | %s |\n",
+                        plan.getUpdatedAt().atZone(ZONE).format(DATETIME_FMT)));
+            }
+            sb.append("\n");
+        }
+
+        // Reparto DCA por posición
+        List<PositionDetail> allDetails = positionDetailService.findAll();
+        List<PositionDetail> withDca = allDetails.stream()
+                .filter(d -> d.getMonthlyDcaAmount() != null && d.getMonthlyDcaAmount() > 0)
+                .sorted(Comparator.comparingDouble(PositionDetail::getMonthlyDcaAmount).reversed())
+                .toList();
+        if (!withDca.isEmpty()) {
+            double totalDca = withDca.stream().mapToDouble(PositionDetail::getMonthlyDcaAmount).sum();
+            sb.append("### Reparto DCA mensual por posición\n\n");
+            sb.append("| Ticker | DCA Mensual (€) | % del Presupuesto |\n");
+            sb.append("|--------|-----------------|-------------------|\n");
+            for (PositionDetail d : withDca) {
+                double pct = plan != null && plan.getMonthlyBudget() != null && plan.getMonthlyBudget() > 0
+                        ? (d.getMonthlyDcaAmount() / plan.getMonthlyBudget()) * 100 : 0;
+                sb.append(String.format("| **%s** | %s | %s |\n",
+                        d.getTicker(), fmtEur(d.getMonthlyDcaAmount()), pct > 0 ? fmtPct(pct) : "—"));
+            }
+            sb.append(String.format("| **TOTAL** | **%s** | %s |\n", fmtEur(totalDca),
+                    plan != null && plan.getMonthlyBudget() != null && plan.getMonthlyBudget() > 0
+                            ? fmtPct((totalDca / plan.getMonthlyBudget()) * 100) : "—"));
+            sb.append("\n");
+        }
+
+        // Comparar con la media real de los últimos 6 meses COMPLETOS (excluye mes actual)
+        LocalDate firstDayCurrentMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate firstDayThreeMonthsAgo = firstDayCurrentMonth.minusMonths(6);
+        Map<String, Double> recentMonthly = new TreeMap<>();
+        for (DcaEntry e : dcaEntries) {
+            if (!"SELL".equals(e.getType())
+                    && !e.getDate().isBefore(firstDayThreeMonthsAgo)
+                    && e.getDate().isBefore(firstDayCurrentMonth)) {
+                String key = e.getDate().getYear() + "-" + String.format("%02d", e.getDate().getMonthValue());
+                recentMonthly.merge(key, e.getShares() * e.getPrice(), Double::sum);
+            }
+        }
+
+        if (!recentMonthly.isEmpty()) {
+            double avgMonthly = recentMonthly.values().stream().mapToDouble(v -> v).average().orElse(0);
+            sb.append("### Inversión real últimos 6 meses completos\n\n");
+            sb.append("| Mes | Invertido (€) | Nota |\n");
+            sb.append("|-----|---------------|------|\n");
+            recentMonthly.forEach((k, v) -> sb.append(String.format("| %s | %s | |\n", k, fmtEur(v))));
+            sb.append(String.format("| **Media mensual** | **%s** | Solo meses completos |\n", fmtEur(avgMonthly)));
+
+            // Mostrar mes actual (parcial) como referencia
+            String currentMonthKey = firstDayCurrentMonth.getYear() + "-" + String.format("%02d", firstDayCurrentMonth.getMonthValue());
+            double currentMonthTotal = dcaEntries.stream()
+                    .filter(e -> !"SELL".equals(e.getType())
+                            && !e.getDate().isBefore(firstDayCurrentMonth))
+                    .mapToDouble(e -> e.getShares() * e.getPrice())
+                    .sum();
+            if (currentMonthTotal > 0) {
+                sb.append(String.format("| %s | %s | ⏳ Mes en curso (parcial) |\n", currentMonthKey, fmtEur(currentMonthTotal)));
+            }
+            sb.append("\n");
+
+            if (plan != null && plan.getMonthlyBudget() != null && plan.getMonthlyBudget() > 0) {
+                double deviation = ((avgMonthly - plan.getMonthlyBudget()) / plan.getMonthlyBudget()) * 100;
+                sb.append(String.format("- Desviación media vs objetivo: **%s** %s\n\n",
+                        fmtPct(deviation), Math.abs(deviation) >= 20 ? "⚠️" : "✅"));
+            }
+        }
+    }
+
+    // ───────────────────── FLUJOS DE CAJA PLANIFICADOS ─────────────────────
+
+    private void appendPlannedCashFlows(StringBuilder sb) {
+        List<PlannedCashFlow> pending = plannedCashFlowRepository.findByExecutedFalseOrderByExpectedDateAsc();
+
+        sb.append("## 1c. Flujos de Caja Planificados\n\n");
+
+        if (pending.isEmpty()) {
+            sb.append("*Sin flujos de caja futuros planificados.*\n\n");
+            return;
+        }
+
+        double totalPending = pending.stream().mapToDouble(PlannedCashFlow::getAmount).sum();
+        sb.append(String.format("Total pendiente: **%s** en **%d** flujo(s)\n\n", fmtEur(totalPending), pending.size()));
+        sb.append("| Fecha Prevista | Tipo | Importe (€) | Descripción |\n");
+        sb.append("|----------------|------|-------------|-------------|\n");
+
+        for (PlannedCashFlow cf : pending) {
+            sb.append(String.format("| %s | %s | %s | %s |\n",
+                    cf.getExpectedDate().format(DATE_FMT),
+                    cf.getType(),
+                    fmtEur(cf.getAmount()),
+                    cf.getDescription()));
+        }
+        sb.append("\n");
     }
 
     // ───────────────────── ALERTAS ACTIVAS ─────────────────────
@@ -195,10 +340,20 @@ public class ExportService {
 
     // ───────────────────── DETALLE POR POSICIÓN ─────────────────────
 
-    private void appendPositionsDetail(StringBuilder sb, List<Position> positions, PortfolioMetricsDto metrics) {
+    private void appendPositionsDetail(StringBuilder sb, List<Position> positions, PortfolioMetricsDto metrics, List<DcaEntry> dcaEntries) {
         sb.append("## 3. Detalle por Posición\n\n");
-        sb.append("| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | Var. Día | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR |\n");
-        sb.append("|--------|--------|--------|----------|-------------|---------------|----------|---------------|-----------|---------|---------|------|\n");
+        sb.append("| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | P.Hace7d (€) | Var.Semana | Var. Día | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR | Primera Compra |\n");
+        sb.append("|--------|--------|--------|----------|-------------|---------------|--------------|------------|----------|---------------|-----------|---------|---------|------|----------------|\n");
+
+        // Pre-calcular primera compra por ticker
+        Map<String, LocalDate> firstBuyByTicker = dcaEntries.stream()
+                .filter(e -> !"SELL".equals(e.getType()))
+                .collect(Collectors.groupingBy(DcaEntry::getTicker,
+                        Collectors.collectingAndThen(
+                                Collectors.minBy(Comparator.comparing(DcaEntry::getDate)),
+                                opt -> opt.map(DcaEntry::getDate).orElse(null))));
+
+        Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
 
         double sumInvested = 0, sumValue = 0, sumPL = 0;
 
@@ -213,23 +368,43 @@ public class ExportService {
                 double pct = ((p.getCurrentPrice() - p.getPreviousClose()) / p.getPreviousClose()) * 100;
                 dayChange = fmtPct(pct);
             }
-            String lastUpdate = p.getLastPriceUpdate() != null
-                    ? p.getLastPriceUpdate().atZone(ZONE).format(DATETIME_FMT)
-                    : "Manual";
 
-            sb.append(String.format("| **%s** | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
+            // Precio hace 7 días y variación semanal
+            String price7dStr = "—";
+            String weekChangeStr = "—";
+            if (p.getCurrentPrice() != null) {
+                List<PriceHistory> weekHistory = priceHistoryRepository
+                        .findByTickerAndTimestampAfterOrderByTimestampAsc(p.getTicker(), oneWeekAgo);
+                if (!weekHistory.isEmpty()) {
+                    double price7d = weekHistory.getFirst().getPriceEur();
+                    price7dStr = fmtNum(price7d, 4);
+                    if (price7d > 0) {
+                        double weekPct = ((p.getCurrentPrice() - price7d) / price7d) * 100;
+                        weekChangeStr = fmtPct(weekPct);
+                    }
+                }
+            }
+
+            // Primera compra
+            LocalDate firstBuy = firstBuyByTicker.get(p.getTicker());
+            String firstBuyStr = firstBuy != null ? firstBuy.format(DATE_FMT) : "—";
+
+            sb.append(String.format("| **%s** | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
                     p.getTicker(),
                     nvl(p.getName()),
                     nvl(p.getSector()),
                     fmtNum(p.getShares(), 6),
                     fmtNum(p.getAvgPrice(), 4),
                     p.getCurrentPrice() != null ? fmtNum(p.getCurrentPrice(), 4) : "—",
+                    price7dStr,
+                    weekChangeStr,
                     dayChange,
                     fmtEur(invested),
                     value != null ? fmtEur(value) : "—",
                     pl != null ? fmtEur(pl) : "—",
                     plPct != null ? fmtPct(plPct) : "—",
-                    xirr != null ? fmtPct(xirr * 100) : "N/D"
+                    xirr != null ? fmtPct(xirr * 100) : "N/D",
+                    firstBuyStr
             ));
 
             sumInvested += invested;
@@ -238,7 +413,7 @@ public class ExportService {
         }
 
         double sumPLPct = sumInvested > 0 ? (sumPL / sumInvested) * 100 : 0;
-        sb.append(String.format("| **TOTAL** | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** |\n",
+        sb.append(String.format("| **TOTAL** | | | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** | |\n",
                 fmtEur(sumInvested), fmtEur(sumValue), fmtEur(sumPL), fmtPct(sumPLPct),
                 metrics.portfolioXirr() != null ? fmtPct(metrics.portfolioXirr() * 100) : "N/D"));
         sb.append("\n");
@@ -462,7 +637,7 @@ public class ExportService {
             if (d == null) continue;
 
             boolean hasContent = d.getStrategy() != null || d.getStopLoss() != null ||
-                    d.getTakeProfit() != null || d.getNotes() != null || d.getTargetWeightPct() != null;
+                    d.getTakeProfit() != null || d.getTargetWeightPct() != null;
             if (!hasContent) continue;
 
             sb.append(String.format("### %s — %s\n\n", p.getTicker(), nvl(p.getName())));
@@ -514,10 +689,6 @@ public class ExportService {
                 }
             }
 
-            // Notas
-            if (d.getNotes() != null && !d.getNotes().isBlank()) {
-                sb.append("\n**Notas:**\n> ").append(d.getNotes().replace("\n", "\n> ")).append("\n");
-            }
 
             sb.append("\n");
         }
@@ -705,16 +876,30 @@ public class ExportService {
         }
         sb.append("\n");
 
-        // Inversión mensual
-        sb.append("### Inversión mensual\n\n");
-        Map<String, Double> monthly = new TreeMap<>();
+        // Inversión mensual (solo compras, excluyendo ventas)
+        sb.append("### Inversión mensual (solo compras)\n\n");
+        Map<String, Double> monthlyBuys = new TreeMap<>();
+        Map<String, Double> monthlySells = new TreeMap<>();
         for (DcaEntry e : dcaEntries) {
             String key = e.getDate().getYear() + "-" + String.format("%02d", e.getDate().getMonthValue());
-            monthly.merge(key, e.getShares() * e.getPrice(), Double::sum);
+            if ("SELL".equals(e.getType())) {
+                monthlySells.merge(key, e.getShares() * e.getPrice(), Double::sum);
+            } else {
+                monthlyBuys.merge(key, e.getShares() * e.getPrice(), Double::sum);
+            }
         }
-        sb.append("| Mes | Inversión (€) |\n");
-        sb.append("|-----|---------------|\n");
-        monthly.forEach((k, v) -> sb.append(String.format("| %s | %s |\n", k, fmtEur(v))));
+        // Todos los meses con actividad
+        Set<String> allMonths = new TreeSet<>();
+        allMonths.addAll(monthlyBuys.keySet());
+        allMonths.addAll(monthlySells.keySet());
+        sb.append("| Mes | Compras (€) | Ventas (€) | Neto (€) |\n");
+        sb.append("|-----|-------------|------------|----------|\n");
+        for (String m : allMonths) {
+            double buys = monthlyBuys.getOrDefault(m, 0.0);
+            double sells = monthlySells.getOrDefault(m, 0.0);
+            sb.append(String.format("| %s | %s | %s | %s |\n", m, fmtEur(buys),
+                    sells > 0 ? fmtEur(sells) : "—", fmtEur(buys - sells)));
+        }
         sb.append("\n");
     }
 
@@ -747,39 +932,52 @@ public class ExportService {
 
             double min30d = month.stream().mapToDouble(PriceHistory::getPriceEur).min().orElse(p.getCurrentPrice());
             double max30d = month.stream().mapToDouble(PriceHistory::getPriceEur).max().orElse(p.getCurrentPrice());
+            // Solo mostrar min/max si hay datos de al menos 7 días
+            boolean hasEnoughMonthData = !month.isEmpty() &&
+                    month.getFirst().getTimestamp().isBefore(Instant.now().minus(7, ChronoUnit.DAYS));
 
             sb.append(String.format("| %s | %s | %s | %s | %s | %s | %s |\n",
                     p.getTicker(),
                     fmtNum(p.getCurrentPrice(), 4),
-                    var7d != null ? fmtPct(var7d) : "—",
-                    var30d != null ? fmtPct(var30d) : "—",
-                    var90d != null ? fmtPct(var90d) : "—",
-                    fmtNum(min30d, 4),
-                    fmtNum(max30d, 4)));
+                    var7d != null ? fmtPct(var7d) : "Sin datos",
+                    var30d != null ? fmtPct(var30d) : "Sin datos",
+                    var90d != null ? fmtPct(var90d) : "Sin datos",
+                    month.isEmpty() ? "Sin datos" : hasEnoughMonthData ? fmtNum(min30d, 4) : "Datos insuficientes",
+                    month.isEmpty() ? "Sin datos" : hasEnoughMonthData ? fmtNum(max30d, 4) : "Datos insuficientes"));
         }
         sb.append("\n");
 
         // Últimos puntos de precio (semanal) para dar contexto temporal
-        sb.append("### Puntos de precio recientes (últimos 7 días, muestreo)\n\n");
+        sb.append("### Puntos de precio recientes (últimos 7 días)\n\n");
+
+        // Recoger datos de todos los tickers para una tabla conjunta
+        sb.append("| Ticker | Fecha/Hora | Precio (€) |\n");
+        sb.append("|--------|------------|------------|\n");
+
+        boolean hasAnyData = false;
         for (Position p : positions) {
             List<PriceHistory> week = priceHistoryRepository
                     .findByTickerAndTimestampAfterOrderByTimestampAsc(p.getTicker(), oneWeekAgo);
             if (week.isEmpty()) continue;
+            hasAnyData = true;
 
-            sb.append(String.format("**%s** — ", p.getTicker()));
-            // Tomar máximo ~10 puntos equidistantes
-            int step = Math.max(1, week.size() / 10);
-            StringJoiner sj = new StringJoiner(" → ");
+            // Tomar máximo ~5 puntos equidistantes + el último
+            int step = Math.max(1, week.size() / 5);
+            Set<Integer> indices = new LinkedHashSet<>();
             for (int i = 0; i < week.size(); i += step) {
-                PriceHistory ph = week.get(i);
-                String ts = ph.getTimestamp().atZone(ZONE).format(DateTimeFormatter.ofPattern("dd/MM HH:mm"));
-                sj.add(String.format("%s: %s€", ts, fmtNum(ph.getPriceEur(), 4)));
+                indices.add(i);
             }
-            // Siempre incluir el último
-            PriceHistory last = week.getLast();
-            String tsLast = last.getTimestamp().atZone(ZONE).format(DateTimeFormatter.ofPattern("dd/MM HH:mm"));
-            sj.add(String.format("%s: %s€", tsLast, fmtNum(last.getPriceEur(), 4)));
-            sb.append(sj).append("\n");
+            indices.add(week.size() - 1); // siempre incluir el último
+
+            for (int idx : indices) {
+                PriceHistory ph = week.get(idx);
+                String ts = ph.getTimestamp().atZone(ZONE).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+                sb.append(String.format("| %s | %s | %s |\n",
+                        p.getTicker(), ts, fmtNum(ph.getPriceEur(), 4)));
+            }
+        }
+        if (!hasAnyData) {
+            sb.append("| — | Sin datos de precio en los últimos 7 días | — |\n");
         }
         sb.append("\n");
     }
@@ -855,8 +1053,15 @@ public class ExportService {
                 - El **XIRR** (Extended Internal Rate of Return) se calcula considerando las fechas y montos exactos de cada
                   compra DCA como flujos de caja negativos, y el valor actual como flujo positivo.
                 - Las posiciones con XIRR "N/D" no tienen historial DCA suficiente para calcular la TIR.
-                - La estrategia de inversión es **DCA (Dollar Cost Averaging)**: compras periódicas sin intentar
-                  hacer timing del mercado.
+                - **Evolución de la estrategia:** Inicialmente se operó con acciones individuales y operaciones puntuales,
+                  pero rápidamente se migró a una estrategia de **DCA (Dollar Cost Averaging)**: compras periódicas
+                  y sistemáticas sin intentar hacer timing del mercado. Esta es la estrategia activa actualmente y
+                  la que refleja el grueso de las posiciones abiertas.
+                - Las posiciones cerradas y algunas operaciones antiguas pueden corresponder a la fase inicial
+                  de acciones individuales, antes de adoptar el enfoque DCA.
+                - **Comisiones:** Las compras DCA automatizadas con Trade Republic tienen comisión **0 €**. Las operaciones
+                  de venta tienen una comisión fija de **1 €** por operación. Estas comisiones no están descontadas
+                  en los cálculos de P&L del informe, pero deben tenerse en cuenta para el resultado neto real.
                 - El **HHI** (Herfindahl-Hirschman Index) mide la concentración:
                   - < 1500: Cartera diversificada
                   - 1500-2500: Concentración moderada
@@ -882,6 +1087,11 @@ public class ExportService {
                 .filter(ph -> ph.getTimestamp().isAfter(since) || ph.getTimestamp().equals(since))
                 .min(Comparator.comparing(PriceHistory::getTimestamp));
         if (oldest.isEmpty()) return null;
+        // Verificar que el punto de referencia sea realmente del periodo solicitado
+        // (debe estar en la primera mitad del periodo, no ser un dato reciente)
+        Instant midPoint = Instant.now().minus(
+                Duration.between(since, Instant.now()).dividedBy(2));
+        if (oldest.get().getTimestamp().isAfter(midPoint)) return null;
         double ref = oldest.get().getPriceEur();
         return ref > 0 ? ((currentPrice - ref) / ref) * 100 : null;
     }

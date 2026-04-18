@@ -52,6 +52,9 @@ public class PositionDetail {
     @Column(name = "target_weight_pct")
     private Double targetWeightPct;
 
+    @Column(name = "monthly_dca_amount")
+    private Double monthlyDcaAmount;
+
     @Column(name = "updated_at")
     @Convert(converter = InstantStringConverter.class)
     private Instant updatedAt;

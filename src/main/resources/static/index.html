@@ -76,7 +76,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .dca-progress-fill{height:100%;border-radius:var(--radius-full);transition:width .4s ease}
 .dca-progress-label{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-muted);margin-top:3px;font-variant-numeric:tabular-nums}
 /* DCA target popover */
-.dca-target-popover{display:none;position:absolute;z-index:900;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-md);min-width:260px}
+.dca-target-popover{display:none;position:absolute;z-index:900;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-md);min-width:320px;max-width:380px}
 .dca-target-popover.open{display:block}
 .dca-target-popover h4{font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-3);display:flex;align-items:center;gap:var(--space-2)}
 .dca-target-popover input{width:100%;padding:var(--space-2) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-bg);color:var(--color-text);font-size:var(--text-sm);font-variant-numeric:tabular-nums}
@@ -385,14 +385,45 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       <div class="kpi-card"><div class="kpi-label">Capital Invertido</div><div class="kpi-value" id="kpiInvested">—</div><div class="kpi-sub" id="kpiPositions">0 posiciones</div></div>
       <div class="kpi-card"><div class="kpi-label">Valor Actual</div><div class="kpi-value" id="kpiValue">—</div><div class="kpi-sub">Basado en precios actuales</div></div>
       <div class="kpi-card"><div class="kpi-label">Ganancia / Pérdida</div><div class="kpi-value" id="kpiPL">—</div><div class="kpi-sub" id="kpiPLSub">—</div><div class="kpi-sub" id="kpiPLDay" style="margin-top:var(--space-1)">—</div><div class="kpi-sub" id="kpiRealizedPL" style="margin-top:var(--space-1)"></div></div>
-      <div class="kpi-card clickable" id="kpiDcaCard" style="position:relative" onclick="toggleDcaTargetPopover(event)"><div class="kpi-label">Invertido este Mes</div><div class="kpi-value" id="kpiDca">—</div><div class="kpi-sub" id="kpiDcaSub">—</div><div class="dca-progress-wrap" id="kpiDcaProgress" style="display:none"><div class="dca-progress-bar"><div class="dca-progress-fill" id="kpiDcaFill" style="width:0%;background:var(--color-primary)"></div></div><div class="dca-progress-label"><span id="kpiDcaPctLabel">0%</span><span id="kpiDcaTargetLabel">Obj: —</span></div></div>
+      <div class="kpi-card clickable" id="kpiDcaCard" style="position:relative" onclick="toggleDcaTargetPopover(event)"><div class="kpi-label">Invertido este Mes <span id="kpiDcaPlanStatus" title="Plan de inversión no configurado">🟡</span></div><div class="kpi-value" id="kpiDca">—</div><div class="kpi-sub" id="kpiDcaSub">—</div><div class="dca-progress-wrap" id="kpiDcaProgress" style="display:none"><div class="dca-progress-bar"><div class="dca-progress-fill" id="kpiDcaFill" style="width:0%;background:var(--color-primary)"></div></div><div class="dca-progress-label"><span id="kpiDcaPctLabel">0%</span><span id="kpiDcaTargetLabel">Obj: —</span></div></div>
         <div class="dca-target-popover" id="dcaTargetPopover">
-          <h4>🎯 Objetivo mensual de inversión</h4>
+          <h4>🎯 Plan de inversión mensual</h4>
+          <div id="dcaPlanUpdatedAt" style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-2)"></div>
+          <label style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:2px;display:block">Objetivo mensual (€)</label>
           <input type="number" id="dcaTargetInput" min="0" step="50" placeholder="Ej: 2000" onkeydown="if(event.key==='Enter'){saveDcaTarget(event)}">
+          <label style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:6px;margin-bottom:2px;display:block">Tipo de aportación</label>
+          <select id="dcaBudgetType" class="form-input" style="width:100%;padding:var(--space-1) var(--space-2);font-size:var(--text-sm);margin-bottom:4px">
+            <option value="FIJO">Fijo</option>
+            <option value="VARIABLE">Variable</option>
+          </select>
+          <label style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:6px;margin-bottom:2px;display:block">Notas (opcional)</label>
+          <textarea id="dcaPlanNotes" rows="2" placeholder="Ej: 60% CSPX, 20% NUKL…" style="width:100%;resize:vertical;padding:var(--space-1) var(--space-2);font-size:var(--text-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text);font-family:inherit"></textarea>
           <div class="dca-pop-actions">
             <button onclick="clearDcaTarget(event)">Quitar</button>
             <button class="dca-pop-save" onclick="saveDcaTarget(event)">Guardar</button>
           </div>
+          <hr style="margin:var(--space-4) 0;border:none;border-top:1px solid var(--color-border)">
+          <h4>📅 Flujos de caja planificados</h4>
+          <div id="cashFlowList" style="max-height:180px;overflow-y:auto;margin-bottom:var(--space-3)"></div>
+          <details id="cashFlowForm" style="margin-top:var(--space-2)">
+            <summary style="font-size:var(--text-xs);cursor:pointer;color:var(--color-primary);font-weight:600;margin-bottom:var(--space-2)">+ Añadir flujo</summary>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:var(--space-2)">
+              <input type="text" id="cfDesc" placeholder="Descripción (ej: Bonus anual)" style="width:100%;padding:var(--space-1) var(--space-2);font-size:var(--text-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-text)">
+              <div style="display:flex;gap:4px">
+                <input type="number" id="cfAmount" placeholder="Importe €" min="0" step="50" style="flex:1;padding:var(--space-1) var(--space-2);font-size:var(--text-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-text)">
+                <input type="date" id="cfDate" style="flex:1;padding:var(--space-1) var(--space-2);font-size:var(--text-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-text)">
+              </div>
+              <select id="cfType" style="width:100%;padding:var(--space-1) var(--space-2);font-size:var(--text-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text)">
+                <option value="EXTRAORDINARIA">Extraordinaria</option>
+                <option value="RECURRENTE">Recurrente</option>
+              </select>
+              <button onclick="addCashFlow(event)" class="dca-pop-save" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3);border-radius:var(--radius-md);border:none;cursor:pointer;margin-top:2px">Añadir</button>
+            </div>
+          </details>
+          <hr style="margin:var(--space-4) 0;border:none;border-top:1px solid var(--color-border)">
+          <h4>💰 Reparto DCA por posición</h4>
+          <div id="dcaAllocationList" style="max-height:220px;overflow-y:auto"></div>
+          <div id="dcaAllocationTotal" style="display:flex;justify-content:space-between;font-size:var(--text-xs);font-weight:600;padding:4px 0;border-top:1px solid var(--color-border);margin-top:4px"></div>
         </div>
       </div>
       <div class="kpi-card"><div class="kpi-label">Rentab. Anualizada (XIRR)</div><div class="kpi-value" id="kpiXirr">—</div><div class="kpi-sub" id="kpiXirrSub" title="Tasa interna de retorno anualizada considerando fechas y montos de cada compra DCA" style="cursor:help">Basado en flujos DCA</div></div>
@@ -1296,6 +1327,7 @@ const COLORS = ['#4f98a3','#e8af34','#6daa45','#5591c7','#fdab43','#a86fdf','#dd
 let positions = [];
 let dcaEntries = [];
 let metrics = null;
+let investmentPlan = null;
 let editingTicker = null;
 let dcaDisplayLimit = 10;
 let positionDetailsMap = {};
@@ -1463,11 +1495,14 @@ function renderKPIs() {
   }
   document.getElementById('kpiDcaSub').textContent = dcaSubText;
 
-  // Progress bar con objetivo mensual desde localStorage
-  const dcaTarget = parseFloat(localStorage.getItem('dcaMonthlyTarget') || '0');
+  // Progress bar con objetivo mensual desde BD
+  const dcaTarget = investmentPlan && investmentPlan.monthlyBudget ? investmentPlan.monthlyBudget : 0;
   const progressWrap = document.getElementById('kpiDcaProgress');
   const dcaCard = document.getElementById('kpiDcaCard');
+  const planStatus = document.getElementById('kpiDcaPlanStatus');
   if (dcaTarget > 0) {
+    planStatus.textContent = '✅';
+    planStatus.title = `Plan configurado: ${fmtEur(dcaTarget)}/mes`;
     progressWrap.style.display = '';
     const pctRaw = (dcaBuysThisMonth / dcaTarget) * 100;
     const pctBar = Math.min(pctRaw, 100);
@@ -1479,6 +1514,8 @@ function renderKPIs() {
     document.getElementById('kpiDcaTargetLabel').textContent = `Obj: ${fmtEur(dcaTarget)}`;
     dcaCard.classList.toggle('exceeded', exceeded);
   } else {
+    planStatus.textContent = '🟡';
+    planStatus.title = 'Plan de inversión no configurado — haz clic para configurar';
     progressWrap.style.display = 'none';
     dcaCard.classList.remove('exceeded');
   }
@@ -1492,13 +1529,22 @@ function renderKPIs() {
 // ===================== DCA TARGET POPOVER =====================
 function toggleDcaTargetPopover(event) {
   const popover = document.getElementById('dcaTargetPopover');
-  // Si el click fue dentro del popover, no hacer nada
   if (popover.contains(event.target)) return;
   const isOpen = popover.classList.contains('open');
   popover.classList.toggle('open');
   if (!isOpen) {
-    const saved = localStorage.getItem('dcaMonthlyTarget') || '';
-    document.getElementById('dcaTargetInput').value = saved && parseFloat(saved) > 0 ? parseFloat(saved) : '';
+    // Cargar datos desde variable global (ya cargada de BD)
+    const plan = investmentPlan || {};
+    document.getElementById('dcaTargetInput').value = plan.monthlyBudget > 0 ? plan.monthlyBudget : '';
+    document.getElementById('dcaBudgetType').value = plan.budgetType || 'FIJO';
+    document.getElementById('dcaPlanNotes').value = plan.notes || '';
+    const updEl = document.getElementById('dcaPlanUpdatedAt');
+    if (plan.updatedAt) {
+      const d = new Date(plan.updatedAt);
+      updEl.textContent = '📝 Última actualización: ' + d.toLocaleDateString('es-ES') + ' ' + d.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+    } else { updEl.textContent = ''; }
+    renderCashFlows();
+    renderDcaAllocations();
     setTimeout(() => document.getElementById('dcaTargetInput').focus(), 50);
   }
 }
@@ -1506,21 +1552,177 @@ function toggleDcaTargetPopover(event) {
 function saveDcaTarget(event) {
   event.stopPropagation();
   const val = parseFloat(document.getElementById('dcaTargetInput').value);
-  if (val > 0) {
-    localStorage.setItem('dcaMonthlyTarget', val.toString());
-  } else {
-    localStorage.removeItem('dcaMonthlyTarget');
-  }
+  const budgetType = document.getElementById('dcaBudgetType').value;
+  const notes = document.getElementById('dcaPlanNotes').value.trim();
+  syncDcaTargetToBackend(val > 0 ? val : null, budgetType, notes);
   document.getElementById('dcaTargetPopover').classList.remove('open');
-  renderKPIs();
 }
 
 function clearDcaTarget(event) {
   event.stopPropagation();
-  localStorage.removeItem('dcaMonthlyTarget');
   document.getElementById('dcaTargetInput').value = '';
+  document.getElementById('dcaPlanNotes').value = '';
+  document.getElementById('dcaBudgetType').value = 'FIJO';
+  syncDcaTargetToBackend(null, 'FIJO', '');
   document.getElementById('dcaTargetPopover').classList.remove('open');
+}
+
+/** Persiste el plan de inversión en BD y actualiza la variable global + KPIs */
+async function syncDcaTargetToBackend(monthlyBudget, budgetType, notes) {
+  try {
+    const resp = await fetch(`${BASE}/api/investment-plan`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ id: 1, monthlyBudget, budgetType: budgetType || 'FIJO', notes: notes || null })
+    });
+    investmentPlan = await resp.json();
+  } catch (e) {
+    console.warn('No se pudo sincronizar plan de inversión con backend:', e);
+  }
   renderKPIs();
+}
+
+/** Carga el plan de inversión desde BD a la variable global */
+async function loadInvestmentPlan() {
+  try {
+    investmentPlan = await fetch(`${BASE}/api/investment-plan`).then(r => r.json());
+  } catch (e) { investmentPlan = null; }
+}
+
+/** Flujos de caja planificados */
+let plannedCashFlows = [];
+
+async function loadCashFlows() {
+  try {
+    plannedCashFlows = await fetch(`${BASE}/api/planned-cashflows`).then(r => r.json());
+  } catch (e) { plannedCashFlows = []; }
+}
+
+function renderCashFlows() {
+  const el = document.getElementById('cashFlowList');
+  if (!el) return;
+  const pending = plannedCashFlows.filter(cf => !cf.executed);
+  const executed = plannedCashFlows.filter(cf => cf.executed);
+  if (plannedCashFlows.length === 0) {
+    el.innerHTML = '<div style="font-size:var(--text-xs);color:var(--color-text-faint);text-align:center;padding:var(--space-2)">Sin flujos planificados</div>';
+    return;
+  }
+  let html = '';
+  const renderRow = (cf, isPending) => {
+    const date = cf.expectedDate ? cf.expectedDate.split('-').reverse().join('/') : '—';
+    const icon = cf.type === 'RECURRENTE' ? '🔄' : '⚡';
+    const status = isPending ? '' : ' style="opacity:0.5;text-decoration:line-through"';
+    html += `<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:var(--text-xs);border-bottom:1px solid var(--color-border)"${status}>`;
+    html += `<span style="flex:1" title="${cf.description}">${icon} ${cf.description}</span>`;
+    html += `<span style="white-space:nowrap;font-variant-numeric:tabular-nums">${Number(cf.amount).toLocaleString('es-ES',{minimumFractionDigits:0})}€</span>`;
+    html += `<span style="color:var(--color-text-muted);min-width:62px;text-align:right">${date}</span>`;
+    if (isPending) {
+      html += `<button onclick="executeCashFlow(event,${cf.id})" title="Marcar como ejecutado" style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 2px">✅</button>`;
+    }
+    html += `<button onclick="deleteCashFlow(event,${cf.id})" title="Eliminar" style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 2px;color:var(--color-danger)">🗑️</button>`;
+    html += `</div>`;
+  };
+  pending.forEach(cf => renderRow(cf, true));
+  executed.forEach(cf => renderRow(cf, false));
+  el.innerHTML = html;
+}
+
+async function addCashFlow(event) {
+  event.stopPropagation();
+  const desc = document.getElementById('cfDesc').value.trim();
+  const amount = parseFloat(document.getElementById('cfAmount').value);
+  const date = document.getElementById('cfDate').value;
+  const type = document.getElementById('cfType').value;
+  if (!desc || !amount || !date) { alert('Rellena descripción, importe y fecha'); return; }
+  try {
+    await fetch(`${BASE}/api/planned-cashflows`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ description: desc, amount, expectedDate: date, type })
+    });
+    document.getElementById('cfDesc').value = '';
+    document.getElementById('cfAmount').value = '';
+    document.getElementById('cfDate').value = '';
+    document.getElementById('cashFlowForm').removeAttribute('open');
+    await loadCashFlows();
+    renderCashFlows();
+  } catch (e) { alert('Error al crear flujo: ' + e); }
+}
+
+async function executeCashFlow(event, id) {
+  event.stopPropagation();
+  try {
+    await fetch(`${BASE}/api/planned-cashflows/${id}/execute`, { method: 'PATCH' });
+    await loadCashFlows();
+    renderCashFlows();
+  } catch (e) { alert('Error: ' + e); }
+}
+
+async function deleteCashFlow(event, id) {
+  event.stopPropagation();
+  if (!confirm('¿Eliminar este flujo planificado?')) return;
+  try {
+    await fetch(`${BASE}/api/planned-cashflows/${id}`, { method: 'DELETE' });
+    await loadCashFlows();
+    renderCashFlows();
+  } catch (e) { alert('Error: ' + e); }
+}
+
+/** Reparto DCA por posición */
+function renderDcaAllocations() {
+  const el = document.getElementById('dcaAllocationList');
+  const totalEl = document.getElementById('dcaAllocationTotal');
+  if (!el) return;
+  const active = (positions || []).filter(p => p.shares > 0).sort((a, b) => {
+    const da = (positionDetailsMap[a.ticker] || {}).monthlyDcaAmount || 0;
+    const db = (positionDetailsMap[b.ticker] || {}).monthlyDcaAmount || 0;
+    return db - da;
+  });
+  if (active.length === 0) {
+    el.innerHTML = '<div style="font-size:var(--text-xs);color:var(--color-text-faint);text-align:center;padding:var(--space-2)">Sin posiciones activas</div>';
+    totalEl.innerHTML = '';
+    return;
+  }
+  let html = '';
+  for (const p of active) {
+    const detail = positionDetailsMap[p.ticker] || {};
+    const val = detail.monthlyDcaAmount || '';
+    html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:var(--text-xs);border-bottom:1px solid var(--color-border)">`;
+    html += `<span style="flex:1;font-weight:500" title="${p.name || p.ticker}">${p.ticker}</span>`;
+    html += `<input type="number" min="0" step="25" value="${val}" placeholder="0" data-ticker="${p.ticker}" onchange="saveDcaAllocation(event)" onblur="saveDcaAllocation(event)" style="width:80px;padding:2px 6px;font-size:var(--text-xs);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-text);text-align:right;font-variant-numeric:tabular-nums"> €`;
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+  updateDcaAllocationTotal();
+}
+
+function updateDcaAllocationTotal() {
+  const totalEl = document.getElementById('dcaAllocationTotal');
+  if (!totalEl) return;
+  const inputs = document.querySelectorAll('#dcaAllocationList input[data-ticker]');
+  let sum = 0;
+  inputs.forEach(inp => { sum += parseFloat(inp.value) || 0; });
+  const budget = investmentPlan && investmentPlan.monthlyBudget ? investmentPlan.monthlyBudget : 0;
+  const diff = sum - budget;
+  const color = budget <= 0 ? 'var(--color-text-muted)' : Math.abs(diff) < 1 ? 'var(--color-success)' : 'var(--color-danger)';
+  totalEl.innerHTML = `<span>Total reparto: <span style="color:${color}">${sum.toLocaleString('es-ES')} €</span></span>` +
+    (budget > 0 ? `<span style="color:var(--color-text-muted)">Objetivo: ${budget.toLocaleString('es-ES')} €</span>` : '');
+}
+
+async function saveDcaAllocation(event) {
+  event.stopPropagation();
+  const input = event.target;
+  const ticker = input.dataset.ticker;
+  const val = parseFloat(input.value) || null;
+  const existing = positionDetailsMap[ticker] || { ticker };
+  existing.monthlyDcaAmount = val;
+  try {
+    const resp = await fetch(`${BASE}/api/positions/${ticker}/detail`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(existing)
+    });
+    positionDetailsMap[ticker] = await resp.json();
+  } catch (e) { console.warn('Error saving DCA allocation for ' + ticker, e); }
+  updateDcaAllocationTotal();
 }
 
 // Cerrar popover al hacer click fuera
@@ -4532,6 +4734,8 @@ async function loadAll() {
       positionDetailsMap = {};
       details.forEach(d => positionDetailsMap[d.ticker] = d);
     } catch(e) { positionDetailsMap = {}; }
+    await loadInvestmentPlan();
+    await loadCashFlows();
     renderAll();
     loadWatchlist();
     loadAlerts();
