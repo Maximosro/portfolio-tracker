@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Tracker — Simuladores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ===================== DESIGN TOKENS (same as main) ===================== */
+:root,[data-theme="light"]{
+  --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
+  --color-surface-offset:#f3f0ec;--color-surface-dynamic:#e6e4df;
+  --color-divider:#dcd9d5;--color-border:#d4d1ca;
+  --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
+  --color-primary:#01696f;--color-primary-hover:#0c4e54;
+  --color-success:#437a22;--color-notification:#a13544;--color-gold:#d19900;
+  --color-orange:#da7101;
+  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--radius-full:9999px;
+  --shadow-sm:0 1px 2px oklch(0.2 0.01 80/.06);--shadow-md:0 4px 12px oklch(0.2 0.01 80/.08);
+  --transition-interactive:180ms cubic-bezier(.16,1,.3,1);
+  --font-body:'Inter','Helvetica Neue',sans-serif;
+  --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);--text-sm:clamp(.875rem,.8rem + .35vw,1rem);
+  --text-base:clamp(1rem,.95rem + .25vw,1.125rem);--text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);
+  --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;
+  --space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--space-16:4rem;
+  --content-wide:1600px;
+}
+[data-theme="dark"]{
+  --color-bg:#111318;--color-surface:#191b22;--color-surface-2:#1e2028;
+  --color-surface-offset:#1b1d24;--color-surface-dynamic:#2a2d36;
+  --color-divider:#262830;--color-border:#32353f;
+  --color-text:#d0d1d8;--color-text-muted:#7a7d8a;--color-text-faint:#4a4d58;
+  --color-primary:#4f98a3;--color-primary-hover:#3d8490;
+  --color-success:#6daa45;--color-notification:#dd6974;--color-gold:#e8af34;
+  --color-orange:#fdab43;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.25);--shadow-md:0 4px 12px oklch(0 0 0/.35);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
+body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg);line-height:1.5}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
+input,select{font:inherit;color:inherit}
+/* ===================== LAYOUT ===================== */
+.app{max-width:var(--content-wide);margin:0 auto;padding:var(--space-6) var(--space-8)}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-8);padding-bottom:var(--space-4);border-bottom:1px solid var(--color-divider);flex-wrap:wrap;gap:var(--space-3)}
+.header-left{display:flex;align-items:center;gap:var(--space-3)}
+.logo{display:flex;align-items:center;gap:var(--space-2);font-weight:700;font-size:var(--text-lg);letter-spacing:-.02em}
+.logo-icon{width:32px;height:32px;color:var(--color-gold)}
+.header-right{display:flex;align-items:center;gap:var(--space-3)}
+.btn{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500;cursor:pointer;transition:background var(--transition-interactive),color var(--transition-interactive);border:1px solid transparent}
+.btn-primary{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+.btn-primary:hover{background:var(--color-primary-hover)}
+.btn-secondary{background:var(--color-surface-2);color:var(--color-text);border:1px solid var(--color-border)}
+.btn-secondary:hover{background:var(--color-surface-dynamic)}
+.btn-sm{padding:var(--space-1) var(--space-3);font-size:var(--text-xs)}
+.theme-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text-muted);transition:all var(--transition-interactive)}
+.theme-btn:hover{background:var(--color-surface-dynamic);color:var(--color-text)}
+/* ===================== SIMULATOR LAYOUT ===================== */
+.sim-grid{display:grid;grid-template-columns:340px 1fr;gap:var(--space-6);align-items:start}
+@media(max-width:900px){.sim-grid{grid-template-columns:1fr}}
+.sim-panel{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);box-shadow:var(--shadow-sm)}
+.sim-panel h2{font-size:var(--text-lg);font-weight:700;margin-bottom:var(--space-5);display:flex;align-items:center;gap:var(--space-2)}
+.form-group{display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-4)}
+.form-label{font-size:var(--text-xs);font-weight:500;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em}
+.form-input{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);font-size:var(--text-sm);color:var(--color-text);outline:none;width:100%}
+.form-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px oklch(from var(--color-primary) l c h / .15)}
+.form-hint{font-size:11px;color:var(--color-text-faint);margin-top:2px}
+/* ===================== KPI ROW ===================== */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-6)}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4) var(--space-5);box-shadow:var(--shadow-sm)}
+.kpi-label{font-size:var(--text-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-1);font-weight:500}
+.kpi-value{font-size:var(--text-xl);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
+.kpi-value.positive{color:var(--color-success)}
+.kpi-sub{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-1);font-variant-numeric:tabular-nums}
+/* ===================== CHART ===================== */
+.chart-container{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);box-shadow:var(--shadow-sm);margin-bottom:var(--space-6)}
+.chart-title{font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-4)}
+.chart-wrap{position:relative;height:400px}
+/* ===================== TABLE ===================== */
+.table-container{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+.table-container h3{padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--color-divider);font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em}
+.table-wrap{overflow-x:auto}
+.data-table{width:100%;font-size:var(--text-sm);font-variant-numeric:tabular-nums;border-collapse:collapse}
+.data-table th{text-align:right;padding:var(--space-2) var(--space-4);color:var(--color-text-muted);font-weight:500;font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--color-divider)}
+.data-table th:first-child{text-align:center}
+.data-table td{padding:var(--space-2) var(--space-4);text-align:right;border-bottom:1px solid oklch(from var(--color-text) l c h / .06)}
+.data-table td:first-child{text-align:center}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--color-surface-offset)}
+.pl-positive{color:var(--color-success);font-weight:600}
+.pl-negative{color:var(--color-notification);font-weight:600}
+/* ===================== SIDEBAR NAV ===================== */
+.sim-nav{display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-6)}
+.sim-nav-item{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500;color:var(--color-text-muted);cursor:pointer;transition:all var(--transition-interactive);border:1px solid transparent}
+.sim-nav-item:hover{color:var(--color-text);background:var(--color-surface-dynamic)}
+.sim-nav-item.active{color:var(--color-gold);background:oklch(from var(--color-gold) l c h / .1);border-color:oklch(from var(--color-gold) l c h / .2);font-weight:600}
+.sim-nav-item.disabled{opacity:.4;cursor:not-allowed}
+/* ===================== TOAST ===================== */
+.toast-container{position:fixed;bottom:var(--space-6);right:var(--space-6);display:flex;flex-direction:column;gap:var(--space-2);z-index:1000;pointer-events:none}
+.toast{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:var(--space-2);pointer-events:auto;animation:slideIn .25s ease;max-width:320px}
+.toast.success{border-color:oklch(from var(--color-success) l c h / .4);color:var(--color-success)}
+.toast.error{border-color:oklch(from var(--color-notification) l c h / .4);color:var(--color-notification)}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* ===================== LOADING ===================== */
+.loading-overlay{display:flex;align-items:center;justify-content:center;padding:var(--space-16);color:var(--color-text-muted);gap:var(--space-3)}
+.spinner{width:24px;height:24px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-left">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+          <rect x="2" y="14" width="6" height="16" rx="2" fill="currentColor" opacity=".6"/>
+          <rect x="10" y="10" width="6" height="20" rx="2" fill="currentColor" opacity=".75"/>
+          <rect x="18" y="6" width="6" height="24" rx="2" fill="currentColor" opacity=".85"/>
+          <rect x="26" y="2" width="4" height="28" rx="2" fill="currentColor"/>
+          <path d="M4 16 L13 10 L20 4 L28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>
+        </svg>
+        <span>Simuladores</span>
+        <span style="font-size:var(--text-xs);color:var(--color-text-faint);margin-left:var(--space-2);font-weight:400">Portfolio Tracker</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='index.html'" title="Volver al portfolio">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Volver al Portfolio
+      </button>
+      <button class="theme-btn" data-theme-toggle aria-label="Cambiar tema">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="sim-grid">
+    <!-- LEFT SIDEBAR -->
+    <div>
+      <!-- Navigation -->
+      <div class="sim-panel" style="margin-bottom:var(--space-4)">
+        <nav class="sim-nav" style="margin-bottom:0">
+          <div class="sim-nav-item active" data-sim="projection">📈 Proyección de Cartera</div>
+          <div class="sim-nav-item disabled" title="Próximamente">🧮 Simulador FIFO Fiscal</div>
+          <div class="sim-nav-item disabled" title="Próximamente">⚖️ Rebalanceo</div>
+          <div class="sim-nav-item disabled" title="Próximamente">📉 What-If de Precios</div>
+          <div class="sim-nav-item disabled" title="Próximamente">🏦 Retirada Segura (SWR)</div>
+          <div class="sim-nav-item disabled" title="Próximamente">🎲 Monte Carlo</div>
+          <div class="sim-nav-item disabled" title="Próximamente">💰 Interés Compuesto</div>
+        </nav>
+      </div>
+
+      <!-- Parameters panel -->
+      <div class="sim-panel" id="paramsPanel">
+        <h2>⚙️ Parámetros</h2>
+
+        <div class="form-group">
+          <label class="form-label">Años de proyección</label>
+          <input type="number" class="form-input" id="inputYears" value="20" min="1" max="60" step="1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Aportación mensual (€)</label>
+          <input type="number" class="form-input" id="inputMonthly" placeholder="Del plan de inversión" min="0" step="50">
+          <div class="form-hint" id="hintMonthly">Vacío = usa tu plan de inversión</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rentabilidad anual esperada (%)</label>
+          <input type="number" class="form-input" id="inputReturn" placeholder="XIRR real de tu cartera" min="-20" max="50" step="0.5">
+          <div class="form-hint" id="hintReturn">Vacío = usa tu XIRR real</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Inflación anual (%)</label>
+          <input type="number" class="form-input" id="inputInflation" value="2.5" min="0" max="20" step="0.1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:var(--space-2)">
+            <input type="checkbox" id="inputScenarios" checked style="width:auto">
+            Mostrar escenarios (±3%)
+          </label>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)" onclick="runProjection()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Simular
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT CONTENT -->
+    <div id="resultArea">
+      <div class="loading-overlay" id="loadingArea">
+        <div class="spinner"></div>
+        <span>Cargando simulación con datos reales…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const BASE = document.baseURI.replace(/\/+$/, '').replace(/\/simuladores\.html.*$/, '');
+
+// ===================== THEME =====================
+(function(){
+  const saved = localStorage.getItem('theme');
+  if(saved) document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('click', e => {
+    if(!e.target.closest('[data-theme-toggle]')) return;
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+})();
+
+// ===================== TOAST =====================
+function showToast(msg, type='success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ===================== FORMAT =====================
+function fmt(v) { return v != null ? v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'; }
+function fmtK(v) {
+  if (v == null) return '—';
+  if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'M';
+  if (Math.abs(v) >= 10_000) return (v / 1_000).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'K';
+  return fmt(v);
+}
+
+// ===================== PROJECTION =====================
+let projChart = null;
+let lastResult = null;
+
+async function runProjection() {
+  const years = parseInt(document.getElementById('inputYears').value) || 20;
+  const monthly = document.getElementById('inputMonthly').value;
+  const ret = document.getElementById('inputReturn').value;
+  const inflation = parseFloat(document.getElementById('inputInflation').value) || 2.5;
+  const scenarios = document.getElementById('inputScenarios').checked;
+
+  const body = {
+    years,
+    inflationPct: inflation,
+    showScenarios: scenarios
+  };
+  if (monthly !== '') body.monthlyContribution = parseFloat(monthly);
+  if (ret !== '') body.expectedReturnPct = parseFloat(ret);
+
+  document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Calculando proyección…</span></div>';
+
+  try {
+    const resp = await fetch(`${BASE}/api/simulator/projection`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) throw new Error('Error en la simulación');
+    lastResult = await resp.json();
+    renderProjection(lastResult);
+  } catch (e) {
+    showToast(e.message, 'error');
+    document.getElementById('resultArea').innerHTML = `<div class="sim-panel" style="text-align:center;padding:var(--space-12);color:var(--color-notification)">❌ ${e.message}</div>`;
+  }
+}
+
+function renderProjection(r) {
+  const area = document.getElementById('resultArea');
+  const s = r.summary;
+  const base = r.baseProjection;
+
+  // Source badges
+  const retSrc = r.expectedReturnSource === 'xirr' ? '(XIRR real)' : '(personalizado)';
+  const monthlySrc = r.monthlyContributionSource === 'plan' ? '(plan inversión)' : '(personalizado)';
+
+  area.innerHTML = `
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Valor Final (${r.years} años)</div>
+        <div class="kpi-value positive">${fmtK(s.finalValueBase)} €</div>
+        <div class="kpi-sub">Valor real: ${fmtK(s.finalRealValueBase)} € (ajust. inflación)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Aportado</div>
+        <div class="kpi-value">${fmtK(s.totalContributed)} €</div>
+        <div class="kpi-sub">${fmt(r.monthlyContribution)} €/mes ${monthlySrc}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Ganancias Acumuladas</div>
+        <div class="kpi-value ${s.totalGainsBase >= 0 ? 'positive' : ''}">${fmtK(s.totalGainsBase)} €</div>
+        <div class="kpi-sub">Rentabilidad: ${fmt(r.expectedReturnPct)}% anual ${retSrc}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Renta Pasiva (Regla 4%)</div>
+        <div class="kpi-value" style="color:var(--color-gold)">${fmt(s.monthlyPassiveIncome4Pct)} €/mes</div>
+        <div class="kpi-sub">${fmt(s.monthlyPassiveIncome4Pct * 12)} €/año</div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-container">
+      <div class="chart-title">Proyección a ${r.years} años</div>
+      <div class="chart-wrap"><canvas id="projectionChart"></canvas></div>
+    </div>
+
+    <!-- Range summary -->
+    ${r.pessimisticProjection ? `
+    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi-card" style="border-left:3px solid var(--color-notification)">
+        <div class="kpi-label">Pesimista (${fmt(r.expectedReturnPct - 3)}%)</div>
+        <div class="kpi-value">${fmtK(s.finalValuePessimistic)} €</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid var(--color-primary)">
+        <div class="kpi-label">Base (${fmt(r.expectedReturnPct)}%)</div>
+        <div class="kpi-value">${fmtK(s.finalValueBase)} €</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid var(--color-success)">
+        <div class="kpi-label">Optimista (${fmt(r.expectedReturnPct + 3)}%)</div>
+        <div class="kpi-value">${fmtK(s.finalValueOptimistic)} €</div>
+      </div>
+    </div>` : ''}
+
+    <!-- Table -->
+    <div class="table-container">
+      <h3>📋 Desglose por año</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Año</th>
+              <th>Valor Cartera</th>
+              <th>Total Aportado</th>
+              <th>Ganancia Año</th>
+              <th>Ganancias Acum.</th>
+              <th>Valor Real</th>
+            </tr>
+          </thead>
+          <tbody id="projTable"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Populate table
+  const tbody = document.getElementById('projTable');
+  for (const y of base) {
+    const cls = y.yearlyGain >= 0 ? 'pl-positive' : 'pl-negative';
+    const clsTotal = y.totalGains >= 0 ? 'pl-positive' : 'pl-negative';
+    tbody.innerHTML += `<tr>
+      <td>${y.year}</td>
+      <td><strong>${fmtK(y.portfolioValue)} €</strong></td>
+      <td>${fmtK(y.totalContributed)} €</td>
+      <td class="${cls}">${y.yearlyGain >= 0 ? '+' : ''}${fmtK(y.yearlyGain)} €</td>
+      <td class="${clsTotal}">${y.totalGains >= 0 ? '+' : ''}${fmtK(y.totalGains)} €</td>
+      <td style="color:var(--color-text-muted)">${fmtK(y.realValue)} €</td>
+    </tr>`;
+  }
+
+  // Draw chart
+  renderChart(r);
+}
+
+function renderChart(r) {
+  const ctx = document.getElementById('projectionChart').getContext('2d');
+  if (projChart) projChart.destroy();
+
+  const labels = r.baseProjection.map(y => `Año ${y.year}`);
+  const datasets = [
+    {
+      label: 'Total Aportado',
+      data: r.baseProjection.map(y => y.totalContributed),
+      borderColor: 'rgba(127,127,127,.5)',
+      backgroundColor: 'rgba(127,127,127,.08)',
+      fill: true,
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: .3,
+      order: 4
+    },
+    {
+      label: `Base (${r.expectedReturnPct.toFixed(1)}%)`,
+      data: r.baseProjection.map(y => y.portfolioValue),
+      borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim(),
+      backgroundColor: 'transparent',
+      borderWidth: 3,
+      pointRadius: 2,
+      pointHoverRadius: 5,
+      tension: .3,
+      order: 1
+    },
+    {
+      label: 'Valor Real (inflación)',
+      data: r.baseProjection.map(y => y.realValue),
+      borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-gold').trim(),
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderDash: [6, 3],
+      pointRadius: 0,
+      tension: .3,
+      order: 2
+    }
+  ];
+
+  if (r.pessimisticProjection) {
+    datasets.push({
+      label: `Pesimista (${(r.expectedReturnPct - 3).toFixed(1)}%)`,
+      data: r.pessimisticProjection.map(y => y.portfolioValue),
+      borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-notification').trim(),
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderDash: [4, 4],
+      pointRadius: 0,
+      tension: .3,
+      order: 3
+    });
+  }
+  if (r.optimisticProjection) {
+    datasets.push({
+      label: `Optimista (${(r.expectedReturnPct + 3).toFixed(1)}%)`,
+      data: r.optimisticProjection.map(y => y.portfolioValue),
+      borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderDash: [4, 4],
+      pointRadius: 0,
+      tension: .3,
+      order: 3
+    });
+  }
+
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--color-text-muted').trim();
+  const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--color-divider').trim();
+
+  projChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: textColor, usePointStyle: true, padding: 16, font: { size: 11 } } },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,.85)',
+          titleFont: { size: 12 },
+          bodyFont: { size: 11 },
+          padding: 10,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-ES', {minimumFractionDigits: 0, maximumFractionDigits: 0})} €`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 }, maxRotation: 0 }, grid: { color: gridColor } },
+        y: {
+          ticks: {
+            color: textColor,
+            font: { size: 10 },
+            callback: v => {
+              if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
+              if (v >= 1_000) return (v / 1_000).toFixed(0) + 'K';
+              return v;
+            }
+          },
+          grid: { color: gridColor }
+        }
+      }
+    }
+  });
+}
+
+// ===================== INIT =====================
+runProjection();
+</script>
+</body>
+</html>
+
