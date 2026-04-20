@@ -63,7 +63,7 @@ public class MortgageSimulatorService {
             monthlyPayment = calculateMonthlyPayment(principal, annualRate, remainingYears);
         }
 
-        // ─── 1. ¿Cuándo puede la cartera pagar la hipoteca? ───
+        // ─── 1. ¿Cuándo puede la cartera pagar la hipoteca? (escenario: invertir el extra) ───
         Integer payoffMonth = null;
         Double payoffPortfolio = null;
         Double payoffDebt = null;
@@ -75,14 +75,15 @@ public class MortgageSimulatorService {
             int maxMonths = remainingYears * 12;
 
             for (int m = 1; m <= maxMonths; m++) {
-                // Deuda se reduce con la cuota
+                // Deuda se reduce con la cuota normal
                 double interest = debt * monthlyRate;
                 double principalPaid = monthlyPayment - interest;
                 if (principalPaid > debt) principalPaid = debt;
                 debt -= principalPaid;
                 if (debt < 0) debt = 0;
 
-                // Cartera crece (sin extras, escenario base de "esperar")
+                // Cartera crece con el extra + rentabilidad
+                portfolio += extra;
                 portfolio *= (1 + investMonthlyRate);
 
                 if (portfolio >= debt && payoffMonth == null && debt > 0) {
