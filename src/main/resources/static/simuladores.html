@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -8,8 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 /* ===================== DESIGN TOKENS (same as main) ===================== */
 :root,[data-theme="light"]{
@@ -131,6 +132,10 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       </div>
     </div>
     <div class="header-right">
+      <button class="btn btn-secondary btn-sm" id="headerExportBtn" onclick="exportSimToPdf(getCurrentSimTitle())" title="Exportar PDF" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Exportar PDF
+      </button>
       <button class="btn btn-secondary btn-sm" onclick="window.location.href='/portfoliotracker/'" title="Volver al portfolio">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         Volver al Portfolio
@@ -448,7 +453,6 @@ function renderProjection(r) {
   const monthlySrc = r.monthlyContributionSource === 'plan' ? '(plan inversión)' : '(personalizado)';
 
   area.innerHTML = `
-    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Proyección de Cartera')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <!-- KPIs -->
     <div class="kpi-row">
       <div class="kpi-card">
@@ -648,6 +652,13 @@ function renderChart(r) {
 // ===================== INIT =====================
 let currentSim = 'projection';
 
+function getCurrentSimTitle() {
+  const titles = { projection: 'Proyección de Cartera', mortgage: 'Hipoteca vs Inversión', withdrawal: 'Retirada Segura SWR', compound: 'Interés Compuesto' };
+  return titles[currentSim] || 'Simulación';
+}
+function showExportBtn() { document.getElementById('headerExportBtn').style.display = ''; }
+function hideExportBtn() { document.getElementById('headerExportBtn').style.display = 'none'; }
+
 function switchSim(sim) {
   currentSim = sim;
   document.querySelectorAll('.sim-nav-item').forEach(el => {
@@ -658,6 +669,7 @@ function switchSim(sim) {
   document.getElementById('paramsWithdrawal').style.display = sim === 'withdrawal' ? '' : 'none';
   document.getElementById('paramsCompound').style.display = sim === 'compound' ? '' : 'none';
   document.getElementById('resultArea').innerHTML = '';
+  hideExportBtn();
   if (sim === 'projection') runProjection();
   if (sim === 'mortgage') document.getElementById('resultArea').innerHTML = '<div class="sim-panel" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">🏠 Configura los datos de tu hipoteca y pulsa Simular</div>';
   if (sim === 'withdrawal') runWithdrawal();
@@ -764,7 +776,6 @@ function renderMortgage(r) {
     : 'Con la configuración actual, tu cartera no alcanzará a cubrir la deuda antes de que termine la hipoteca normalmente.';
 
   area.innerHTML = `
-    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Hipoteca vs Inversión')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <!-- Winner banner -->
     <div class="sim-panel" style="border-left:4px solid ${winColor};margin-bottom:var(--space-6)">
       <h2 style="color:${winColor}">${winIcon} Mejor estrategia: ${r.winnerStrategy}</h2>
@@ -866,6 +877,7 @@ function renderMortgage(r) {
 
   // Chart
   renderMortgageChart(r);
+  showExportBtn();
 }
 
 function renderMortgageChart(r) {
@@ -964,7 +976,6 @@ function renderWithdrawal(r) {
     : `Tu cartera <strong>se agota en el año ${r.depletionYear}</strong> retirando ${fmt(r.initialMonthlyWithdrawal)} €/mes (tasa ${fmt(r.withdrawalRatePct)}%)`;
 
   area.innerHTML = `
-    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Retirada Segura SWR')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <div class="sim-panel" style="border-left:4px solid ${surviveColor};margin-bottom:var(--space-6)">
       <h2 style="color:${surviveColor}">${surviveIcon} ${r.portfolioSurvives ? 'Cartera sostenible' : 'Cartera se agota'}</h2>
       <p style="font-size:var(--text-sm);color:var(--color-text-muted)">${surviveText}</p>
@@ -1045,6 +1056,7 @@ function renderWithdrawal(r) {
   }
 
   renderSwrChart(r);
+  showExportBtn();
 }
 
 function renderSwrChart(r) {
@@ -1126,7 +1138,6 @@ function renderCompound(r) {
     : '';
 
   area.innerHTML = `
-    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Interés Compuesto')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <div class="sim-panel" style="border-left:4px solid var(--color-success);margin-bottom:var(--space-6)">
       <h2 style="color:var(--color-success)">💰 Tu dinero se multiplica ×${r.multiplier.toFixed(1)}</h2>
       <p style="font-size:var(--text-sm);color:var(--color-text-muted)">
@@ -1187,6 +1198,7 @@ function renderCompound(r) {
   }
 
   renderCiChart(r);
+  showExportBtn();
 }
 
 function renderCiChart(r) {
@@ -1224,71 +1236,173 @@ function renderCiChart(r) {
 runProjection();
 
 // ===================== EXPORT PDF =====================
-async function exportSimToPdf(title) {
-  const area = document.getElementById('resultArea');
-  const btn = area.querySelector('.export-pdf-btn');
-  if (btn) btn.style.display = 'none';
-
-  showToast('Generando PDF…', 'info');
+function exportSimToPdf(title) {
+  showToast('Generando PDF...', 'info');
 
   try {
-    const canvas = await html2canvas(area, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      onclone: function(clonedDoc) {
-        // Replace oklch in all style elements (unsupported by html2canvas)
-        clonedDoc.querySelectorAll('style').forEach(style => {
-          style.textContent = style.textContent.replace(/oklch\([^)]*\)/g, 'rgba(0,0,0,0.1)');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 12;
+    const contentW = pageW - margin * 2;
+    let y = margin;
+
+    // Helper: strip emojis and fix chars unsupported by Helvetica
+    function clean(text) {
+      if (!text) return '';
+      return text
+        .replace(/[\u{1F000}-\u{1FFFF}|\u{2600}-\u{27BF}|\u{FE00}-\u{FEFF}|\u{1F900}-\u{1F9FF}]/gu, '')
+        .replace(/[^\x00-\x7F\u00A0-\u00FF\u0100-\u024F]/g, function(ch) {
+          // Replace common unicode with ASCII equivalents
+          const map = {'\u2014': '-', '\u2013': '-', '\u2018': "'", '\u2019': "'", '\u201C': '"', '\u201D': '"', '\u2026': '...', '\u2192': '->', '\u2190': '<-', '\u2713': 'v', '\u2717': 'x', '\u2022': '*', '\u20AC': 'EUR'};
+          return map[ch] || '';
+        })
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // Helper: check page break
+    function checkPage(needed) {
+      if (y + needed > pageH - margin) {
+        pdf.addPage();
+        y = margin;
+      }
+    }
+
+    // Header
+    pdf.setFontSize(16); pdf.setTextColor(30, 30, 30);
+    pdf.text(clean(title) + ' - Portfolio Tracker', margin, y); y += 7;
+    pdf.setFontSize(9); pdf.setTextColor(120, 120, 120);
+    pdf.text('Generado: ' + new Date().toLocaleString('es-ES'), margin, y); y += 3;
+    pdf.setDrawColor(200); pdf.line(margin, y, pageW - margin, y); y += 6;
+
+    // Extract summary panels FIRST (winner banners, etc.)
+    const panels = document.querySelectorAll('#resultArea > .sim-panel');
+    panels.forEach(panel => {
+      const h2 = clean(panel.querySelector('h2')?.textContent);
+      const pTexts = [];
+      panel.querySelectorAll('p').forEach(p => pTexts.push(clean(p.textContent)));
+      if (h2 || pTexts.length) {
+        checkPage(20);
+        pdf.setFontSize(10); pdf.setTextColor(40, 40, 40); pdf.setFont(undefined, 'bold');
+        if (h2) { pdf.text(h2, margin, y); y += 5; }
+        pdf.setFont(undefined, 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(80, 80, 80);
+        pTexts.forEach(t => {
+          if (!t) return;
+          const lines = pdf.splitTextToSize(t, contentW);
+          checkPage(lines.length * 4);
+          pdf.text(lines, margin, y); y += lines.length * 3.8 + 2;
         });
-        // Force light colors on the result area clone
-        const clonedArea = clonedDoc.getElementById('resultArea');
-        if (clonedArea) {
-          clonedArea.style.background = '#fff';
-          clonedArea.style.padding = '24px';
-          clonedArea.querySelectorAll('*').forEach(el => {
-            el.style.boxShadow = 'none';
-          });
-        }
+        y += 4;
       }
     });
 
-    const { jsPDF } = window.jspdf;
-    const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 190;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    const pageHeight = 277;
+    // Extract KPIs
+    const kpiCards = document.querySelectorAll('#resultArea .kpi-card');
+    if (kpiCards.length > 0) {
+      checkPage(10);
+      pdf.setFontSize(11); pdf.setTextColor(50, 50, 50); pdf.setFont(undefined, 'bold');
+      pdf.text('Resumen de indicadores', margin, y); y += 5;
+      pdf.setFont(undefined, 'normal');
 
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    let position = 10;
+      const kpiData = [];
+      kpiCards.forEach(card => {
+        const label = clean(card.querySelector('.kpi-label')?.textContent);
+        const value = clean(card.querySelector('.kpi-value')?.textContent);
+        const sub = clean(card.querySelector('.kpi-sub')?.textContent);
+        if (label || value) kpiData.push([label, value, sub]);
+      });
 
-    pdf.setFontSize(14);
-    pdf.setTextColor(40);
-    pdf.text(title, 10, position);
-    position += 8;
-    pdf.setFontSize(9);
-    pdf.setTextColor(120);
-    pdf.text('Generado: ' + new Date().toLocaleString('es-ES'), 10, position);
-    position += 6;
+      pdf.autoTable({
+        startY: y,
+        head: [['Indicador', 'Valor', 'Detalle']],
+        body: kpiData,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 40] },
+        headStyles: { fillColor: [1, 105, 111], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        columnStyles: {
+          0: { cellWidth: 55 },
+          1: { cellWidth: 35, fontStyle: 'bold', halign: 'right' },
+          2: { fontSize: 7 }
+        }
+      });
+      y = pdf.lastAutoTable.finalY + 8;
+    }
 
-    let heightLeft = imgHeight;
-    if (imgHeight <= pageHeight - position) {
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-    } else {
-      let srcY = 0;
-      while (heightLeft > 0) {
-        const sliceHeight = Math.min(heightLeft, pageHeight - position);
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = Math.round((sliceHeight / imgHeight) * canvas.height);
-        const sCtx = sliceCanvas.getContext('2d');
-        sCtx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 10, position, imgWidth, sliceHeight);
-        heightLeft -= sliceHeight;
-        srcY += sliceCanvas.height;
-        if (heightLeft > 0) { pdf.addPage(); position = 10; }
+    // Embed charts as high-quality images
+    const chartCanvases = document.querySelectorAll('#resultArea canvas');
+    chartCanvases.forEach(canvas => {
+      const chartTitle = clean(canvas.closest('.chart-container')?.querySelector('.chart-title')?.textContent);
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const ratio = canvas.height / canvas.width;
+      const imgW = contentW;
+      const imgH = imgW * ratio;
+
+      checkPage(imgH + 12);
+      if (chartTitle) {
+        pdf.setFontSize(9); pdf.setTextColor(60, 60, 60); pdf.setFont(undefined, 'bold');
+        pdf.text(chartTitle, margin, y); y += 5;
+        pdf.setFont(undefined, 'normal');
       }
+      pdf.addImage(imgData, 'PNG', margin, y, imgW, imgH);
+      y += imgH + 8;
+    });
+
+    // Extract all data tables
+    const tables = document.querySelectorAll('#resultArea .table-container');
+    tables.forEach(tableContainer => {
+      const tableTitle = clean(tableContainer.querySelector('h3')?.textContent);
+      const tableEl = tableContainer.querySelector('table');
+      if (!tableEl) return;
+
+      // Extract head
+      const headCells = [];
+      tableEl.querySelectorAll('thead th').forEach(th => headCells.push(clean(th.textContent)));
+
+      // Extract body
+      const bodyRows = [];
+      tableEl.querySelectorAll('tbody tr').forEach(tr => {
+        const row = [];
+        tr.querySelectorAll('td').forEach(td => row.push(clean(td.textContent)));
+        if (row.length > 0) bodyRows.push(row);
+      });
+
+      if (headCells.length === 0 || bodyRows.length === 0) return;
+
+      checkPage(25);
+      if (tableTitle) {
+        pdf.setFontSize(9); pdf.setTextColor(50, 50, 50); pdf.setFont(undefined, 'bold');
+        pdf.text(tableTitle, margin, y); y += 5;
+        pdf.setFont(undefined, 'normal');
+      }
+
+      pdf.autoTable({
+        startY: y,
+        head: [headCells],
+        body: bodyRows,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: [40, 40, 40] },
+        headStyles: { fillColor: [1, 105, 111], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        didParseCell: function(data) {
+          if (data.section === 'body') {
+            const text = data.cell.raw || '';
+            if (text.startsWith('+')) data.cell.styles.textColor = [67, 122, 34];
+            else if (text.startsWith('-')) data.cell.styles.textColor = [161, 53, 68];
+          }
+        }
+      });
+      y = pdf.lastAutoTable.finalY + 8;
+    });
+
+    // Footer on all pages
+    const pageCount = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(7); pdf.setTextColor(160, 160, 160);
+      pdf.text('Portfolio Tracker - ' + clean(title) + ' - Pagina ' + i + '/' + pageCount, margin, pageH - 5);
     }
 
     pdf.save('simulacion_' + title.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now() + '.pdf');
@@ -1296,8 +1410,6 @@ async function exportSimToPdf(title) {
   } catch (e) {
     console.error(e);
     showToast('Error al generar PDF: ' + e.message, 'error');
-  } finally {
-    if (btn) btn.style.display = '';
   }
 }
 
