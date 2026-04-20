@@ -147,10 +147,10 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <nav class="sim-nav" style="margin-bottom:0">
           <div class="sim-nav-item active" data-sim="projection" onclick="switchSim('projection')">📈 Proyección de Cartera</div>
           <div class="sim-nav-item" data-sim="mortgage" onclick="switchSim('mortgage')">🏠 Hipoteca vs Inversión</div>
+          <div class="sim-nav-item" data-sim="withdrawal" onclick="switchSim('withdrawal')">🏦 Retirada Segura (SWR)</div>
           <div class="sim-nav-item disabled" title="Próximamente">🧮 Simulador FIFO Fiscal</div>
           <div class="sim-nav-item disabled" title="Próximamente">⚖️ Rebalanceo</div>
           <div class="sim-nav-item disabled" title="Próximamente">📉 What-If de Precios</div>
-          <div class="sim-nav-item disabled" title="Próximamente">🏦 Retirada Segura (SWR)</div>
           <div class="sim-nav-item disabled" title="Próximamente">🎲 Monte Carlo</div>
           <div class="sim-nav-item disabled" title="Próximamente">💰 Interés Compuesto</div>
         </nav>
@@ -239,6 +239,52 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         </div>
 
         <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)" onclick="runMortgage()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Simular
+        </button>
+      </div>
+
+      <!-- Parameters panel: WITHDRAWAL (SWR) -->
+      <div class="sim-panel" id="paramsWithdrawal" style="display:none">
+        <h2>🏦 Retirada Segura</h2>
+
+        <div class="form-group">
+          <label class="form-label">Tasa de retirada anual (%)</label>
+          <input type="number" class="form-input" id="swrRate" value="4" min="1" max="15" step="0.5">
+          <div class="form-hint">Regla del 4%: retiras el 4% de tu cartera el primer año</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">O importe fijo mensual (€)</label>
+          <input type="number" class="form-input" id="swrFixed" placeholder="Vacío = usa la tasa %" min="0" step="100">
+          <div class="form-hint">Si lo indicas, ignora la tasa de arriba</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rentabilidad anual esperada (%)</label>
+          <input type="number" class="form-input" id="swrReturn" placeholder="XIRR real" min="-10" max="30" step="0.5">
+          <div class="form-hint">Vacío = usa tu XIRR real</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Inflación anual (%)</label>
+          <input type="number" class="form-input" id="swrInflation" value="2.5" min="0" max="15" step="0.1">
+          <div class="form-hint">La retirada sube cada año con la inflación</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Años a simular</label>
+          <input type="number" class="form-input" id="swrYears" value="35" min="5" max="60" step="1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:var(--space-2)">
+            <input type="checkbox" id="swrComparison" checked style="width:auto">
+            Comparar múltiples tasas
+          </label>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)" onclick="runWithdrawal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Simular
         </button>
@@ -543,9 +589,11 @@ function switchSim(sim) {
   });
   document.getElementById('paramsProjection').style.display = sim === 'projection' ? '' : 'none';
   document.getElementById('paramsMortgage').style.display = sim === 'mortgage' ? '' : 'none';
+  document.getElementById('paramsWithdrawal').style.display = sim === 'withdrawal' ? '' : 'none';
   document.getElementById('resultArea').innerHTML = '';
   if (sim === 'projection') runProjection();
   if (sim === 'mortgage') document.getElementById('resultArea').innerHTML = '<div class="sim-panel" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">🏠 Configura los datos de tu hipoteca y pulsa Simular</div>';
+  if (sim === 'withdrawal') runWithdrawal();
 }
 
 // ===================== MORTGAGE =====================
@@ -726,6 +774,171 @@ function renderMortgageChart(r) {
       scales: {
         x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
         y: { ticks: { color: textColor, font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v }, grid: { color: gridColor } }
+      }
+    }
+  });
+}
+
+// ===================== WITHDRAWAL (SWR) =====================
+async function runWithdrawal() {
+  const rate = parseFloat(document.getElementById('swrRate').value) || 4;
+  const fixed = document.getElementById('swrFixed').value;
+  const ret = document.getElementById('swrReturn').value;
+  const inflation = parseFloat(document.getElementById('swrInflation').value) || 2.5;
+  const years = parseInt(document.getElementById('swrYears').value) || 35;
+  const comparison = document.getElementById('swrComparison').checked;
+
+  const body = { withdrawalRatePct: rate, inflationPct: inflation, maxYears: years, showComparison: comparison };
+  if (fixed) body.fixedMonthlyWithdrawal = parseFloat(fixed);
+  if (ret) body.expectedReturnPct = parseFloat(ret);
+
+  document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Calculando retirada segura…</span></div>';
+
+  try {
+    const resp = await fetch(`${BASE}/api/simulator/withdrawal`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!resp.ok) throw new Error('Error en la simulación');
+    const r = await resp.json();
+    renderWithdrawal(r);
+  } catch (e) {
+    showToast(e.message, 'error');
+    document.getElementById('resultArea').innerHTML = `<div class="sim-panel" style="text-align:center;padding:var(--space-12);color:var(--color-notification)">❌ ${e.message}</div>`;
+  }
+}
+
+function renderWithdrawal(r) {
+  const area = document.getElementById('resultArea');
+  const surviveColor = r.portfolioSurvives ? 'var(--color-success)' : 'var(--color-notification)';
+  const surviveIcon = r.portfolioSurvives ? '✅' : '⚠️';
+  const surviveText = r.portfolioSurvives
+    ? `Tu cartera <strong>sobrevive ${r.maxYears} años</strong> retirando ${fmt(r.initialMonthlyWithdrawal)} €/mes (tasa ${fmt(r.withdrawalRatePct)}%). Valor residual: ${fmtK(r.finalPortfolioValue)} €`
+    : `Tu cartera <strong>se agota en el año ${r.depletionYear}</strong> retirando ${fmt(r.initialMonthlyWithdrawal)} €/mes (tasa ${fmt(r.withdrawalRatePct)}%)`;
+
+  area.innerHTML = `
+    <div class="sim-panel" style="border-left:4px solid ${surviveColor};margin-bottom:var(--space-6)">
+      <h2 style="color:${surviveColor}">${surviveIcon} ${r.portfolioSurvives ? 'Cartera sostenible' : 'Cartera se agota'}</h2>
+      <p style="font-size:var(--text-sm);color:var(--color-text-muted)">${surviveText}</p>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Cartera actual</div>
+        <div class="kpi-value">${fmtK(r.currentPortfolioValue)} €</div>
+        <div class="kpi-sub">Base para el cálculo</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Retirada mensual inicial</div>
+        <div class="kpi-value" style="color:var(--color-gold)">${fmt(r.initialMonthlyWithdrawal)} €</div>
+        <div class="kpi-sub">Tasa: ${fmt(r.withdrawalRatePct)}% · Rent: ${fmt(r.expectedReturnPct)}%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total retirado</div>
+        <div class="kpi-value">${fmtK(r.totalWithdrawn)} €</div>
+        <div class="kpi-sub">En ${r.depletionYear || r.maxYears} años</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">${r.portfolioSurvives ? 'Valor residual' : 'Duración'}</div>
+        <div class="kpi-value ${r.portfolioSurvives ? 'positive' : ''}">${r.portfolioSurvives ? fmtK(r.finalPortfolioValue) + ' €' : r.depletionYear + ' años'}</div>
+        <div class="kpi-sub">${r.portfolioSurvives ? 'Herencia / colchón' : 'Antes de agotarse'}</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title">Evolución de cartera con retiradas</div>
+      <div class="chart-wrap"><canvas id="swrChart"></canvas></div>
+    </div>
+    ${r.rateComparison && r.rateComparison.length > 0 ? `
+    <div class="table-container" style="margin-bottom:var(--space-6)">
+      <h3>📊 Comparativa de tasas de retirada — ¿Cuánto puedes retirar sin quedarte sin dinero?</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Tasa</th><th>€/mes</th><th>€/año</th><th>¿Sobrevive ${r.maxYears}a?</th><th>Se agota</th><th>Valor final</th></tr></thead>
+          <tbody id="swrCompTable"></tbody>
+        </table>
+      </div>
+    </div>` : ''}
+    <div class="table-container">
+      <h3>📋 Desglose anual</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Año</th><th>Cartera inicio</th><th>Retirada</th><th>Rendimiento</th><th>Cartera fin</th><th>Total retirado</th></tr></thead>
+          <tbody id="swrTable"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  if (r.rateComparison && r.rateComparison.length > 0) {
+    const compBody = document.getElementById('swrCompTable');
+    for (const row of r.rateComparison) {
+      const isActive = Math.abs(row.withdrawalRatePct - r.withdrawalRatePct) < 0.01;
+      const cls = row.survives ? 'pl-positive' : 'pl-negative';
+      compBody.innerHTML += `<tr${isActive ? ' style="background:oklch(from var(--color-gold) l c h / .06)"' : ''}>
+        <td>${isActive ? '<strong>' : ''}${fmt(row.withdrawalRatePct)}%${isActive ? ' ←</strong>' : ''}</td>
+        <td>${fmt(row.monthlyWithdrawal)} €</td>
+        <td>${fmtK(row.annualWithdrawal)} €</td>
+        <td class="${cls}">${row.survives ? '✅ Sí' : '❌ No'}</td>
+        <td>${row.depletionYear ? 'Año ' + row.depletionYear : '—'}</td>
+        <td>${row.survives ? fmtK(row.finalValue) + ' €' : '0 €'}</td>
+      </tr>`;
+    }
+  }
+
+  const tbody = document.getElementById('swrTable');
+  for (const y of r.yearlyEvolution) {
+    tbody.innerHTML += `<tr>
+      <td>${y.year}</td>
+      <td>${fmtK(y.portfolioValueStart)} €</td>
+      <td class="pl-negative">-${fmtK(y.annualWithdrawal)} €</td>
+      <td class="${y.annualReturn >= 0 ? 'pl-positive' : 'pl-negative'}">${y.annualReturn >= 0 ? '+' : ''}${fmtK(y.annualReturn)} €</td>
+      <td><strong>${fmtK(y.portfolioValueEnd)} €</strong>${y.depleted ? ' 💀' : ''}</td>
+      <td style="color:var(--color-text-muted)">${fmtK(y.cumulativeWithdrawn)} €</td>
+    </tr>`;
+  }
+
+  renderSwrChart(r);
+}
+
+function renderSwrChart(r) {
+  const ctx = document.getElementById('swrChart').getContext('2d');
+  const labels = r.yearlyEvolution.map(y => `Año ${y.year}`);
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--color-text-muted').trim();
+  const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--color-divider').trim();
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Valor de cartera',
+          data: r.yearlyEvolution.map(y => y.portfolioValueEnd),
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim(),
+          backgroundColor: 'rgba(79,152,163,.08)',
+          fill: true, borderWidth: 3, pointRadius: 2, tension: .3
+        },
+        {
+          label: 'Total retirado (acumulado)',
+          data: r.yearlyEvolution.map(y => y.cumulativeWithdrawn),
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-gold').trim(),
+          backgroundColor: 'transparent', borderWidth: 2, borderDash: [6, 3], pointRadius: 0, tension: .3
+        },
+        {
+          label: 'Retirada anual',
+          data: r.yearlyEvolution.map(y => y.annualWithdrawal),
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-notification').trim(),
+          backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [3, 3], pointRadius: 0, tension: .3, yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: textColor, usePointStyle: true, padding: 16, font: { size: 11 } } },
+        tooltip: { backgroundColor: 'rgba(0,0,0,.85)', callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-ES', {maximumFractionDigits:0})} €` } }
+      },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor, font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v }, grid: { color: gridColor } },
+        y1: { position: 'right', ticks: { color: textColor, font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v }, grid: { display: false } }
       }
     }
   });

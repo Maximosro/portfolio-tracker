@@ -1,11 +1,9 @@
 package com.sro.myportfoliotracker.controller;
 
-import com.sro.myportfoliotracker.dto.simulator.MortgageRequest;
-import com.sro.myportfoliotracker.dto.simulator.MortgageResult;
-import com.sro.myportfoliotracker.dto.simulator.ProjectionRequest;
-import com.sro.myportfoliotracker.dto.simulator.ProjectionResult;
+import com.sro.myportfoliotracker.dto.simulator.*;
 import com.sro.myportfoliotracker.service.simulator.MortgageSimulatorService;
 import com.sro.myportfoliotracker.service.simulator.ProjectionSimulatorService;
+import com.sro.myportfoliotracker.service.simulator.WithdrawalSimulatorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +16,7 @@ public class SimulatorController {
 
     private final ProjectionSimulatorService projectionService;
     private final MortgageSimulatorService mortgageService;
+    private final WithdrawalSimulatorService withdrawalService;
 
     @PostMapping("/projection")
     public ResponseEntity<ProjectionResult> projectPortfolio(@RequestBody ProjectionRequest request) {
@@ -32,5 +31,10 @@ public class SimulatorController {
     @PostMapping("/mortgage")
     public ResponseEntity<MortgageResult> simulateMortgage(@RequestBody MortgageRequest request) {
         return ResponseEntity.ok(mortgageService.simulate(request));
+    }
+
+    @PostMapping("/withdrawal")
+    public ResponseEntity<WithdrawalResult> simulateWithdrawal(@RequestBody WithdrawalRequest request) {
+        return ResponseEntity.ok(withdrawalService.simulate(request));
     }
 }
