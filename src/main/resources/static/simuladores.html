@@ -129,7 +129,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       </div>
     </div>
     <div class="header-right">
-      <button class="btn btn-secondary btn-sm" onclick="window.location.href='index.html'" title="Volver al portfolio">
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'" title="Volver al portfolio">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         Volver al Portfolio
       </button>
@@ -145,7 +145,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       <!-- Navigation -->
       <div class="sim-panel" style="margin-bottom:var(--space-4)">
         <nav class="sim-nav" style="margin-bottom:0">
-          <div class="sim-nav-item active" data-sim="projection">📈 Proyección de Cartera</div>
+          <div class="sim-nav-item active" data-sim="projection" onclick="switchSim('projection')">📈 Proyección de Cartera</div>
+          <div class="sim-nav-item" data-sim="mortgage" onclick="switchSim('mortgage')">🏠 Hipoteca vs Inversión</div>
           <div class="sim-nav-item disabled" title="Próximamente">🧮 Simulador FIFO Fiscal</div>
           <div class="sim-nav-item disabled" title="Próximamente">⚖️ Rebalanceo</div>
           <div class="sim-nav-item disabled" title="Próximamente">📉 What-If de Precios</div>
@@ -155,8 +156,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         </nav>
       </div>
 
-      <!-- Parameters panel -->
-      <div class="sim-panel" id="paramsPanel">
+      <!-- Parameters panel: PROJECTION -->
+      <div class="sim-panel" id="paramsProjection">
         <h2>⚙️ Parámetros</h2>
 
         <div class="form-group">
@@ -189,6 +190,54 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         </div>
 
         <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)" onclick="runProjection()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Simular
+        </button>
+      </div>
+
+      <!-- Parameters panel: MORTGAGE -->
+      <div class="sim-panel" id="paramsMortgage" style="display:none">
+        <h2>🏠 Hipoteca</h2>
+
+        <div class="form-group">
+          <label class="form-label">Capital pendiente (€)</label>
+          <input type="number" class="form-input" id="mortPrincipal" placeholder="Ej: 150000" min="0" step="1000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo de interés anual (%)</label>
+          <input type="number" class="form-input" id="mortRate" placeholder="Ej: 2.5" min="0" max="20" step="0.1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Años restantes</label>
+          <input type="number" class="form-input" id="mortYears" value="25" min="1" max="40" step="1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cuota mensual (€)</label>
+          <input type="number" class="form-input" id="mortPayment" placeholder="Se calcula auto" min="0" step="10">
+          <div class="form-hint">Vacío = se calcula del capital/tipo/plazo</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Extra mensual disponible (€)</label>
+          <input type="number" class="form-input" id="mortExtra" value="200" min="0" step="50">
+          <div class="form-hint">Cantidad extra para amortizar O invertir</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rentabilidad inversión (%)</label>
+          <input type="number" class="form-input" id="mortReturn" placeholder="XIRR real" min="-20" max="50" step="0.5">
+          <div class="form-hint">Vacío = usa tu XIRR real</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo IRPF plusvalías (%)</label>
+          <input type="number" class="form-input" id="mortTax" value="21" min="0" max="50" step="1">
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)" onclick="runMortgage()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Simular
         </button>
@@ -484,6 +533,203 @@ function renderChart(r) {
 }
 
 // ===================== INIT =====================
+let currentSim = 'projection';
+
+function switchSim(sim) {
+  currentSim = sim;
+  document.querySelectorAll('.sim-nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.sim === sim);
+  });
+  document.getElementById('paramsProjection').style.display = sim === 'projection' ? '' : 'none';
+  document.getElementById('paramsMortgage').style.display = sim === 'mortgage' ? '' : 'none';
+  document.getElementById('resultArea').innerHTML = '';
+  if (sim === 'projection') runProjection();
+  if (sim === 'mortgage') document.getElementById('resultArea').innerHTML = '<div class="sim-panel" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">🏠 Configura los datos de tu hipoteca y pulsa Simular</div>';
+}
+
+// ===================== MORTGAGE =====================
+async function runMortgage() {
+  const principal = parseFloat(document.getElementById('mortPrincipal').value);
+  const rate = parseFloat(document.getElementById('mortRate').value);
+  const years = parseInt(document.getElementById('mortYears').value);
+  const payment = document.getElementById('mortPayment').value;
+  const extra = parseFloat(document.getElementById('mortExtra').value) || 0;
+  const ret = document.getElementById('mortReturn').value;
+  const tax = parseFloat(document.getElementById('mortTax').value) || 21;
+
+  if (!principal || !rate || !years) {
+    showToast('Introduce capital, tipo de interés y años restantes', 'error');
+    return;
+  }
+
+  const body = { outstandingPrincipal: principal, annualInterestRate: rate, remainingYears: years, extraMonthly: extra, taxRatePct: tax };
+  if (payment) body.monthlyPayment = parseFloat(payment);
+  if (ret) body.investmentReturnPct = parseFloat(ret);
+
+  document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Calculando hipoteca vs inversión…</span></div>';
+
+  try {
+    const resp = await fetch(`${BASE}/api/simulator/mortgage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!resp.ok) throw new Error('Error en la simulación');
+    const r = await resp.json();
+    renderMortgage(r);
+  } catch (e) {
+    showToast(e.message, 'error');
+    document.getElementById('resultArea').innerHTML = `<div class="sim-panel" style="text-align:center;padding:var(--space-12);color:var(--color-notification)">❌ ${e.message}</div>`;
+  }
+}
+
+function renderMortgage(r) {
+  const area = document.getElementById('resultArea');
+  const a = r.strategyAmortize;
+  const inv = r.strategyInvest;
+
+  const winColor = r.winnerStrategy === 'INVERTIR' ? 'var(--color-success)' : r.winnerStrategy === 'AMORTIZAR' ? 'var(--color-gold)' : 'var(--color-text-muted)';
+  const winIcon = r.winnerStrategy === 'INVERTIR' ? '📈' : r.winnerStrategy === 'AMORTIZAR' ? '🏠' : '🤝';
+
+  const payoffText = r.payoffMonth
+    ? `Tu cartera podrá cancelar la hipoteca en <strong>${Math.floor(r.payoffMonth/12)} años y ${r.payoffMonth%12} meses</strong> (cartera: ${fmtK(r.payoffPortfolioValue)} € vs deuda: ${fmtK(r.payoffDebtRemaining)} €)`
+    : 'Con la configuración actual, tu cartera no alcanzará a cubrir la deuda antes de que termine la hipoteca normalmente.';
+
+  area.innerHTML = `
+    <!-- Winner banner -->
+    <div class="sim-panel" style="border-left:4px solid ${winColor};margin-bottom:var(--space-6)">
+      <h2 style="color:${winColor}">${winIcon} Mejor estrategia: ${r.winnerStrategy}</h2>
+      <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-3)">
+        Con tu rentabilidad del <strong>${fmt(r.investmentReturnPct)}%</strong> ${r.investmentReturnSource === 'xirr' ? '(XIRR real)' : ''} y un tipo hipotecario del <strong>${fmt(r.annualInterestRate)}%</strong>,
+        ${r.winnerStrategy === 'INVERTIR' ? 'invertir' : 'amortizar'} los ${fmt(r.extraMonthly)} €/mes extra genera <strong>${fmtK(r.advantageEur)} € más</strong> de patrimonio neto al final.
+      </p>
+      <p style="font-size:var(--text-sm);color:var(--color-text-muted)">${payoffText}</p>
+    </div>
+
+    <!-- KPIs comparativa -->
+    <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:var(--space-6)">
+      <div class="kpi-card" style="border-top:3px solid var(--color-gold)">
+        <div class="kpi-label">🏠 Amortizar — Patrimonio neto final</div>
+        <div class="kpi-value">${fmtK(a.netWealthEnd)} €</div>
+        <div class="kpi-sub">Hipoteca cancelada en ${Math.floor(a.monthsToPayOff/12)}a ${a.monthsToPayOff%12}m · Intereses: ${fmtK(a.totalInterestPaid)} €</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--color-success)">
+        <div class="kpi-label">📈 Invertir — Patrimonio neto final</div>
+        <div class="kpi-value">${fmtK(inv.netWealthEnd)} €</div>
+        <div class="kpi-sub">Cartera final: ${fmtK(inv.finalPortfolioAfterTax)} € (neta impuestos) · Intereses: ${fmtK(inv.totalInterestPaid)} €</div>
+      </div>
+    </div>
+
+    <!-- Detailed comparison table -->
+    <div class="table-container" style="margin-bottom:var(--space-6)">
+      <h3>📊 Comparativa detallada</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th style="text-align:left">Concepto</th><th>🏠 Amortizar</th><th>📈 Invertir</th></tr></thead>
+          <tbody>
+            <tr><td style="text-align:left">Total pagado al banco</td><td>${fmtK(a.totalPaidToBank)} €</td><td>${fmtK(inv.totalPaidToBank)} €</td></tr>
+            <tr><td style="text-align:left">Intereses pagados</td><td class="pl-negative">${fmtK(a.totalInterestPaid)} €</td><td class="pl-negative">${fmtK(inv.totalInterestPaid)} €</td></tr>
+            <tr><td style="text-align:left">Intereses ahorrados</td><td class="pl-positive">${fmtK(inv.totalInterestPaid - a.totalInterestPaid)} €</td><td>—</td></tr>
+            <tr><td style="text-align:left">Meses hasta cancelar</td><td><strong>${a.monthsToPayOff}</strong> (${Math.floor(a.monthsToPayOff/12)}a ${a.monthsToPayOff%12}m)</td><td><strong>${inv.monthsToPayOff}</strong> (${Math.floor(inv.monthsToPayOff/12)}a ${inv.monthsToPayOff%12}m)</td></tr>
+            <tr><td style="text-align:left">Cartera final (bruta)</td><td>${fmtK(a.finalPortfolioValue)} €</td><td>${fmtK(inv.finalPortfolioValue)} €</td></tr>
+            <tr><td style="text-align:left">Cartera final (neta impuestos)</td><td>${fmtK(a.finalPortfolioAfterTax)} €</td><td>${fmtK(inv.finalPortfolioAfterTax)} €</td></tr>
+            <tr><td style="text-align:left"><strong>Patrimonio neto final</strong></td><td><strong>${fmtK(a.netWealthEnd)} €</strong></td><td><strong>${fmtK(inv.netWealthEnd)} €</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Chart: evolution -->
+    <div class="chart-container">
+      <div class="chart-title">Evolución: Cartera vs Deuda pendiente (estrategia invertir)</div>
+      <div class="chart-wrap"><canvas id="mortgageChart"></canvas></div>
+    </div>
+
+    <!-- Sensitivity table -->
+    <div class="table-container">
+      <h3>🎚️ Análisis de sensibilidad — ¿Cuándo gana cada estrategia?</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Rentabilidad Inv.</th><th>Tipo Hipoteca</th><th>Ganador</th><th>Ventaja</th></tr></thead>
+          <tbody id="sensTable"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Sensitivity table
+  const sensBody = document.getElementById('sensTable');
+  for (const row of r.sensitivity) {
+    const cls = row.winner === 'INVERTIR' ? 'pl-positive' : 'pl-negative';
+    sensBody.innerHTML += `<tr>
+      <td>${fmt(row.investmentReturn)}%</td>
+      <td>${fmt(row.mortgageRate)}%</td>
+      <td class="${cls}">${row.winner === 'INVERTIR' ? '📈' : '🏠'} ${row.winner}</td>
+      <td>${fmtK(row.advantageEur)} €</td>
+    </tr>`;
+  }
+
+  // Chart
+  renderMortgageChart(r);
+}
+
+function renderMortgageChart(r) {
+  const ctx = document.getElementById('mortgageChart').getContext('2d');
+  const labels = r.yearlyEvolution.map(y => `Año ${y.year}`);
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--color-text-muted').trim();
+  const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--color-divider').trim();
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Cartera (inversión)',
+          data: r.yearlyEvolution.map(y => y.portfolioValue),
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+          backgroundColor: 'rgba(109,170,69,.08)',
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 2,
+          tension: .3
+        },
+        {
+          label: 'Deuda pendiente',
+          data: r.yearlyEvolution.map(y => y.debtRemaining),
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-notification').trim(),
+          backgroundColor: 'rgba(221,105,116,.08)',
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 2,
+          tension: .3
+        },
+        {
+          label: 'Patrimonio neto',
+          data: r.yearlyEvolution.map(y => y.netWealth),
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim(),
+          borderWidth: 2,
+          borderDash: [6, 3],
+          pointRadius: 0,
+          tension: .3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: textColor, usePointStyle: true, padding: 16, font: { size: 11 } } },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,.85)',
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-ES', {maximumFractionDigits:0})} €` }
+        }
+      },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor, font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v }, grid: { color: gridColor } }
+      }
+    }
+  });
+}
+
 runProjection();
 </script>
 </body>
