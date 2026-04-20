@@ -2,9 +2,9 @@ package com.sro.myportfoliotracker.service.simulator;
 
 import com.sro.myportfoliotracker.dto.PortfolioMetricsDto;
 import com.sro.myportfoliotracker.dto.simulator.MortgageRequest;
+import com.sro.myportfoliotracker.dto.simulator.MortgageRequest.RatePeriod;
 import com.sro.myportfoliotracker.dto.simulator.MortgageResult;
 import com.sro.myportfoliotracker.dto.simulator.MortgageResult.*;
-import com.sro.myportfoliotracker.model.Position;
 import com.sro.myportfoliotracker.repository.PositionRepository;
 import com.sro.myportfoliotracker.service.PortfolioMetricsService;
 import lombok.RequiredArgsConstructor;
@@ -50,18 +50,34 @@ public class MortgageSimulatorService {
         }
 
         double principal = req.getOutstandingPrincipal();
-        double annualRate = req.getAnnualInterestRate();
-        int remainingYears = req.getRemainingYears();
         double extra = req.getExtraMonthly() != null ? req.getExtraMonthly() : 0;
         double taxRate = req.getTaxRatePct() != null ? req.getTaxRatePct() : 21.0;
+        boolean isMixed = req.getRatePeriods() != null && req.getRatePeriods().size() > 1;
 
-        // Calcular cuota mensual si no se proporciona
+        // For mixed mortgages, calculate remainingYears from sum of period years
+        int remainingYears;
+        if (isMixed) {
+            remainingYears = req.getRatePeriods().stream().mapToInt(RatePeriod::getYears).sum();
+        } else {
+            remainingYears = req.getRemainingYears();
+        }
+
+        // Build monthly rate schedule for mixed mortgages
+        double[] monthlyRates = buildMonthlyRateSchedule(req, remainingYears);
+        // Weighted average rate for display
+        double annualRate = calculateWeightedAverageRate(req, remainingYears);
+
+        // Calcular cuota mensual (o array de cuotas si es mixta con recalculo por tramo)
         double monthlyPayment;
         if (req.getMonthlyPayment() != null && req.getMonthlyPayment() > 0) {
             monthlyPayment = req.getMonthlyPayment();
         } else {
-            monthlyPayment = calculateMonthlyPayment(principal, annualRate, remainingYears);
+            double initialRate = monthlyRates[0] * 12 * 100;
+            monthlyPayment = calculateMonthlyPayment(principal, initialRate, remainingYears);
         }
+
+        // Build monthly payment schedule: recalculates payment at each period transition
+        double[] monthlyPayments = buildMonthlyPaymentSchedule(req, principal, monthlyPayment, remainingYears);
 
         // ─── 1. ¿Cuándo puede la cartera pagar la hipoteca? (escenario: invertir el extra) ───
         Integer payoffMonth = null;
@@ -70,19 +86,18 @@ public class MortgageSimulatorService {
         {
             double debt = principal;
             double portfolio = currentPortfolio;
-            double monthlyRate = annualRate / 100.0 / 12.0;
             double investMonthlyRate = investReturn / 100.0 / 12.0;
             int maxMonths = remainingYears * 12;
 
             for (int m = 1; m <= maxMonths; m++) {
-                // Deuda se reduce con la cuota normal
+                double monthlyRate = monthlyRates[m - 1];
+                double mp = monthlyPayments[m - 1];
                 double interest = debt * monthlyRate;
-                double principalPaid = monthlyPayment - interest;
+                double principalPaid = mp - interest;
                 if (principalPaid > debt) principalPaid = debt;
                 debt -= principalPaid;
                 if (debt < 0) debt = 0;
 
-                // Cartera crece con el extra + rentabilidad
                 portfolio += extra;
                 portfolio *= (1 + investMonthlyRate);
 
@@ -95,11 +110,11 @@ public class MortgageSimulatorService {
             }
         }
 
-        // ─── 2. Estrategia AMORTIZAR: extra va a reducir hipoteca ───
-        StrategyResult amortizeResult = simulateAmortize(principal, annualRate, monthlyPayment, extra, remainingYears, currentPortfolio, currentInvested, investReturn, taxRate);
+        // ─── 2. Estrategia AMORTIZAR ───
+        StrategyResult amortizeResult = simulateAmortize(principal, monthlyRates, monthlyPayments, extra, remainingYears, currentPortfolio, currentInvested, investReturn, taxRate);
 
-        // ─── 3. Estrategia INVERTIR: extra va a la cartera ───
-        StrategyResult investResult = simulateInvest(principal, annualRate, monthlyPayment, extra, remainingYears, currentPortfolio, currentInvested, investReturn, taxRate);
+        // ─── 3. Estrategia INVERTIR ───
+        StrategyResult investResult = simulateInvest(principal, monthlyRates, monthlyPayments, extra, remainingYears, currentPortfolio, currentInvested, investReturn, taxRate);
 
         // ─── Winner ───
         String winner;
@@ -116,14 +131,14 @@ public class MortgageSimulatorService {
         }
 
         // ─── 4. Evolución anual ───
-        List<YearSnapshot> evolution = buildEvolution(principal, annualRate, monthlyPayment, extra, remainingYears, currentPortfolio, investReturn);
+        List<YearSnapshot> evolution = buildEvolution(principal, monthlyRates, monthlyPayments, extra, remainingYears, currentPortfolio, investReturn);
 
         // ─── 5. Sensibilidad ───
-        List<SensitivityRow> sensitivity = buildSensitivity(principal, annualRate, monthlyPayment, extra, remainingYears, currentPortfolio, currentInvested, taxRate);
+        List<SensitivityRow> sensitivity = buildSensitivity(principal, annualRate, extra, remainingYears, currentPortfolio, currentInvested, taxRate);
 
         return MortgageResult.builder()
                 .outstandingPrincipal(principal)
-                .annualInterestRate(annualRate)
+                .annualInterestRate(round2(annualRate))
                 .remainingYears(remainingYears)
                 .monthlyPayment(round2(monthlyPayment))
                 .extraMonthly(extra)
@@ -131,6 +146,8 @@ public class MortgageSimulatorService {
                 .investmentReturnSource(returnSource)
                 .currentPortfolioValue(round2(currentPortfolio))
                 .taxRatePct(taxRate)
+                .mixedMortgage(isMixed)
+                .ratePeriods(req.getRatePeriods())
                 .payoffMonth(payoffMonth)
                 .payoffPortfolioValue(payoffPortfolio)
                 .payoffDebtRemaining(payoffDebt)
@@ -144,16 +161,61 @@ public class MortgageSimulatorService {
     }
 
     /**
-     * Estrategia AMORTIZAR: el extra mensual reduce capital de hipoteca.
-     * Una vez pagada la hipoteca, el dinero liberado (cuota + extra) va a inversión.
+     * Builds an array of monthly interest rates (as decimal) for each month of the mortgage.
+     * Supports mixed mortgages with multiple rate periods.
      */
-    private StrategyResult simulateAmortize(double principal, double annualRate, double monthlyPayment,
+    private double[] buildMonthlyRateSchedule(MortgageRequest req, int remainingYears) {
+        int totalMonths = remainingYears * 12;
+        double[] rates = new double[totalMonths];
+
+        if (req.getRatePeriods() == null || req.getRatePeriods().isEmpty()) {
+            // Fixed rate
+            double monthlyRate = req.getAnnualInterestRate() / 100.0 / 12.0;
+            for (int i = 0; i < totalMonths; i++) rates[i] = monthlyRate;
+        } else {
+            // Mixed: fill periods sequentially
+            int idx = 0;
+            for (RatePeriod period : req.getRatePeriods()) {
+                double monthlyRate = period.getRate() / 100.0 / 12.0;
+                int periodMonths = period.getYears() * 12;
+                for (int m = 0; m < periodMonths && idx < totalMonths; m++, idx++) {
+                    rates[idx] = monthlyRate;
+                }
+            }
+            // If periods don't cover all months, extend last rate
+            if (idx < totalMonths) {
+                double lastRate = rates[idx - 1];
+                for (; idx < totalMonths; idx++) rates[idx] = lastRate;
+            }
+        }
+        return rates;
+    }
+
+    /**
+     * Calculates weighted average annual rate for display purposes.
+     */
+    private double calculateWeightedAverageRate(MortgageRequest req, int remainingYears) {
+        if (req.getRatePeriods() == null || req.getRatePeriods().isEmpty()) {
+            return req.getAnnualInterestRate();
+        }
+        int totalYears = remainingYears;
+        double weightedSum = 0;
+        int coveredYears = 0;
+        for (RatePeriod p : req.getRatePeriods()) {
+            int yrs = Math.min(p.getYears(), totalYears - coveredYears);
+            weightedSum += p.getRate() * yrs;
+            coveredYears += yrs;
+            if (coveredYears >= totalYears) break;
+        }
+        return coveredYears > 0 ? weightedSum / coveredYears : req.getAnnualInterestRate();
+    }
+
+    private StrategyResult simulateAmortize(double principal, double[] monthlyRates, double[] monthlyPayments,
                                             double extra, int years, double portfolioStart, double investedStart,
                                             double investReturn, double taxRate) {
         double debt = principal;
         double portfolio = portfolioStart;
         double totalInvested = investedStart;
-        double monthlyRate = annualRate / 100.0 / 12.0;
         double investMonthlyRate = investReturn / 100.0 / 12.0;
         int maxMonths = years * 12;
         double totalInterest = 0;
@@ -161,29 +223,28 @@ public class MortgageSimulatorService {
         int monthsToPayOff = maxMonths;
 
         for (int m = 1; m <= maxMonths; m++) {
+            double mp = monthlyPayments[m - 1];
             if (debt <= 0) {
-                // Hipoteca ya pagada: cuota + extra van a inversión
-                double freeAmount = monthlyPayment + extra;
+                double freeAmount = mp + extra;
                 portfolio += freeAmount;
                 totalInvested += freeAmount;
                 portfolio *= (1 + investMonthlyRate);
                 continue;
             }
 
-            double interest = debt * monthlyRate;
+            double interest = debt * monthlyRates[m - 1];
             totalInterest += interest;
 
-            double principalPaid = monthlyPayment - interest + extra;
+            double principalPaid = mp - interest + extra;
             if (principalPaid > debt) {
                 totalPaid += debt + interest;
                 debt = 0;
                 monthsToPayOff = m;
             } else {
                 debt -= principalPaid;
-                totalPaid += monthlyPayment + extra;
+                totalPaid += mp + extra;
             }
 
-            // Cartera crece por rentabilidad solamente (no hay aportaciones mientras pagas hipoteca)
             portfolio *= (1 + investMonthlyRate);
         }
 
@@ -203,17 +264,12 @@ public class MortgageSimulatorService {
                 .build();
     }
 
-    /**
-     * Estrategia INVERTIR: el extra mensual va a la cartera.
-     * La hipoteca se paga normalmente con su cuota.
-     */
-    private StrategyResult simulateInvest(double principal, double annualRate, double monthlyPayment,
+    private StrategyResult simulateInvest(double principal, double[] monthlyRates, double[] monthlyPayments,
                                           double extra, int years, double portfolioStart, double investedStart,
                                           double investReturn, double taxRate) {
         double debt = principal;
         double portfolio = portfolioStart;
         double totalInvested = investedStart;
-        double monthlyRate = annualRate / 100.0 / 12.0;
         double investMonthlyRate = investReturn / 100.0 / 12.0;
         int maxMonths = years * 12;
         double totalInterest = 0;
@@ -221,28 +277,27 @@ public class MortgageSimulatorService {
         int monthsToPayOff = maxMonths;
 
         for (int m = 1; m <= maxMonths; m++) {
+            double mp = monthlyPayments[m - 1];
             if (debt <= 0) {
-                // Hipoteca ya pagada, todo el extra + cuota va a inversión
-                portfolio += extra + monthlyPayment;
-                totalInvested += extra + monthlyPayment;
+                portfolio += extra + mp;
+                totalInvested += extra + mp;
                 portfolio *= (1 + investMonthlyRate);
                 continue;
             }
 
-            double interest = debt * monthlyRate;
+            double interest = debt * monthlyRates[m - 1];
             totalInterest += interest;
 
-            double principalPaid = monthlyPayment - interest;
+            double principalPaid = mp - interest;
             if (principalPaid >= debt) {
                 totalPaid += debt + interest;
                 debt = 0;
                 monthsToPayOff = m;
             } else {
                 debt -= principalPaid;
-                totalPaid += monthlyPayment;
+                totalPaid += mp;
             }
 
-            // Extra va a inversión
             portfolio += extra;
             totalInvested += extra;
             portfolio *= (1 + investMonthlyRate);
@@ -264,26 +319,26 @@ public class MortgageSimulatorService {
                 .build();
     }
 
-    private List<YearSnapshot> buildEvolution(double principal, double annualRate, double monthlyPayment,
+    private List<YearSnapshot> buildEvolution(double principal, double[] monthlyRates, double[] monthlyPayments,
                                               double extra, int years, double portfolioStart, double investReturn) {
         List<YearSnapshot> result = new ArrayList<>();
         double debt = principal;
         double portfolio = portfolioStart;
-        double monthlyRate = annualRate / 100.0 / 12.0;
         double investMonthlyRate = investReturn / 100.0 / 12.0;
         double cumulativeInterest = 0;
+        int monthIdx = 0;
 
         for (int y = 1; y <= years; y++) {
             for (int m = 0; m < 12; m++) {
                 if (debt > 0) {
-                    double interest = debt * monthlyRate;
+                    double interest = debt * monthlyRates[monthIdx];
                     cumulativeInterest += interest;
-                    double principalPaid = monthlyPayment - interest;
+                    double principalPaid = monthlyPayments[monthIdx] - interest;
                     if (principalPaid >= debt) { debt = 0; } else { debt -= principalPaid; }
                 }
-                // Invertir el extra
                 portfolio += extra;
                 portfolio *= (1 + investMonthlyRate);
+                monthIdx++;
             }
             result.add(YearSnapshot.builder()
                     .year(y)
@@ -296,7 +351,7 @@ public class MortgageSimulatorService {
         return result;
     }
 
-    private List<SensitivityRow> buildSensitivity(double principal, double annualRate, double monthlyPayment,
+    private List<SensitivityRow> buildSensitivity(double principal, double annualRate,
                                                    double extra, int years, double portfolioStart,
                                                    double investedStart, double taxRate) {
         List<SensitivityRow> rows = new ArrayList<>();
@@ -307,8 +362,14 @@ public class MortgageSimulatorService {
             for (double rate : rates) {
                 if (rate < 0) continue;
                 double mp = calculateMonthlyPayment(principal, rate, years);
-                StrategyResult amort = simulateAmortize(principal, rate, mp, extra, years, portfolioStart, investedStart, r, taxRate);
-                StrategyResult invest = simulateInvest(principal, rate, mp, extra, years, portfolioStart, investedStart, r, taxRate);
+                int totalMonths = years * 12;
+                double monthlyRate = rate / 100.0 / 12.0;
+                double[] fixedRates = new double[totalMonths];
+                double[] fixedPayments = new double[totalMonths];
+                for (int i = 0; i < totalMonths; i++) { fixedRates[i] = monthlyRate; fixedPayments[i] = mp; }
+
+                StrategyResult amort = simulateAmortize(principal, fixedRates, fixedPayments, extra, years, portfolioStart, investedStart, r, taxRate);
+                StrategyResult invest = simulateInvest(principal, fixedRates, fixedPayments, extra, years, portfolioStart, investedStart, r, taxRate);
 
                 String winner = invest.getNetWealthEnd() > amort.getNetWealthEnd() ? "INVERTIR" : "AMORTIZAR";
                 double adv = Math.abs(invest.getNetWealthEnd() - amort.getNetWealthEnd());
@@ -322,6 +383,63 @@ public class MortgageSimulatorService {
             }
         }
         return rows;
+    }
+
+    /**
+     * Builds monthly payment schedule. For mixed mortgages, recalculates the payment
+     * at each period transition based on remaining principal and remaining term.
+     */
+    private double[] buildMonthlyPaymentSchedule(MortgageRequest req, double principal, double initialPayment, int remainingYears) {
+        int totalMonths = remainingYears * 12;
+        double[] payments = new double[totalMonths];
+
+        if (req.getRatePeriods() == null || req.getRatePeriods().size() <= 1) {
+            // Fixed rate or single period: same payment throughout
+            for (int i = 0; i < totalMonths; i++) payments[i] = initialPayment;
+            return payments;
+        }
+
+        // Mixed: simulate month by month, recalculating payment at period boundaries
+        double debt = principal;
+        int monthIdx = 0;
+        int monthsElapsed = 0;
+
+        for (int p = 0; p < req.getRatePeriods().size() && monthIdx < totalMonths; p++) {
+            RatePeriod period = req.getRatePeriods().get(p);
+            double annualRate = period.getRate();
+            double monthlyRate = annualRate / 100.0 / 12.0;
+            int periodMonths = period.getYears() * 12;
+            int remainingMonths = totalMonths - monthsElapsed;
+
+            // Recalculate payment for this period based on current debt and remaining term
+            double periodPayment = calculateMonthlyPayment(debt, annualRate, (totalMonths - monthsElapsed + 11) / 12);
+            // More precise: use remaining months directly
+            if (monthlyRate > 0) {
+                int n = totalMonths - monthsElapsed;
+                periodPayment = debt * monthlyRate * Math.pow(1 + monthlyRate, n) / (Math.pow(1 + monthlyRate, n) - 1);
+            } else {
+                periodPayment = debt / (totalMonths - monthsElapsed);
+            }
+
+            for (int m = 0; m < periodMonths && monthIdx < totalMonths; m++) {
+                payments[monthIdx] = periodPayment;
+                // Advance debt for accurate recalculation at next period
+                double interest = debt * monthlyRate;
+                double principalPaid = periodPayment - interest;
+                if (principalPaid > debt) principalPaid = debt;
+                debt -= principalPaid;
+                if (debt < 0) debt = 0;
+                monthIdx++;
+                monthsElapsed++;
+            }
+        }
+
+        // Fill any remaining months (shouldn't happen if periods cover all years)
+        if (monthIdx < totalMonths && monthIdx > 0) {
+            for (; monthIdx < totalMonths; monthIdx++) payments[monthIdx] = payments[monthIdx - 1];
+        }
+
+        return payments;
     }
 
     private double calculateMonthlyPayment(double principal, double annualRate, int years) {

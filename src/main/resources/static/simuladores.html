@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 /* ===================== DESIGN TOKENS (same as main) ===================== */
 :root,[data-theme="light"]{
@@ -206,13 +208,35 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         </div>
 
         <div class="form-group">
-          <label class="form-label">Tipo de interés anual (%)</label>
-          <input type="number" class="form-input" id="mortRate" placeholder="Ej: 2.5" min="0" max="20" step="0.1">
+          <label class="form-label" style="display:flex;align-items:center;gap:var(--space-3)">
+            Tipo de hipoteca
+            <span style="display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);font-weight:400">
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="mortType" value="fixed" checked onchange="toggleMortType()"> Fija</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="mortType" value="mixed" onchange="toggleMortType()"> Mixta</label>
+            </span>
+          </label>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Años restantes</label>
-          <input type="number" class="form-input" id="mortYears" value="25" min="1" max="40" step="1">
+        <!-- Fixed rate fields -->
+        <div id="mortFixedFields">
+          <div class="form-group">
+            <label class="form-label">Tipo de interés anual (%)</label>
+            <input type="number" class="form-input" id="mortRate" placeholder="Ej: 2.5" min="0" max="20" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Años restantes</label>
+            <input type="number" class="form-input" id="mortYears" value="25" min="1" max="40" step="1">
+          </div>
+        </div>
+
+        <!-- Mixed rate fields -->
+        <div id="mortMixedFields" style="display:none">
+          <div class="form-group">
+            <label class="form-label">🔀 Tramos de tipo de interés</label>
+            <div id="mortRatePeriods" style="display:flex;flex-direction:column;gap:var(--space-2)"></div>
+            <button type="button" onclick="addRatePeriod()" style="margin-top:var(--space-2);font-size:var(--text-xs);color:var(--color-primary);background:none;border:none;cursor:pointer;text-decoration:underline">+ Añadir tramo</button>
+            <div class="form-hint">Ej: 5 años al 1.5% + 20 años al 3%. Los años se suman automáticamente</div>
+          </div>
         </div>
 
         <div class="form-group">
@@ -424,6 +448,7 @@ function renderProjection(r) {
   const monthlySrc = r.monthlyContributionSource === 'plan' ? '(plan inversión)' : '(personalizado)';
 
   area.innerHTML = `
+    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Proyección de Cartera')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <!-- KPIs -->
     <div class="kpi-row">
       <div class="kpi-card">
@@ -640,6 +665,27 @@ function switchSim(sim) {
 }
 
 // ===================== MORTGAGE =====================
+function toggleMortType() {
+  const isMixed = document.querySelector('input[name="mortType"]:checked').value === 'mixed';
+  document.getElementById('mortFixedFields').style.display = isMixed ? 'none' : '';
+  document.getElementById('mortMixedFields').style.display = isMixed ? '' : 'none';
+}
+
+function addRatePeriod() {
+  const container = document.getElementById('mortRatePeriods');
+  const row = document.createElement('div');
+  row.className = 'rate-period-row';
+  row.style.cssText = 'display:flex;gap:var(--space-2);align-items:center';
+  row.innerHTML = `
+    <input type="number" class="form-input rp-years" placeholder="Años" min="1" max="40" step="1" style="width:80px">
+    <span style="color:var(--color-text-muted);font-size:var(--text-xs)">años al</span>
+    <input type="number" class="form-input rp-rate" placeholder="%" min="0" max="20" step="0.1" style="width:80px">
+    <span style="color:var(--color-text-muted);font-size:var(--text-xs)">%</span>
+    <button type="button" onclick="this.parentElement.remove()" style="color:var(--color-notification);background:none;border:none;cursor:pointer;font-size:var(--text-sm)">✕</button>
+  `;
+  container.appendChild(row);
+}
+
 async function runMortgage() {
   const principal = parseFloat(document.getElementById('mortPrincipal').value);
   const rate = parseFloat(document.getElementById('mortRate').value);
@@ -649,12 +695,42 @@ async function runMortgage() {
   const ret = document.getElementById('mortReturn').value;
   const tax = parseFloat(document.getElementById('mortTax').value) || 21;
 
-  if (!principal || !rate || !years) {
-    showToast('Introduce capital, tipo de interés y años restantes', 'error');
+  const isMixed = document.querySelector('input[name="mortType"]:checked').value === 'mixed';
+
+  // Collect rate periods for mixed mortgage
+  const ratePeriods = [];
+  if (isMixed) {
+    const periodRows = document.querySelectorAll('#mortRatePeriods .rate-period-row');
+    periodRows.forEach(row => {
+      const y = parseInt(row.querySelector('.rp-years').value);
+      const r = parseFloat(row.querySelector('.rp-rate').value);
+      if (y > 0 && r >= 0) ratePeriods.push({ years: y, rate: r });
+    });
+  }
+  const yearsFromPeriods = ratePeriods.reduce((sum, p) => sum + p.years, 0);
+
+  if (!principal) {
+    showToast('Introduce el capital pendiente', 'error');
+    return;
+  }
+  if (isMixed && ratePeriods.length === 0) {
+    showToast('Añade al menos un tramo de tipo de interés', 'error');
+    return;
+  }
+  if (!isMixed && (!rate || !years)) {
+    showToast('Introduce tipo de interés y años restantes', 'error');
     return;
   }
 
-  const body = { outstandingPrincipal: principal, annualInterestRate: rate, remainingYears: years, extraMonthly: extra, taxRatePct: tax };
+  const body = { outstandingPrincipal: principal, extraMonthly: extra, taxRatePct: tax };
+  if (isMixed) {
+    body.ratePeriods = ratePeriods;
+    body.annualInterestRate = ratePeriods[0].rate;
+    body.remainingYears = yearsFromPeriods;
+  } else {
+    body.annualInterestRate = rate;
+    body.remainingYears = years;
+  }
   if (payment) body.monthlyPayment = parseFloat(payment);
   if (ret) body.investmentReturnPct = parseFloat(ret);
 
@@ -679,32 +755,63 @@ function renderMortgage(r) {
   const winColor = r.winnerStrategy === 'INVERTIR' ? 'var(--color-success)' : r.winnerStrategy === 'AMORTIZAR' ? 'var(--color-gold)' : 'var(--color-text-muted)';
   const winIcon = r.winnerStrategy === 'INVERTIR' ? '📈' : r.winnerStrategy === 'AMORTIZAR' ? '🏠' : '🤝';
 
+  const rateDesc = r.mixedMortgage && r.ratePeriods
+    ? 'tipo mixto (' + r.ratePeriods.map(p => p.years + 'a al ' + p.rate + '%').join(' + ') + ')'
+    : 'un tipo hipotecario del <strong>' + fmt(r.annualInterestRate) + '%</strong>';
+
   const payoffText = r.payoffMonth
     ? `Tu cartera podrá cancelar la hipoteca en <strong>${Math.floor(r.payoffMonth/12)} años y ${r.payoffMonth%12} meses</strong> (cartera: ${fmtK(r.payoffPortfolioValue)} € vs deuda: ${fmtK(r.payoffDebtRemaining)} €)`
     : 'Con la configuración actual, tu cartera no alcanzará a cubrir la deuda antes de que termine la hipoteca normalmente.';
 
   area.innerHTML = `
+    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Hipoteca vs Inversión')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <!-- Winner banner -->
     <div class="sim-panel" style="border-left:4px solid ${winColor};margin-bottom:var(--space-6)">
       <h2 style="color:${winColor}">${winIcon} Mejor estrategia: ${r.winnerStrategy}</h2>
       <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-3)">
-        Con tu rentabilidad del <strong>${fmt(r.investmentReturnPct)}%</strong> ${r.investmentReturnSource === 'xirr' ? '(XIRR real)' : ''} y un tipo hipotecario del <strong>${fmt(r.annualInterestRate)}%</strong>,
+        Con tu rentabilidad del <strong>${fmt(r.investmentReturnPct)}%</strong> ${r.investmentReturnSource === 'xirr' ? '(XIRR real)' : ''} y ${rateDesc},
         ${r.winnerStrategy === 'INVERTIR' ? 'invertir' : 'amortizar'} los ${fmt(r.extraMonthly)} €/mes extra genera <strong>${fmtK(r.advantageEur)} € más</strong> de patrimonio neto al final.
       </p>
       <p style="font-size:var(--text-sm);color:var(--color-text-muted)">${payoffText}</p>
     </div>
 
     <!-- KPIs comparativa -->
-    <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:var(--space-6)">
+    <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:var(--space-4)">
       <div class="kpi-card" style="border-top:3px solid var(--color-gold)">
-        <div class="kpi-label">🏠 Amortizar — Patrimonio neto final</div>
+        <div class="kpi-label">🏠 Amortizar — Patrimonio neto al final</div>
         <div class="kpi-value">${fmtK(a.netWealthEnd)} €</div>
-        <div class="kpi-sub">Hipoteca cancelada en ${Math.floor(a.monthsToPayOff/12)}a ${a.monthsToPayOff%12}m · Intereses: ${fmtK(a.totalInterestPaid)} €</div>
+        <div class="kpi-sub">Cancelas hipoteca en <strong>${Math.floor(a.monthsToPayOff/12)}a ${a.monthsToPayOff%12}m</strong><br>
+          Ahorras ${fmtK(inv.totalInterestPaid - a.totalInterestPaid)} € en intereses<br>
+          Luego inviertes cuota+extra → cartera: ${fmtK(a.finalPortfolioAfterTax)} € neta</div>
       </div>
       <div class="kpi-card" style="border-top:3px solid var(--color-success)">
-        <div class="kpi-label">📈 Invertir — Patrimonio neto final</div>
+        <div class="kpi-label">📈 Invertir — Patrimonio neto al final</div>
         <div class="kpi-value">${fmtK(inv.netWealthEnd)} €</div>
-        <div class="kpi-sub">Cartera final: ${fmtK(inv.finalPortfolioAfterTax)} € (neta impuestos) · Intereses: ${fmtK(inv.totalInterestPaid)} €</div>
+        <div class="kpi-sub">Pagas hipoteca normal (${Math.floor(inv.monthsToPayOff/12)}a ${inv.monthsToPayOff%12}m)<br>
+          Extra ${fmt(r.extraMonthly)} €/mes va a cartera<br>
+          Cartera final: ${fmtK(inv.finalPortfolioAfterTax)} € neta de impuestos</div>
+      </div>
+    </div>
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-6)">
+      <div class="kpi-card">
+        <div class="kpi-label">💰 Cuota mensual</div>
+        <div class="kpi-value">${fmt(r.monthlyPayment)} €</div>
+        <div class="kpi-sub">+ extra ${fmt(r.extraMonthly)} €/mes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">📅 Plazo restante</div>
+        <div class="kpi-value">${r.remainingYears} años</div>
+        <div class="kpi-sub">${r.remainingYears * 12} meses</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🏦 Deuda pendiente</div>
+        <div class="kpi-value">${fmtK(r.outstandingPrincipal)} €</div>
+        <div class="kpi-sub">Tipo: ${fmt(r.annualInterestRate)}%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🎯 Diferencia neta</div>
+        <div class="kpi-value" style="color:${winColor}">${r.winnerStrategy === 'EMPATE' ? '≈ 0' : '+ ' + fmtK(r.advantageEur)} €</div>
+        <div class="kpi-sub">A favor de ${r.winnerStrategy.toLowerCase()}</div>
       </div>
     </div>
 
@@ -857,6 +964,7 @@ function renderWithdrawal(r) {
     : `Tu cartera <strong>se agota en el año ${r.depletionYear}</strong> retirando ${fmt(r.initialMonthlyWithdrawal)} €/mes (tasa ${fmt(r.withdrawalRatePct)}%)`;
 
   area.innerHTML = `
+    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Retirada Segura SWR')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <div class="sim-panel" style="border-left:4px solid ${surviveColor};margin-bottom:var(--space-6)">
       <h2 style="color:${surviveColor}">${surviveIcon} ${r.portfolioSurvives ? 'Cartera sostenible' : 'Cartera se agota'}</h2>
       <p style="font-size:var(--text-sm);color:var(--color-text-muted)">${surviveText}</p>
@@ -1018,6 +1126,7 @@ function renderCompound(r) {
     : '';
 
   area.innerHTML = `
+    <div style="text-align:right;margin-bottom:var(--space-4)"><button class="export-pdf-btn" onclick="exportSimToPdf('Interés Compuesto')" style="background:var(--color-primary);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500">📄 Exportar PDF</button></div>
     <div class="sim-panel" style="border-left:4px solid var(--color-success);margin-bottom:var(--space-6)">
       <h2 style="color:var(--color-success)">💰 Tu dinero se multiplica ×${r.multiplier.toFixed(1)}</h2>
       <p style="font-size:var(--text-sm);color:var(--color-text-muted)">
@@ -1113,6 +1222,85 @@ function renderCiChart(r) {
 }
 
 runProjection();
+
+// ===================== EXPORT PDF =====================
+async function exportSimToPdf(title) {
+  const area = document.getElementById('resultArea');
+  const btn = area.querySelector('.export-pdf-btn');
+  if (btn) btn.style.display = 'none';
+
+  showToast('Generando PDF…', 'info');
+
+  try {
+    const canvas = await html2canvas(area, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      onclone: function(clonedDoc) {
+        // Replace oklch in all style elements (unsupported by html2canvas)
+        clonedDoc.querySelectorAll('style').forEach(style => {
+          style.textContent = style.textContent.replace(/oklch\([^)]*\)/g, 'rgba(0,0,0,0.1)');
+        });
+        // Force light colors on the result area clone
+        const clonedArea = clonedDoc.getElementById('resultArea');
+        if (clonedArea) {
+          clonedArea.style.background = '#fff';
+          clonedArea.style.padding = '24px';
+          clonedArea.querySelectorAll('*').forEach(el => {
+            el.style.boxShadow = 'none';
+          });
+        }
+      }
+    });
+
+    const { jsPDF } = window.jspdf;
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = 190;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pageHeight = 277;
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    let position = 10;
+
+    pdf.setFontSize(14);
+    pdf.setTextColor(40);
+    pdf.text(title, 10, position);
+    position += 8;
+    pdf.setFontSize(9);
+    pdf.setTextColor(120);
+    pdf.text('Generado: ' + new Date().toLocaleString('es-ES'), 10, position);
+    position += 6;
+
+    let heightLeft = imgHeight;
+    if (imgHeight <= pageHeight - position) {
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    } else {
+      let srcY = 0;
+      while (heightLeft > 0) {
+        const sliceHeight = Math.min(heightLeft, pageHeight - position);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = Math.round((sliceHeight / imgHeight) * canvas.height);
+        const sCtx = sliceCanvas.getContext('2d');
+        sCtx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 10, position, imgWidth, sliceHeight);
+        heightLeft -= sliceHeight;
+        srcY += sliceCanvas.height;
+        if (heightLeft > 0) { pdf.addPage(); position = 10; }
+      }
+    }
+
+    pdf.save('simulacion_' + title.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now() + '.pdf');
+    showToast('PDF descargado correctamente', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Error al generar PDF: ' + e.message, 'error');
+  } finally {
+    if (btn) btn.style.display = '';
+  }
+}
+
 </script>
 </body>
 </html>

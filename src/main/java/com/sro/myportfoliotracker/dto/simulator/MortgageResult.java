@@ -23,6 +23,8 @@ public class MortgageResult {
     private String investmentReturnSource; // "xirr" | "custom"
     private double currentPortfolioValue;
     private double taxRatePct;
+    private boolean mixedMortgage;
+    private List<MortgageRequest.RatePeriod> ratePeriods;
 
     // ─── Resultado principal: ¿cuándo puede la cartera pagar la hipoteca? ───
     private Integer payoffMonth;           // Mes en que cartera >= deuda pendiente (null si nunca)
