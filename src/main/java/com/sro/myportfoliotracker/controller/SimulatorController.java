@@ -1,6 +1,7 @@
 package com.sro.myportfoliotracker.controller;
 
 import com.sro.myportfoliotracker.dto.simulator.*;
+import com.sro.myportfoliotracker.service.simulator.CompoundInterestService;
 import com.sro.myportfoliotracker.service.simulator.MortgageSimulatorService;
 import com.sro.myportfoliotracker.service.simulator.ProjectionSimulatorService;
 import com.sro.myportfoliotracker.service.simulator.WithdrawalSimulatorService;
@@ -17,6 +18,7 @@ public class SimulatorController {
     private final ProjectionSimulatorService projectionService;
     private final MortgageSimulatorService mortgageService;
     private final WithdrawalSimulatorService withdrawalService;
+    private final CompoundInterestService compoundInterestService;
 
     @PostMapping("/projection")
     public ResponseEntity<ProjectionResult> projectPortfolio(@RequestBody ProjectionRequest request) {
@@ -36,5 +38,10 @@ public class SimulatorController {
     @PostMapping("/withdrawal")
     public ResponseEntity<WithdrawalResult> simulateWithdrawal(@RequestBody WithdrawalRequest request) {
         return ResponseEntity.ok(withdrawalService.simulate(request));
+    }
+
+    @PostMapping("/compound")
+    public ResponseEntity<CompoundInterestResult> simulateCompound(@RequestBody CompoundInterestRequest request) {
+        return ResponseEntity.ok(compoundInterestService.simulate(request));
     }
 }
