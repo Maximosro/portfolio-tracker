@@ -144,13 +144,14 @@ public class MortgageSimulatorService {
 
     /**
      * Estrategia AMORTIZAR: el extra mensual reduce capital de hipoteca.
-     * La cartera solo crece por rentabilidad (sin nuevas aportaciones).
+     * Una vez pagada la hipoteca, el dinero liberado (cuota + extra) va a inversión.
      */
     private StrategyResult simulateAmortize(double principal, double annualRate, double monthlyPayment,
                                             double extra, int years, double portfolioStart, double investedStart,
                                             double investReturn, double taxRate) {
         double debt = principal;
         double portfolio = portfolioStart;
+        double totalInvested = investedStart;
         double monthlyRate = annualRate / 100.0 / 12.0;
         double investMonthlyRate = investReturn / 100.0 / 12.0;
         int maxMonths = years * 12;
@@ -159,7 +160,14 @@ public class MortgageSimulatorService {
         int monthsToPayOff = maxMonths;
 
         for (int m = 1; m <= maxMonths; m++) {
-            if (debt <= 0) break;
+            if (debt <= 0) {
+                // Hipoteca ya pagada: cuota + extra van a inversión
+                double freeAmount = monthlyPayment + extra;
+                portfolio += freeAmount;
+                totalInvested += freeAmount;
+                portfolio *= (1 + investMonthlyRate);
+                continue;
+            }
 
             double interest = debt * monthlyRate;
             totalInterest += interest;
@@ -174,18 +182,18 @@ public class MortgageSimulatorService {
                 totalPaid += monthlyPayment + extra;
             }
 
-            // Cartera crece por rentabilidad solamente
+            // Cartera crece por rentabilidad solamente (no hay aportaciones mientras pagas hipoteca)
             portfolio *= (1 + investMonthlyRate);
         }
 
-        double gains = portfolio - investedStart;
+        double gains = portfolio - totalInvested;
         double tax = gains > 0 ? gains * taxRate / 100.0 : 0;
         double portfolioAfterTax = portfolio - tax;
 
         return StrategyResult.builder()
                 .name("Amortizar")
                 .totalInterestPaid(round2(totalInterest))
-                .totalInvested(round2(investedStart))
+                .totalInvested(round2(totalInvested))
                 .finalPortfolioValue(round2(portfolio))
                 .finalPortfolioAfterTax(round2(portfolioAfterTax))
                 .netWealthEnd(round2(portfolioAfterTax - debt))
