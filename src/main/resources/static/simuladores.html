@@ -156,10 +156,10 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
           <div class="sim-nav-item" data-sim="mortgage" onclick="switchSim('mortgage')">🏠 Hipoteca vs Inversión</div>
           <div class="sim-nav-item" data-sim="withdrawal" onclick="switchSim('withdrawal')">🏦 Retirada Segura (SWR)</div>
           <div class="sim-nav-item" data-sim="compound" onclick="switchSim('compound')">💰 Interés Compuesto</div>
+          <div class="sim-nav-item" data-sim="montecarlo" onclick="switchSim('montecarlo')">🎲 Monte Carlo</div>
           <div class="sim-nav-item disabled" title="Próximamente">🧮 Simulador FIFO Fiscal</div>
           <div class="sim-nav-item disabled" title="Próximamente">⚖️ Rebalanceo</div>
           <div class="sim-nav-item disabled" title="Próximamente">📉 What-If de Precios</div>
-          <div class="sim-nav-item disabled" title="Próximamente">🎲 Monte Carlo</div>
         </nav>
       </div>
 
@@ -357,6 +357,56 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)" onclick="runCompound()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Calcular
+        </button>
+      </div>
+
+      <!-- Parameters panel: MONTE CARLO -->
+      <div class="sim-panel" id="paramsMontecarlo" style="display:none">
+        <h2>🎲 Monte Carlo</h2>
+
+        <div class="form-group">
+          <label class="form-label">Simulaciones</label>
+          <input type="number" class="form-input" id="mcSims" value="1000" min="100" max="10000" step="100">
+          <div class="form-hint">Más simulaciones = más precisión (100-10.000)</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Años a simular</label>
+          <input type="number" class="form-input" id="mcYears" value="20" min="1" max="60" step="1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rentabilidad media anual (%)</label>
+          <input type="number" class="form-input" id="mcReturn" placeholder="XIRR real" min="-10" max="30" step="0.5">
+          <div class="form-hint">Vacío = usa tu XIRR real</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Volatilidad anual (%)</label>
+          <input type="number" class="form-input" id="mcVolatility" value="15" min="1" max="60" step="1">
+          <div class="form-hint">Desviación estándar. Ej: 15% para RV global, 20% para tech, 5% para RF</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Aportación mensual (€)</label>
+          <input type="number" class="form-input" id="mcMonthly" placeholder="Del plan de inversión" min="0" step="50">
+          <div class="form-hint">Vacío = usa tu plan de inversión</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Inflación anual (%)</label>
+          <input type="number" class="form-input" id="mcInflation" value="2.5" min="0" max="15" step="0.1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Objetivo de patrimonio (€)</label>
+          <input type="number" class="form-input" id="mcGoal" placeholder="Ej: 500000" min="0" step="10000">
+          <div class="form-hint">Opcional: calcula probabilidad de alcanzarlo</div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)" onclick="runMonteCarlo()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Simular
         </button>
       </div>
     </div>
@@ -653,7 +703,7 @@ function renderChart(r) {
 let currentSim = 'projection';
 
 function getCurrentSimTitle() {
-  const titles = { projection: 'Proyección de Cartera', mortgage: 'Hipoteca vs Inversión', withdrawal: 'Retirada Segura SWR', compound: 'Interés Compuesto' };
+  const titles = { projection: 'Proyección de Cartera', mortgage: 'Hipoteca vs Inversión', withdrawal: 'Retirada Segura SWR', compound: 'Interés Compuesto', montecarlo: 'Monte Carlo' };
   return titles[currentSim] || 'Simulación';
 }
 function showExportBtn() { document.getElementById('headerExportBtn').style.display = ''; }
@@ -668,12 +718,14 @@ function switchSim(sim) {
   document.getElementById('paramsMortgage').style.display = sim === 'mortgage' ? '' : 'none';
   document.getElementById('paramsWithdrawal').style.display = sim === 'withdrawal' ? '' : 'none';
   document.getElementById('paramsCompound').style.display = sim === 'compound' ? '' : 'none';
+  document.getElementById('paramsMontecarlo').style.display = sim === 'montecarlo' ? '' : 'none';
   document.getElementById('resultArea').innerHTML = '';
   hideExportBtn();
   if (sim === 'projection') runProjection();
   if (sim === 'mortgage') document.getElementById('resultArea').innerHTML = '<div class="sim-panel" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">🏠 Configura los datos de tu hipoteca y pulsa Simular</div>';
   if (sim === 'withdrawal') runWithdrawal();
   if (sim === 'compound') runCompound();
+  if (sim === 'montecarlo') runMonteCarlo();
 }
 
 // ===================== MORTGAGE =====================
@@ -1234,6 +1286,245 @@ function renderCiChart(r) {
 }
 
 runProjection();
+
+// ===================== MONTE CARLO =====================
+async function runMonteCarlo() {
+  const body = {
+    numSimulations: parseInt(document.getElementById('mcSims').value) || 1000,
+    years: parseInt(document.getElementById('mcYears').value) || 20,
+    volatilityPct: parseFloat(document.getElementById('mcVolatility').value) || 15,
+    inflationPct: parseFloat(document.getElementById('mcInflation').value) || 2.5
+  };
+  const ret = document.getElementById('mcReturn').value;
+  const monthly = document.getElementById('mcMonthly').value;
+  const goal = document.getElementById('mcGoal').value;
+  if (ret) body.expectedReturnPct = parseFloat(ret);
+  if (monthly) body.monthlyContribution = parseFloat(monthly);
+  if (goal) body.goalAmount = parseFloat(goal);
+
+  document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Ejecutando ' + body.numSimulations + ' simulaciones…</span></div>';
+
+  try {
+    const resp = await fetch(`${BASE}/api/simulator/montecarlo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!resp.ok) throw new Error('Error en la simulación');
+    const r = await resp.json();
+    renderMonteCarlo(r);
+  } catch (e) {
+    showToast(e.message, 'error');
+    document.getElementById('resultArea').innerHTML = `<div class="sim-panel" style="text-align:center;padding:var(--space-12);color:var(--color-notification)">❌ ${e.message}</div>`;
+  }
+}
+
+function renderMonteCarlo(r) {
+  const area = document.getElementById('resultArea');
+  const retSrc = r.expectedReturnSource === 'xirr' ? '(XIRR real)' : '(personalizado)';
+  const monthlySrc = r.monthlyContributionSource === 'plan' ? '(plan inversión)' : '(personalizado)';
+
+  const goalHtml = r.goalAmount ? `
+    <div class="kpi-card" style="border-top:3px solid var(--color-gold)">
+      <div class="kpi-label">Prob. alcanzar ${fmtK(r.goalAmount)} €</div>
+      <div class="kpi-value" style="color:${r.goalProbabilityPct >= 70 ? 'var(--color-success)' : r.goalProbabilityPct >= 40 ? 'var(--color-gold)' : 'var(--color-notification)'}">${fmt(r.goalProbabilityPct)}%</div>
+      <div class="kpi-sub">De ${r.numSimulations} simulaciones</div>
+    </div>` : '';
+
+  area.innerHTML = `
+    <div class="sim-panel" style="border-left:4px solid var(--color-primary);margin-bottom:var(--space-6)">
+      <h2 style="color:var(--color-primary)">🎲 Simulación Monte Carlo — ${r.numSimulations.toLocaleString('es-ES')} escenarios</h2>
+      <p style="font-size:var(--text-sm);color:var(--color-text-muted)">
+        Partiendo de <strong>${fmtK(r.currentPortfolioValue)} €</strong>, aportando ${fmt(r.monthlyContribution)} €/mes ${monthlySrc},
+        con rentabilidad media ${fmt(r.expectedReturnPct)}% ${retSrc} y volatilidad ${fmt(r.volatilityPct)}%,
+        durante <strong>${r.years} años</strong>.
+      </p>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Mediana (P50)</div>
+        <div class="kpi-value positive">${fmtK(r.p50Median)} €</div>
+        <div class="kpi-sub">Real: ${fmtK(r.p50Real)} € (inflación ${fmt(r.inflationPct)}%)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Media</div>
+        <div class="kpi-value">${fmtK(r.mean)} €</div>
+        <div class="kpi-sub">Real: ${fmtK(r.meanReal)} €</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Prob. de pérdida</div>
+        <div class="kpi-value" style="color:${r.probabilityOfLossPct > 20 ? 'var(--color-notification)' : r.probabilityOfLossPct > 5 ? 'var(--color-gold)' : 'var(--color-success)'}">${fmt(r.probabilityOfLossPct)}%</div>
+        <div class="kpi-sub">Final &lt; aportado (${fmtK(r.totalContributed)} €)</div>
+      </div>
+      ${goalHtml}
+    </div>
+
+    <div class="kpi-row" style="grid-template-columns:repeat(5,1fr)">
+      <div class="kpi-card">
+        <div class="kpi-label">Pesimista (P5)</div>
+        <div class="kpi-value" style="font-size:var(--text-lg)">${fmtK(r.p5)} €</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">P25</div>
+        <div class="kpi-value" style="font-size:var(--text-lg)">${fmtK(r.p25)} €</div>
+      </div>
+      <div class="kpi-card" style="border-top:2px solid var(--color-primary)">
+        <div class="kpi-label">Mediana (P50)</div>
+        <div class="kpi-value" style="font-size:var(--text-lg)">${fmtK(r.p50Median)} €</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">P75</div>
+        <div class="kpi-value" style="font-size:var(--text-lg)">${fmtK(r.p75)} €</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Optimista (P95)</div>
+        <div class="kpi-value" style="font-size:var(--text-lg)">${fmtK(r.p95)} €</div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Abanico de probabilidades — Percentiles por año</div>
+      <div class="chart-wrap"><canvas id="mcChart"></canvas></div>
+    </div>
+
+    <div class="table-container">
+      <h3>📋 Percentiles por año</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Año</th><th>P5</th><th>P10</th><th>P25</th><th>P50</th><th>P75</th><th>P90</th><th>P95</th><th>Aportado</th></tr></thead>
+          <tbody id="mcTable"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Table
+  const tbody = document.getElementById('mcTable');
+  for (const y of r.yearlyPercentiles) {
+    tbody.innerHTML += `<tr>
+      <td>${y.year}</td>
+      <td>${fmtK(y.p5)} €</td>
+      <td>${fmtK(y.p10)} €</td>
+      <td>${fmtK(y.p25)} €</td>
+      <td><strong>${fmtK(y.p50)} €</strong></td>
+      <td>${fmtK(y.p75)} €</td>
+      <td>${fmtK(y.p90)} €</td>
+      <td>${fmtK(y.p95)} €</td>
+      <td style="color:var(--color-text-muted)">${fmtK(y.totalContributed)} €</td>
+    </tr>`;
+  }
+
+  // Fan chart
+  renderMonteCarloChart(r);
+  showExportBtn();
+}
+
+function renderMonteCarloChart(r) {
+  const ctx = document.getElementById('mcChart').getContext('2d');
+  const labels = r.yearlyPercentiles.map(y => `Año ${y.year}`);
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--color-text-muted').trim();
+  const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--color-divider').trim();
+  const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'P95',
+          data: r.yearlyPercentiles.map(y => y.p95),
+          borderColor: 'rgba(109,170,69,.3)',
+          backgroundColor: 'rgba(109,170,69,.05)',
+          fill: '+1',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: .3
+        },
+        {
+          label: 'P75',
+          data: r.yearlyPercentiles.map(y => y.p75),
+          borderColor: 'rgba(109,170,69,.4)',
+          backgroundColor: 'rgba(109,170,69,.08)',
+          fill: '+1',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: .3
+        },
+        {
+          label: 'P50 (Mediana)',
+          data: r.yearlyPercentiles.map(y => y.p50),
+          borderColor: primaryColor,
+          backgroundColor: 'rgba(79,152,163,.1)',
+          fill: '+1',
+          borderWidth: 3,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: .3
+        },
+        {
+          label: 'P25',
+          data: r.yearlyPercentiles.map(y => y.p25),
+          borderColor: 'rgba(221,105,116,.4)',
+          backgroundColor: 'rgba(221,105,116,.08)',
+          fill: '+1',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: .3
+        },
+        {
+          label: 'P5',
+          data: r.yearlyPercentiles.map(y => y.p5),
+          borderColor: 'rgba(221,105,116,.3)',
+          backgroundColor: 'transparent',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: .3
+        },
+        {
+          label: 'Total aportado',
+          data: r.yearlyPercentiles.map(y => y.totalContributed),
+          borderColor: 'rgba(127,127,127,.5)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [6, 3],
+          pointRadius: 0,
+          tension: .3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: textColor, usePointStyle: true, padding: 16, font: { size: 11 } } },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,.85)',
+          titleFont: { size: 12 },
+          bodyFont: { size: 11 },
+          padding: 10,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-ES', {minimumFractionDigits: 0, maximumFractionDigits: 0})} €`
+          }
+        },
+        filler: { propagate: true }
+      },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 }, maxRotation: 0 }, grid: { color: gridColor } },
+        y: {
+          ticks: {
+            color: textColor,
+            font: { size: 10 },
+            callback: v => {
+              if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
+              if (v >= 1_000) return (v / 1_000).toFixed(0) + 'K';
+              return v;
+            }
+          },
+          grid: { color: gridColor }
+        }
+      }
+    }
+  });
+}
 
 // ===================== EXPORT PDF =====================
 function exportSimToPdf(title) {

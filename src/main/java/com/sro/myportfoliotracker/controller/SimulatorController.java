@@ -2,6 +2,7 @@ package com.sro.myportfoliotracker.controller;
 
 import com.sro.myportfoliotracker.dto.simulator.*;
 import com.sro.myportfoliotracker.service.simulator.CompoundInterestService;
+import com.sro.myportfoliotracker.service.simulator.MonteCarloService;
 import com.sro.myportfoliotracker.service.simulator.MortgageSimulatorService;
 import com.sro.myportfoliotracker.service.simulator.ProjectionSimulatorService;
 import com.sro.myportfoliotracker.service.simulator.WithdrawalSimulatorService;
@@ -19,6 +20,7 @@ public class SimulatorController {
     private final MortgageSimulatorService mortgageService;
     private final WithdrawalSimulatorService withdrawalService;
     private final CompoundInterestService compoundInterestService;
+    private final MonteCarloService monteCarloService;
 
     @PostMapping("/projection")
     public ResponseEntity<ProjectionResult> projectPortfolio(@RequestBody ProjectionRequest request) {
@@ -43,5 +45,10 @@ public class SimulatorController {
     @PostMapping("/compound")
     public ResponseEntity<CompoundInterestResult> simulateCompound(@RequestBody CompoundInterestRequest request) {
         return ResponseEntity.ok(compoundInterestService.simulate(request));
+    }
+
+    @PostMapping("/montecarlo")
+    public ResponseEntity<MonteCarloResult> simulateMonteCarlo(@RequestBody MonteCarloRequest request) {
+        return ResponseEntity.ok(monteCarloService.simulate(request));
     }
 }
