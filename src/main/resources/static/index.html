@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
 /* ===================== DESIGN TOKENS ===================== */
@@ -442,11 +443,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
           <!-- Toggle: Precios / Cartera -->
           <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-            <button class="range-btn chart-toggle active" onclick="switchChartView('price')">Evolución de Precios</button>
-            <button class="range-btn chart-toggle" onclick="switchChartView('portfolio')">Evolución de Cartera</button>
+            <button class="range-btn chart-toggle" onclick="switchChartView('price')">Evolución de Precios</button>
+            <button class="range-btn chart-toggle active" onclick="switchChartView('portfolio')">Evolución de Cartera</button>
           </div>
           <!-- Controles gráfica de PRECIOS -->
-          <div id="priceChartControls" style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          <div id="priceChartControls" style="display:none;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="histTicker" onchange="loadHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
@@ -461,31 +462,32 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
             </div>
           </div>
           <!-- Controles gráfica de CARTERA -->
-          <div id="portfolioChartControls" style="display:none;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          <div id="portfolioChartControls" style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="pdTicker" onchange="loadPdHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
               <option value="ALL">Toda la cartera</option>
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-              <button class="range-btn pd-range" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
+              <button class="range-btn pd-range active" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
               <button class="range-btn pd-range" data-pdrange="1w" onclick="setPdRange('1w')">1S</button>
               <button class="range-btn pd-range" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
               <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
               <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
               <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
               <button class="range-btn pd-range" data-pdrange="ytd" onclick="setPdRange('ytd')">ActY</button>
-              <button class="range-btn pd-range active" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
+              <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
             </div>
           </div>
         </div>
-        <div id="priceChartWrap" style="position:relative;height:400px"><canvas id="historyChart"></canvas></div>
-        <div id="portfolioChartWrap" style="position:relative;height:400px;display:none"><canvas id="pdHistChart"></canvas></div>
+        <div id="priceChartWrap" style="position:relative;height:400px;display:none"><canvas id="historyChart"></canvas></div>
+        <div id="portfolioChartWrap" style="position:relative;height:400px"><canvas id="pdHistChart"></canvas></div>
       </div>
     </div>
 
     <!-- POSITIONS TABLE -->
     <div class="section">
-      <div class="section-header">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between">
         <div class="section-title">Posiciones</div>
+        <button onclick="forceRefreshPrices()" id="forceRefreshBtn" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2);color:var(--color-text-muted);cursor:pointer;display:flex;align-items:center;gap:4px" title="Forzar actualización de precios (ignora horarios de mercado)">🔄 Forzar actualización</button>
       </div>
       <div class="section-body" style="padding:0">
          <div class="table-wrap">
@@ -1438,8 +1440,37 @@ function fmtPct(v) {
 function fmtShares(v) { return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 6 }); }
 function plClass(v) { return v === null ? 'pl-zero' : v > 0 ? 'pl-positive' : v < 0 ? 'pl-negative' : 'pl-zero'; }
 
-function priceAge(ts) {
+function isMarketOpenNow(yahooTicker) {
+  if (!yahooTicker || !marketSchedules || marketSchedules.length === 0) return true;
+  const suffix = extractTickerSuffix(yahooTicker);
+  const schedule = marketSchedules.find(s =>
+    (suffix === null && s.tickerSuffix === null) || (s.tickerSuffix && s.tickerSuffix.toUpperCase() === (suffix || ''))
+  );
+  if (!schedule || !schedule.enabled) return true;
+  try {
+    const now = new Date();
+    const dayInTz = parseInt(now.toLocaleString('en-US', { timeZone: schedule.timezone, weekday: 'narrow' === 'narrow' ? undefined : undefined }));
+    // Check weekend
+    const weekday = new Date(now.toLocaleString('en-US', { timeZone: schedule.timezone })).getDay();
+    if (weekday === 0 || weekday === 6) return false;
+    // Check time
+    const timeStr = now.toLocaleString('en-GB', { timeZone: schedule.timezone, hour: '2-digit', minute: '2-digit', hour12: false });
+    const [h, m] = timeStr.split(':').map(Number);
+    const current = h * 60 + m;
+    const [oh, om] = schedule.openTime.split(':').map(Number);
+    const [ch, cm] = schedule.closeTime.split(':').map(Number);
+    return current >= (oh * 60 + om) && current <= (ch * 60 + cm);
+  } catch(e) { return true; }
+}
+
+function priceAge(ts, yahooTicker) {
   if (!ts) return '<span title="Precio manual" style="font-size:10px;opacity:.4">✎</span>';
+  // Si el mercado está cerrado, mostrar indicador de mercado cerrado
+  if (yahooTicker && !isMarketOpenNow(yahooTicker)) {
+    const date = new Date(ts);
+    const full = date.toLocaleString('es-ES', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<span title="Mercado cerrado — último: ${full}" style="font-size:10px;color:var(--color-text-muted);cursor:help">🌙 cerrado</span>`;
+  }
   const date = new Date(ts);
   const diffMin = Math.round((Date.now() - date.getTime()) / 60000);
   let ago, color;
@@ -1836,7 +1867,7 @@ function renderTable() {
       </td>
       <td>${fmtShares(pos.shares)}</td>
       <td>${fmtEur(pos.avgPrice, 4)}</td>
-      <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
+      <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate, pos.yahooTicker) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td>${wlVolumeBadge(pos.volume, pos.avgVolume)}</td>
       <td>${fmtEur(invested)}</td>
@@ -2425,7 +2456,7 @@ function showToast(msg, type = 'success') {
 
 
 // ===================== CHART VIEW TOGGLE =====================
-let currentChartView = 'price';
+let currentChartView = 'portfolio';
 
 function switchChartView(view) {
   currentChartView = view;
@@ -2497,7 +2528,7 @@ function renderHistoryChart(data, tickerFilter) {
       borderWidth: 2.5, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
       tension: 0, fill: true, spanGaps: true
     }];
-    createLineChart(ctx, c, datasets);
+    createLineChart(ctx, c, datasets, tickerFilter);
   } else {
     // All tickers — show price lines per ticker
     const tsMap = new Map();
@@ -2542,12 +2573,127 @@ function renderHistoryChart(data, tickerFilter) {
       borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0, fill: true, spanGaps: true
     });
 
-    createLineChart(ctx, c, datasets);
+    createLineChart(ctx, c, datasets, 'ALL');
   }
 }
 
 function getTimeUnit() {
   return getChartTimeConfig(currentRange);
+}
+
+// ===================== MARKET SCHEDULE ANNOTATIONS =====================
+let marketSchedules = [];
+
+/**
+ * Extrae el sufijo de un Yahoo ticker: "SXR8.DE" → ".DE", "AAPL" → null
+ */
+function extractTickerSuffix(yahooTicker) {
+  if (!yahooTicker) return null;
+  const dot = yahooTicker.lastIndexOf('.');
+  if (dot > 0 && dot < yahooTicker.length - 1) return yahooTicker.substring(dot).toUpperCase();
+  return null;
+}
+
+/**
+ * Genera annotations de líneas verticales de apertura/cierre para gráficas con rango 1D.
+ * @param {string} range - rango actual ('1d', '1w', etc.)
+ * @param {string|null} tickerFilter - ticker seleccionado o 'ALL'/null
+ * @returns {object} objeto annotations para chartjs-plugin-annotation, o {}
+ */
+function buildMarketHourAnnotations(range, tickerFilter) {
+  if (range !== '1d' || !marketSchedules || marketSchedules.length === 0) return {};
+
+  // Determinar qué sufijos son relevantes
+  let relevantSuffixes = new Set();
+  if (tickerFilter && tickerFilter !== 'ALL') {
+    const pos = positions.find(p => p.ticker === tickerFilter);
+    if (pos && pos.yahooTicker) relevantSuffixes.add(extractTickerSuffix(pos.yahooTicker));
+  } else {
+    positions.filter(p => p.shares > 0 && p.yahooTicker).forEach(p => {
+      relevantSuffixes.add(extractTickerSuffix(p.yahooTicker));
+    });
+  }
+
+  const annotations = {};
+  const colors = ['#01696f', '#d19900', '#a13544', '#437a22', '#da7101', '#6a5acd'];
+  let colorIdx = 0;
+  const today = new Date();
+
+  // Deduplicar por open/close time (varios sufijos pueden compartir horario)
+  const seen = new Set();
+
+  relevantSuffixes.forEach(suffix => {
+    const schedule = marketSchedules.find(s =>
+      (suffix === null && s.tickerSuffix === null) || (s.tickerSuffix && s.tickerSuffix.toUpperCase() === (suffix || ''))
+    );
+    if (!schedule || !schedule.enabled) return;
+
+    const key = schedule.openTime + '-' + schedule.closeTime + '-' + schedule.timezone;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    // Convertir hora del mercado a hora local del navegador
+    const openLocal = marketTimeToLocal(today, schedule.openTime, schedule.timezone);
+    const closeLocal = marketTimeToLocal(today, schedule.closeTime, schedule.timezone);
+    if (!openLocal || !closeLocal) return;
+
+    const color = colors[colorIdx % colors.length];
+    colorIdx++;
+    const label = schedule.marketName || (schedule.tickerSuffix || 'US');
+
+    annotations['open_' + key] = {
+      type: 'line', scaleID: 'x', value: openLocal.getTime(),
+      borderColor: color + 'AA', borderWidth: 1.5, borderDash: [6, 3],
+      label: {
+        display: true, content: '🔔 ' + label, position: 'start',
+        backgroundColor: color + '22', color: color, font: { size: 9, weight: 'bold' },
+        padding: { top: 2, bottom: 2, left: 4, right: 4 }, borderRadius: 3
+      }
+    };
+    annotations['close_' + key] = {
+      type: 'line', scaleID: 'x', value: closeLocal.getTime(),
+      borderColor: color + 'AA', borderWidth: 1.5, borderDash: [6, 3],
+      label: {
+        display: true, content: '🔕 ' + label, position: 'start',
+        backgroundColor: color + '22', color: color, font: { size: 9, weight: 'bold' },
+        padding: { top: 2, bottom: 2, left: 4, right: 4 }, borderRadius: 3
+      }
+    };
+  });
+
+  return annotations;
+}
+
+/**
+ * Convierte una hora HH:mm en una zona horaria dada a un Date local del navegador para hoy.
+ */
+function marketTimeToLocal(today, timeStr, timezone) {
+  try {
+    const [h, m] = timeStr.split(':').map(Number);
+    // Crear fecha en la zona del mercado usando formato ISO
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    // Truco: formatear en la zona del mercado y obtener offset
+    const marketDate = new Date(`${yyyy}-${mm}-${dd}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+    // Calcular offset entre zona del mercado y local
+    const localStr = marketDate.toLocaleString('en-US', { timeZone: timezone });
+    const utcStr = marketDate.toLocaleString('en-US', { timeZone: 'UTC' });
+    const localDate = new Date(localStr);
+    const utcDate = new Date(utcStr);
+    const marketOffset = localDate.getTime() - utcDate.getTime();
+
+    const browserStr = marketDate.toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    const browserDate = new Date(browserStr);
+    const browserOffset = browserDate.getTime() - utcDate.getTime();
+
+    // La hora del mercado en UTC
+    const marketUTC = new Date(today.getFullYear(), today.getMonth(), today.getDate(), h, m, 0).getTime() - marketOffset;
+    // Convertir a hora local del navegador
+    return new Date(marketUTC + browserOffset);
+  } catch(e) {
+    return null;
+  }
 }
 
 /**
@@ -2566,7 +2712,7 @@ function getChartTimeConfig(range) {
     case '6m': return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 6 };
     case '1y': return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 12 };
     case 'ytd':return { unit: 'month', fmt: 'MMM',     ttFmt: 'dd MMM yyyy',        ticks: 12 };
-    case 'all':return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 12 };
+    case 'all':return { unit: false,   fmt: 'dd MMM yy', ttFmt: 'dd MMM yyyy',       ticks: 15 };
     default:   return { unit: 'day',   fmt: 'dd MMM',  ttFmt: 'dd MMM yyyy',        ticks: 10 };
   }
 }
@@ -2618,10 +2764,11 @@ function calcYBounds10(datasets) {
   return { min: Math.max(0, minY - margin), max: maxY + margin };
 }
 
-function createLineChart(ctx, c, datasets) {
+function createLineChart(ctx, c, datasets, tickerFilter) {
   const tu = getTimeUnit();
   const bounds = getRangeBounds();
   const yBounds = calcYBounds10(datasets);
+  const marketAnnotations = buildMarketHourAnnotations(currentRange, tickerFilter);
 
   histChartInst = new Chart(ctx, {
     type: 'line',
@@ -2655,6 +2802,7 @@ function createLineChart(ctx, c, datasets) {
         }
       },
       plugins: {
+        annotation: { annotations: marketAnnotations },
         legend: {
           display: datasets.length > 1,
           position: 'top',
@@ -4306,7 +4454,7 @@ function renderEquityChart(data) {
 // ===================== PORTFOLIO DETAIL SCREEN =====================
 let pdPieInst = null;
 let pdHistInst = null;
-let pdHistRange = 'all';
+let pdHistRange = '1d';
 
 function openPortfolioDetail() {
   document.getElementById('portfolioDetailOverlay').classList.add('open');
@@ -4510,6 +4658,7 @@ function renderPdPortfolioChart(data, c, ctx) {
   const yBounds = calcYBounds10(datasets);
   const xBounds = getPdRangeBounds();
   const pdTu = getChartTimeConfig(pdHistRange);
+  const mktAnnotations = buildMarketHourAnnotations(pdHistRange, 'ALL');
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
@@ -4520,6 +4669,7 @@ function renderPdPortfolioChart(data, c, ctx) {
         y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
+        annotation: { annotations: mktAnnotations },
         legend: { display: false },
         tooltip: {
           backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` }
@@ -4546,6 +4696,7 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
   const yBounds = calcYBounds10(datasets);
   const xBounds = getPdRangeBounds();
   const pdTu = getChartTimeConfig(pdHistRange);
+  const mktAnnotations = buildMarketHourAnnotations(pdHistRange, ticker);
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
@@ -4556,6 +4707,7 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
         y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
+        annotation: { annotations: mktAnnotations },
         legend: { display: false },
         tooltip: {
           backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` }
@@ -4925,6 +5077,24 @@ async function executeImport() {
 }
 
 // ===================== INIT =====================
+async function forceRefreshPrices() {
+  const btn = document.getElementById('forceRefreshBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Actualizando…';
+  try {
+    const resp = await fetch(`${BASE}/api/prices/refresh`, { method: 'POST' });
+    if (!resp.ok) throw new Error('Error');
+    const result = await resp.json();
+    showToast(`Actualización forzada: ${result.updated} OK, ${result.failed} errores`, result.failed > 0 ? 'warning' : 'success');
+    await loadAll();
+  } catch(e) {
+    showToast('Error al forzar actualización', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 Forzar actualización';
+  }
+}
+
 async function loadAll() {
   try {
     positions = await apiGet();
@@ -4936,6 +5106,7 @@ async function loadAll() {
       positionDetailsMap = {};
       details.forEach(d => positionDetailsMap[d.ticker] = d);
     } catch(e) { positionDetailsMap = {}; }
+    try { marketSchedules = await (await fetch(`${BASE}/api/market-schedules`)).json(); } catch(e) { marketSchedules = []; }
     await loadInvestmentPlan();
     await loadCashFlows();
     renderAll();
