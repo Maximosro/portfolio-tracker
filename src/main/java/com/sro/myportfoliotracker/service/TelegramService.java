@@ -2,6 +2,7 @@ package com.sro.myportfoliotracker.service;
 
 import com.sro.myportfoliotracker.dto.AlertDto;
 import com.sro.myportfoliotracker.model.AppSetting;
+import com.sro.myportfoliotracker.model.Position;
 import com.sro.myportfoliotracker.repository.AppSettingRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,8 @@ public class TelegramService {
     private final AlertService alertService;
     private final AppSettingRepository settingRepository;
     private final ActivityLogService activityLog;
+    private final PositionService positionService;
+    private final PortfolioMetricsService metricsService;
 
     @Value("${telegram.bot-token:}")
     private String botToken;
@@ -53,15 +56,22 @@ public class TelegramService {
     /**
      * Almacena las alertas ya notificadas para no repetir.
      * Key: "ticker|type|severity" → Value: timestamp de última notificación.
-     * Se limpia cuando la alerta desaparece.
+     * Se mantiene un cooldown de 24h antes de re-notificar para evitar
+     * duplicados por oscilación de precio alrededor de un umbral (flapping).
      */
     private final Map<String, Instant> notifiedAlerts = new ConcurrentHashMap<>();
 
-    public TelegramService(RestClient restClient, AlertService alertService, AppSettingRepository settingRepository, ActivityLogService activityLog) {
+    /** Cooldown: no re-notificar la misma alerta en menos de 24 horas */
+    private static final long COOLDOWN_HOURS = 24;
+
+    public TelegramService(RestClient restClient, AlertService alertService, AppSettingRepository settingRepository,
+                           ActivityLogService activityLog, PositionService positionService, PortfolioMetricsService metricsService) {
         this.restClient = restClient;
         this.alertService = alertService;
         this.settingRepository = settingRepository;
         this.activityLog = activityLog;
+        this.positionService = positionService;
+        this.metricsService = metricsService;
     }
 
     /**
@@ -200,18 +210,18 @@ public class TelegramService {
     }
 
     /**
-     * Cada 30 minutos, revisa las alertas y envía notificaciones
-     * solo para alertas NUEVAS o que hayan cambiado de severidad.
+     * Revisa las alertas y envía notificaciones solo para alertas NUEVAS
+     * o que hayan cambiado de severidad.
+     * Se invoca automáticamente tras cada actualización de precios.
      * Si Telegram no está configurado, no hace nada (sin errores).
      */
-    @Scheduled(cron = "0 5,35 * * * *") // a los :05 y :35 (justo después de la actualización de precios)
-    public void checkAndNotifyAlerts() {
+    public synchronized void checkAndNotifyAlerts() {
         if (!isEnabled()) return;
 
         try {
             List<AlertDto> currentAlerts = alertService.checkAlerts();
             if (currentAlerts == null || currentAlerts.isEmpty()) {
-                notifiedAlerts.clear();
+                // No borrar notifiedAlerts: mantener cooldown para evitar re-envíos por flapping
                 return;
             }
 
@@ -221,10 +231,12 @@ public class TelegramService {
                 String key = alert.getTicker() + "|" + alert.getType() + "|" + alert.getSeverity();
                 currentKeys.add(key);
 
-                // Solo notificar si es nueva (no se ha notificado antes).
-                // Cuando la alerta desaparezca se limpia del mapa, así si vuelve se notifica de nuevo.
+                // Solo notificar si es nueva o si ya pasó el cooldown.
                 if (notifiedAlerts.containsKey(key)) {
-                    continue; // Ya notificada, no repetir
+                    Instant lastNotified = notifiedAlerts.get(key);
+                    if (lastNotified != null && lastNotified.plusSeconds(COOLDOWN_HOURS * 3600).isAfter(Instant.now())) {
+                        continue; // Dentro del cooldown, no repetir
+                    }
                 }
 
                 // Solo notificar alertas DANGER y WARNING (no INFO, para no spammear)
@@ -240,8 +252,10 @@ public class TelegramService {
                 Thread.sleep(200);
             }
 
-            // Limpiar alertas que ya no están activas
-            notifiedAlerts.keySet().removeIf(key -> !currentKeys.contains(key));
+            // Limpiar alertas que ya no están activas Y cuyo cooldown ha expirado
+            Instant cooldownLimit = Instant.now().minusSeconds(COOLDOWN_HOURS * 3600);
+            notifiedAlerts.entrySet().removeIf(entry ->
+                    !currentKeys.contains(entry.getKey()) && entry.getValue().isBefore(cooldownLimit));
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -281,52 +295,129 @@ public class TelegramService {
     }
 
     /**
-     * Envía un resumen diario del portfolio por Telegram.
-     * Se ejecuta a las 18:00 (cierre de mercado europeo).
-     * Si Telegram no está configurado, no hace nada (sin errores).
+     * Envía un informe de cierre de mercado por Telegram.
+     * Se ejecuta a las 18:00 L-V (cierre de mercado europeo).
+     * Incluye: valor total, P&L del día, top gainers/losers, TIR y alertas.
      */
     @Scheduled(cron = "0 0 18 * * MON-FRI")
     public void sendDailySummary() {
         if (!isEnabled()) return;
 
         try {
-            List<AlertDto> alerts = alertService.checkAlerts();
-            if (alerts == null) alerts = List.of();
+            List<Position> positions = positionService.findAll().stream()
+                    .filter(p -> p.getShares() != null && p.getShares() > 0)
+                    .filter(p -> p.getCurrentPrice() != null && p.getCurrentPrice() > 0)
+                    .toList();
 
-            long danger = alerts.stream().filter(a -> "DANGER".equals(a.getSeverity())).count();
-            long warning = alerts.stream().filter(a -> "WARNING".equals(a.getSeverity())).count();
+            if (positions.isEmpty()) return;
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("📊 <b>Resumen diario — Portfolio Tracker</b>\n\n");
+            // ── Valor total y coste total ──
+            double totalValue = 0, totalCost = 0, dayPL = 0;
+            List<double[]> dayChanges = new ArrayList<>(); // [changePct, ticker index]
 
-            if (alerts.isEmpty()) {
-                sb.append("✅ Sin alertas activas. Cartera dentro de límites.\n");
-            } else {
-                sb.append(String.format("⚠️ %d alerta(s) activa(s)", alerts.size()));
-                if (danger > 0) sb.append(String.format(" (%d crítica(s))", danger));
-                sb.append("\n\n");
+            for (int i = 0; i < positions.size(); i++) {
+                Position p = positions.get(i);
+                double value = p.getShares() * p.getCurrentPrice();
+                double cost = p.getShares() * (p.getAvgPrice() != null ? p.getAvgPrice() : p.getCurrentPrice());
+                totalValue += value;
+                totalCost += cost;
 
-                // Solo mostrar las DANGER y WARNING
-                alerts.stream()
-                        .filter(a -> !"INFO".equals(a.getSeverity()))
-                        .limit(5)
-                        .forEach(a -> {
-                            String icon = "DANGER".equals(a.getSeverity()) ? "🔴" : "🟡";
-                            sb.append(String.format("%s <b>%s</b>: %s\n", icon, a.getTicker(), a.getMessage()));
-                        });
-
-                if (alerts.size() > 5) {
-                    sb.append(String.format("\n... y %d más\n", alerts.size() - 5));
+                // Variación diaria
+                if (p.getPreviousClose() != null && p.getPreviousClose() > 0) {
+                    double changePct = ((p.getCurrentPrice() - p.getPreviousClose()) / p.getPreviousClose()) * 100;
+                    double changeAbs = p.getShares() * (p.getCurrentPrice() - p.getPreviousClose());
+                    dayPL += changeAbs;
+                    dayChanges.add(new double[]{changePct, i});
                 }
             }
 
-            sb.append("\n🕐 ").append(TIME_FMT.format(Instant.now()));
+            double totalPL = totalValue - totalCost;
+            double totalPLPct = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("📊 <b>Cierre de mercado — Portfolio Tracker</b>\n\n");
+
+            // ── Resumen de cartera ──
+            sb.append(String.format("💼 <b>Valor total:</b> %s €\n", fmtMoney(totalValue)));
+            sb.append(String.format("💰 <b>P&amp;L total:</b> %s € (%s%%)\n",
+                    fmtMoneySign(totalPL), fmtSign(totalPLPct)));
+
+            if (!dayChanges.isEmpty()) {
+                String dayIcon = dayPL >= 0 ? "📈" : "📉";
+                sb.append(String.format("%s <b>Hoy:</b> %s €\n", dayIcon, fmtMoneySign(dayPL)));
+            }
+
+            // ── TIR (XIRR) ──
+            try {
+                var metrics = metricsService.calculateMetrics();
+                if (metrics.portfolioXirr() != null) {
+                    sb.append(String.format("🎯 <b>TIR (XIRR):</b> %s%%\n", fmtSign(metrics.portfolioXirr() * 100)));
+                }
+                if (metrics.totalRealizedPL() != null && metrics.totalRealizedPL() != 0) {
+                    sb.append(String.format("🏦 <b>P&amp;L realizado:</b> %s €\n", fmtMoneySign(metrics.totalRealizedPL())));
+                }
+            } catch (Exception ignored) {}
+
+            // ── Top movers del día ──
+            if (dayChanges.size() >= 2) {
+                dayChanges.sort((a, b) -> Double.compare(b[0], a[0]));
+
+                sb.append("\n<b>🟢 Mejor hoy:</b>\n");
+                int topN = Math.min(3, dayChanges.size());
+                for (int i = 0; i < topN; i++) {
+                    Position p = positions.get((int) dayChanges.get(i)[1]);
+                    double pct = dayChanges.get(i)[0];
+                    sb.append(String.format("  %s  %s%%\n", p.getTicker(), fmtSign(pct)));
+                }
+
+                sb.append("\n<b>🔴 Peor hoy:</b>\n");
+                for (int i = dayChanges.size() - 1; i >= Math.max(0, dayChanges.size() - topN); i--) {
+                    Position p = positions.get((int) dayChanges.get(i)[1]);
+                    double pct = dayChanges.get(i)[0];
+                    if (pct >= 0 && i < dayChanges.size() - 1) break; // todas positivas, no listar
+                    sb.append(String.format("  %s  %s%%\n", p.getTicker(), fmtSign(pct)));
+                }
+            }
+
+            // ── Alertas activas ──
+            List<AlertDto> alerts = alertService.checkAlerts();
+            if (alerts != null && !alerts.isEmpty()) {
+                List<AlertDto> dangerAlerts = alerts.stream().filter(a -> "DANGER".equals(a.getSeverity())).toList();
+                List<AlertDto> warningAlerts = alerts.stream().filter(a -> "WARNING".equals(a.getSeverity())).toList();
+
+                if (!dangerAlerts.isEmpty()) {
+                    sb.append(String.format("\n🚨 <b>%d alerta(s) crítica(s):</b>\n", dangerAlerts.size()));
+                    dangerAlerts.forEach(a -> sb.append(String.format("  🔴 <b>%s</b>: %s\n", a.getTicker(), a.getMessage())));
+                }
+
+                if (!warningAlerts.isEmpty()) {
+                    sb.append(String.format("\n⚠️ <b>%d aviso(s):</b>\n", warningAlerts.size()));
+                    warningAlerts.forEach(a -> sb.append(String.format("  🟡 <b>%s</b>: %s\n", a.getTicker(), a.getMessage())));
+                }
+            } else {
+                sb.append("\n✅ Sin alertas activas\n");
+            }
+
+            sb.append(String.format("\n📍 %d posiciones · 🕐 %s", positions.size(), TIME_FMT.format(Instant.now())));
+
             sendMessage(sb.toString());
-            activityLog.info("TELEGRAM", "Resumen diario enviado por Telegram (" + alerts.size() + " alertas)", null, "📊");
+            activityLog.info("TELEGRAM", "Informe de cierre enviado por Telegram", null, "📊");
 
         } catch (Exception e) {
-            log.debug("Telegram: error enviando resumen diario (se reintentará mañana): {}", e.getMessage());
+            log.debug("Telegram: error enviando informe de cierre: {}", e.getMessage());
         }
+    }
+
+    private static String fmtMoney(double v) {
+        return String.format("%,.2f", v);
+    }
+
+    private static String fmtMoneySign(double v) {
+        return String.format("%+,.2f", v);
+    }
+
+    private static String fmtSign(double v) {
+        return String.format("%+.2f", v);
     }
 }
 

@@ -26,6 +26,7 @@ public class PriceUpdateService {
     private final YahooFinanceService yahooFinanceService;
     private final ExchangeRateService exchangeRateService;
     private final ActivityLogService activityLog;
+    private final TelegramService telegramService;
 
     private final AtomicReference<Instant> lastUpdate = new AtomicReference<>(null);
 
@@ -153,6 +154,14 @@ public class PriceUpdateService {
         PriceUpdateResult result = new PriceUpdateResult(updated, failed.size(), now, failed);
         log.info("Actualización completada: {} OK, {} errores", updated, failed.size());
         activityLog.success("PRICE", "Actualización completada: " + updated + " OK, " + failed.size() + " errores", null, "✅");
+
+        // Tras actualizar precios, revisar y enviar alertas por Telegram
+        try {
+            telegramService.checkAndNotifyAlerts();
+        } catch (Exception e) {
+            log.debug("Error revisando alertas Telegram tras actualización de precios: {}", e.getMessage());
+        }
+
         return result;
     }
 }
