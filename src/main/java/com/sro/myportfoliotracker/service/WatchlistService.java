@@ -26,8 +26,8 @@ public class WatchlistService {
     private final WatchlistAlertService watchlistAlertService;
     private final TelegramService telegramService;
 
-    /** Solo actualizar precios si han pasado más de 25 minutos desde la última actualización */
-    private static final Duration UPDATE_COOLDOWN = Duration.ofMinutes(25);
+    /** Solo actualizar precios si han pasado más de 8 minutos desde la última actualización */
+    private static final Duration UPDATE_COOLDOWN = Duration.ofMinutes(8);
 
     public List<WatchlistItem> findAll() {
         return watchlistRepository.findAll();
@@ -111,9 +111,9 @@ public class WatchlistService {
 
 
     /**
-     * Actualiza precios de watchlist cada 30 minutos (sincronizado con la actualización de posiciones).
+     * Actualiza precios de watchlist cada 10 minutos (sincronizado con la actualización de posiciones).
      */
-    @Scheduled(cron = "0 */30 * * * *")
+    @Scheduled(cron = "0 */10 * * * *")
     public void scheduledWatchlistUpdate() {
         log.info("⏰ Actualización programada de watchlist");
         updateWatchlistPrices();

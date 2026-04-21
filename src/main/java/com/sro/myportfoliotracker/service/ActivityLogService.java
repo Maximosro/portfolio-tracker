@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 @Service
 public class ActivityLogService {
 
-    private static final int MAX_ENTRIES = 500;
+    private static final int MAX_ENTRIES = 2000;
 
     private final ConcurrentLinkedDeque<ActivityLogEntry> entries = new ConcurrentLinkedDeque<>();
 

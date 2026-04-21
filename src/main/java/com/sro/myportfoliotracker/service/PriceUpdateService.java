@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
@@ -31,19 +32,27 @@ public class PriceUpdateService {
 
     private final AtomicReference<Instant> lastUpdate = new AtomicReference<>(null);
 
+    /** Contador de ciclos para alternar entre fetch ligero y extendido */
+    private final AtomicInteger cycleCount = new AtomicInteger(0);
+
+    /** Cada cuántos ciclos se hace fetch extendido (volumen). 3 ciclos × 10 min = 30 min */
+    private static final int EXTENDED_FETCH_EVERY = 3;
+
     public Instant getLastUpdate() {
         return lastUpdate.get();
     }
 
 
     /**
-     * Cada 30 minutos, 24/7.
+     * Cada 10 minutos, 24/7.
      */
-    @Scheduled(cron = "0 */30 * * * *")
+    @Scheduled(cron = "0 */10 * * * *")
     public void scheduledUpdate() {
-        log.info("⏰ Actualización programada de precios");
-        activityLog.info("PRICE", "Actualización programada de precios iniciada", null, "⏰");
-        updateAllPrices();
+        int cycle = cycleCount.incrementAndGet();
+        boolean extended = (cycle % EXTENDED_FETCH_EVERY == 0);
+        log.info("⏰ Actualización programada de precios (ciclo {}, {})", cycle, extended ? "extendido" : "ligero");
+        activityLog.info("PRICE", "Actualización programada de precios iniciada" + (extended ? " (extendido)" : ""), null, "⏰");
+        updateAllPrices(extended);
     }
 
     /**
@@ -72,61 +81,64 @@ public class PriceUpdateService {
      * Guarda cada precio obtenido en el histórico.
      * NO es @Transactional a propósito: cada posición se guarda independientemente
      * para que un fallo en una no impida guardar el resto.
+     *
+     * @param extended si true, usa fetchQuoteExtended (range=1mo, incluye volumen).
+     *                 Si false, usa fetchQuote (range=1d, más ligero).
      */
-    public PriceUpdateResult updateAllPrices() {
+    public PriceUpdateResult updateAllPrices(boolean extended) {
         List<Position> positions = positionRepository.findAll();
         int updated = 0;
         List<String> failed = new ArrayList<>();
         Instant now = Instant.now();
 
         for (Position position : positions) {
-            // Omitir posiciones cerradas (totalmente vendidas)
-            if (position.getShares() == null || position.getShares() <= 0) {
-                continue;
-            }
+            if (position.getShares() == null || position.getShares() <= 0) continue;
 
             String yahoo = position.getYahooTicker();
             if (yahoo == null || yahoo.isBlank()) {
                 log.warn("Posición {} sin Yahoo Ticker, omitida", position.getTicker());
                 failed.add(position.getTicker() + " (sin Yahoo Ticker)");
-                // Guardar histórico con precio existente si lo tiene
                 if (position.getCurrentPrice() != null) {
                     priceHistoryRepository.save(PriceHistory.builder()
-                            .ticker(position.getTicker())
-                            .timestamp(now)
-                            .rawPrice(position.getCurrentPrice())
-                            .currency("EUR")
-                            .priceEur(position.getCurrentPrice())
-                            .build());
+                            .ticker(position.getTicker()).timestamp(now)
+                            .rawPrice(position.getCurrentPrice()).currency("EUR")
+                            .priceEur(position.getCurrentPrice()).build());
                 }
                 continue;
             }
 
             try {
-                YahooQuoteExtended quote = yahooFinanceService.fetchQuoteExtended(yahoo);
-                double priceEur = Math.round(exchangeRateService.convertToEur(quote.price(), quote.currency()) * 10000.0) / 10000.0;
+                double rawPrice;
+                String currency;
+
+                if (extended) {
+                    YahooQuoteExtended quote = yahooFinanceService.fetchQuoteExtended(yahoo);
+                    rawPrice = quote.price();
+                    currency = quote.currency();
+                    position.setVolume(quote.volume());
+                    position.setAvgVolume(quote.avgVolume());
+                } else {
+                    YahooQuote quote = yahooFinanceService.fetchQuote(yahoo);
+                    rawPrice = quote.price();
+                    currency = quote.currency();
+                    // Mantener volumen anterior (no se actualiza en ciclo ligero)
+                }
+
+                double priceEur = Math.round(exchangeRateService.convertToEur(rawPrice, currency) * 10000.0) / 10000.0;
 
                 position.setCurrentPrice(priceEur);
-                position.setVolume(quote.volume());
-                position.setAvgVolume(quote.avgVolume());
                 position.setLastPriceUpdate(now);
                 positionRepository.save(position);
                 updated++;
 
-                // Guardar en histórico
                 priceHistoryRepository.save(PriceHistory.builder()
-                        .ticker(position.getTicker())
-                        .timestamp(now)
-                        .rawPrice(quote.price())
-                        .currency(quote.currency())
-                        .priceEur(priceEur)
-                        .build());
+                        .ticker(position.getTicker()).timestamp(now)
+                        .rawPrice(rawPrice).currency(currency)
+                        .priceEur(priceEur).build());
 
-                log.info("✓ {} ({}) → {} {} → {} EUR",
-                        position.getTicker(), yahoo, quote.price(), quote.currency(), priceEur);
+                log.info("✓ {} ({}) → {} {} → {} EUR", position.getTicker(), yahoo, rawPrice, currency, priceEur);
                 activityLog.success("PRICE", position.getTicker() + " → " + priceEur + " EUR (vía " + yahoo + ")", position.getTicker(), "📈");
 
-                // Delay entre peticiones para no saturar Yahoo
                 Thread.sleep(500);
 
             } catch (InterruptedException e) {
@@ -137,20 +149,15 @@ public class PriceUpdateService {
                 failed.add(position.getTicker());
                 activityLog.error("PRICE", "Error actualizando " + position.getTicker() + ": " + e.getMessage(), position.getTicker(), "❌");
 
-                // Guardar en histórico el precio existente para no romper las gráficas
                 if (position.getCurrentPrice() != null) {
                     priceHistoryRepository.save(PriceHistory.builder()
-                            .ticker(position.getTicker())
-                            .timestamp(now)
-                            .rawPrice(position.getCurrentPrice())
-                            .currency("EUR")
-                            .priceEur(position.getCurrentPrice())
-                            .build());
+                            .ticker(position.getTicker()).timestamp(now)
+                            .rawPrice(position.getCurrentPrice()).currency("EUR")
+                            .priceEur(position.getCurrentPrice()).build());
                     log.info("↻ {} — histórico con precio existente ({} EUR)", position.getTicker(), position.getCurrentPrice());
                 }
             }
         }
-
 
         lastUpdate.set(now);
 
@@ -158,7 +165,6 @@ public class PriceUpdateService {
         log.info("Actualización completada: {} OK, {} errores", updated, failed.size());
         activityLog.success("PRICE", "Actualización completada: " + updated + " OK, " + failed.size() + " errores", null, "✅");
 
-        // Tras actualizar precios, revisar y enviar alertas por Telegram
         try {
             telegramService.checkAndNotifyAlerts();
         } catch (Exception e) {
@@ -166,5 +172,10 @@ public class PriceUpdateService {
         }
 
         return result;
+    }
+
+    /** Sobrecarga para compatibilidad (refresh manual = siempre extendido) */
+    public PriceUpdateResult updateAllPrices() {
+        return updateAllPrices(true);
     }
 }
