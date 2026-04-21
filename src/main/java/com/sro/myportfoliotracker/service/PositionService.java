@@ -22,6 +22,7 @@ public class PositionService {
     private final PositionDetailRepository positionDetailRepository;
     private final DcaEntryRepository dcaEntryRepository;
     private final PriceHistoryRepository priceHistoryRepository;
+    private final MarketScheduleService marketScheduleService;
 
     public List<Position> findAll() {
         return positionRepository.findAll();
@@ -43,7 +44,9 @@ public class PositionService {
             position.setTargetPct(0.0);
         }
 
-        return positionRepository.save(position);
+        Position saved = positionRepository.save(position);
+        warnIfNoMarketSchedule(saved.getYahooTicker());
+        return saved;
     }
 
     @Transactional
@@ -62,7 +65,9 @@ public class PositionService {
         existing.setTargetPct(updated.getTargetPct() != null ? updated.getTargetPct() : 0.0);
         existing.setSector(updated.getSector());
 
-        return positionRepository.save(existing);
+        Position saved = positionRepository.save(existing);
+        warnIfNoMarketSchedule(saved.getYahooTicker());
+        return saved;
     }
 
     @Transactional
@@ -87,6 +92,20 @@ public class PositionService {
         log.info("Eliminando posición {} con todos sus datos asociados (DCA, precios, detalle operativo)", normalizedTicker);
 
         positionRepository.deleteById(normalizedTicker);
+    }
+
+    /**
+     * Avisa en log si el yahooTicker tiene un sufijo sin horario de mercado configurado.
+     * En ese caso se consultará Yahoo 24/7 (sin optimización).
+     */
+    private void warnIfNoMarketSchedule(String yahooTicker) {
+        if (yahooTicker == null || yahooTicker.isBlank()) return;
+        String suffix = marketScheduleService.extractSuffix(yahooTicker);
+        if (!marketScheduleService.hasScheduleFor(suffix)) {
+            String suffixDisplay = suffix != null ? suffix : "(sin sufijo / US)";
+            log.warn("⚠ El sufijo {} del ticker {} no tiene horario de mercado configurado. Se consultará 24/7.",
+                    suffixDisplay, yahooTicker);
+        }
     }
 }
 

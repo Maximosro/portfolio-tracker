@@ -95,6 +95,13 @@ public class MarketScheduleService {
     }
 
     /**
+     * Comprueba si existe un horario configurado para el sufijo dado.
+     */
+    public boolean hasScheduleFor(String suffix) {
+        return marketScheduleRepository.findByTickerSuffix(suffix).isPresent();
+    }
+
+    /**
      * Guarda o actualiza un horario de mercado.
      */
     public MarketSchedule save(MarketSchedule schedule) {
