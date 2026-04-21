@@ -1439,8 +1439,37 @@ function fmtPct(v) {
 function fmtShares(v) { return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 6 }); }
 function plClass(v) { return v === null ? 'pl-zero' : v > 0 ? 'pl-positive' : v < 0 ? 'pl-negative' : 'pl-zero'; }
 
-function priceAge(ts) {
+function isMarketOpenNow(yahooTicker) {
+  if (!yahooTicker || !marketSchedules || marketSchedules.length === 0) return true;
+  const suffix = extractTickerSuffix(yahooTicker);
+  const schedule = marketSchedules.find(s =>
+    (suffix === null && s.tickerSuffix === null) || (s.tickerSuffix && s.tickerSuffix.toUpperCase() === (suffix || ''))
+  );
+  if (!schedule || !schedule.enabled) return true;
+  try {
+    const now = new Date();
+    const dayInTz = parseInt(now.toLocaleString('en-US', { timeZone: schedule.timezone, weekday: 'narrow' === 'narrow' ? undefined : undefined }));
+    // Check weekend
+    const weekday = new Date(now.toLocaleString('en-US', { timeZone: schedule.timezone })).getDay();
+    if (weekday === 0 || weekday === 6) return false;
+    // Check time
+    const timeStr = now.toLocaleString('en-GB', { timeZone: schedule.timezone, hour: '2-digit', minute: '2-digit', hour12: false });
+    const [h, m] = timeStr.split(':').map(Number);
+    const current = h * 60 + m;
+    const [oh, om] = schedule.openTime.split(':').map(Number);
+    const [ch, cm] = schedule.closeTime.split(':').map(Number);
+    return current >= (oh * 60 + om) && current <= (ch * 60 + cm);
+  } catch(e) { return true; }
+}
+
+function priceAge(ts, yahooTicker) {
   if (!ts) return '<span title="Precio manual" style="font-size:10px;opacity:.4">✎</span>';
+  // Si el mercado está cerrado, mostrar indicador de mercado cerrado
+  if (yahooTicker && !isMarketOpenNow(yahooTicker)) {
+    const date = new Date(ts);
+    const full = date.toLocaleString('es-ES', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<span title="Mercado cerrado — último: ${full}" style="font-size:10px;color:var(--color-text-muted);cursor:help">🌙 cerrado</span>`;
+  }
   const date = new Date(ts);
   const diffMin = Math.round((Date.now() - date.getTime()) / 60000);
   let ago, color;
@@ -1837,7 +1866,7 @@ function renderTable() {
       </td>
       <td>${fmtShares(pos.shares)}</td>
       <td>${fmtEur(pos.avgPrice, 4)}</td>
-      <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
+      <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate, pos.yahooTicker) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td>${wlVolumeBadge(pos.volume, pos.avgVolume)}</td>
       <td>${fmtEur(invested)}</td>
