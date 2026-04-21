@@ -8,7 +8,7 @@
 --
 -- USO:
 --   1. Parar la app
---   2. Ejecutar en DB Browser for SQLite / DBeaver sobre ./data/portfolio.db
+--   2. Ejecutar en DB Browser for SQLite / DBeaver sobre ./data/portfolio_test.db
 --   3. Arrancar la app y probar: POST /portfoliotracker/api/prices/history/purge
 -- ============================================================================
 

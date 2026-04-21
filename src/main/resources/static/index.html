@@ -437,12 +437,16 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 
     <!-- CHARTS ROW -->
-    <div style="display:flex;gap:var(--space-6);margin-bottom:var(--space-6);flex-wrap:wrap">
-      <!-- PRICE CHART — 50% -->
-      <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
+    <div style="margin-bottom:var(--space-6)">
+      <div class="chart-card" style="margin-bottom:0">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
-          <div class="chart-title" style="margin-bottom:0">Evolución de Precios</div>
-          <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          <!-- Toggle: Precios / Cartera -->
+          <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
+            <button class="range-btn chart-toggle active" onclick="switchChartView('price')">Evolución de Precios</button>
+            <button class="range-btn chart-toggle" onclick="switchChartView('portfolio')">Evolución de Cartera</button>
+          </div>
+          <!-- Controles gráfica de PRECIOS -->
+          <div id="priceChartControls" style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="histTicker" onchange="loadHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
@@ -456,14 +460,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
               <button class="range-btn active" data-range="all" onclick="setRange('all')">Todo</button>
             </div>
           </div>
-        </div>
-        <div style="position:relative;height:300px"><canvas id="historyChart"></canvas></div>
-      </div>
-      <!-- PORTFOLIO EVOLUTION CHART — 50% -->
-      <div class="chart-card" style="flex:1 1 0;min-width:400px;margin-bottom:0">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
-          <div class="chart-title" style="margin-bottom:0">Evolución de Cartera</div>
-          <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          <!-- Controles gráfica de CARTERA -->
+          <div id="portfolioChartControls" style="display:none;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="pdTicker" onchange="loadPdHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
               <option value="ALL">Toda la cartera</option>
             </select>
@@ -479,7 +477,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
             </div>
           </div>
         </div>
-        <div style="position:relative;height:300px"><canvas id="pdHistChart"></canvas></div>
+        <div id="priceChartWrap" style="position:relative;height:400px"><canvas id="historyChart"></canvas></div>
+        <div id="portfolioChartWrap" style="position:relative;height:400px;display:none"><canvas id="pdHistChart"></canvas></div>
       </div>
     </div>
 
@@ -2425,6 +2424,23 @@ function showToast(msg, type = 'success') {
 })();
 
 
+// ===================== CHART VIEW TOGGLE =====================
+let currentChartView = 'price';
+
+function switchChartView(view) {
+  currentChartView = view;
+  const isPrice = view === 'price';
+  document.getElementById('priceChartWrap').style.display = isPrice ? 'block' : 'none';
+  document.getElementById('portfolioChartWrap').style.display = isPrice ? 'none' : 'block';
+  document.getElementById('priceChartControls').style.display = isPrice ? 'flex' : 'none';
+  document.getElementById('portfolioChartControls').style.display = isPrice ? 'none' : 'flex';
+  document.querySelectorAll('.chart-toggle').forEach(b => b.classList.toggle('active',
+    (b.textContent.includes('Precios') && isPrice) || (b.textContent.includes('Cartera') && !isPrice)
+  ));
+  // Recargar la gráfica visible para que se redimensione bien
+  if (isPrice) loadHistory(); else loadPdHistory();
+}
+
 // ===================== HISTORY CHART (MAIN — PRICE EVOLUTION) =====================
 let histChartInst = null;
 let currentRange = 'all';
@@ -2594,8 +2610,12 @@ function calcYBounds10(datasets) {
   if (allY.length === 0) return {};
   const minY = Math.min(...allY);
   const maxY = Math.max(...allY);
-  const range = maxY - minY || maxY * 0.1 || 1;
-  return { min: Math.max(0, minY - range * 0.1), max: maxY + range * 0.1 };
+  const range = maxY - minY || 1;
+  const avg = (minY + maxY) / 2;
+  // Margen mínimo: al menos ±2% del precio medio, para no exagerar movimientos de céntimos
+  const minMargin = avg * 0.02;
+  const margin = Math.max(range * 0.1, minMargin);
+  return { min: Math.max(0, minY - margin), max: maxY + margin };
 }
 
 function createLineChart(ctx, c, datasets) {
