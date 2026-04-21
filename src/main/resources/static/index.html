@@ -485,8 +485,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
     <!-- POSITIONS TABLE -->
     <div class="section">
-      <div class="section-header">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between">
         <div class="section-title">Posiciones</div>
+        <button onclick="forceRefreshPrices()" id="forceRefreshBtn" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2);color:var(--color-text-muted);cursor:pointer;display:flex;align-items:center;gap:4px" title="Forzar actualización de precios (ignora horarios de mercado)">🔄 Forzar actualización</button>
       </div>
       <div class="section-body" style="padding:0">
          <div class="table-wrap">
@@ -5076,6 +5077,24 @@ async function executeImport() {
 }
 
 // ===================== INIT =====================
+async function forceRefreshPrices() {
+  const btn = document.getElementById('forceRefreshBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Actualizando…';
+  try {
+    const resp = await fetch(`${BASE}/api/prices/refresh`, { method: 'POST' });
+    if (!resp.ok) throw new Error('Error');
+    const result = await resp.json();
+    showToast(`Actualización forzada: ${result.updated} OK, ${result.failed} errores`, result.failed > 0 ? 'warning' : 'success');
+    await loadAll();
+  } catch(e) {
+    showToast('Error al forzar actualización', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 Forzar actualización';
+  }
+}
+
 async function loadAll() {
   try {
     positions = await apiGet();
