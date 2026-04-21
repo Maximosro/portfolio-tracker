@@ -25,6 +25,7 @@ public class WatchlistService {
     private final ActivityLogService activityLog;
     private final WatchlistAlertService watchlistAlertService;
     private final TelegramService telegramService;
+    private final MarketScheduleService marketScheduleService;
 
     /** Solo actualizar precios si han pasado más de 8 minutos desde la última actualización */
     private static final Duration UPDATE_COOLDOWN = Duration.ofMinutes(8);
@@ -156,6 +157,12 @@ public class WatchlistService {
             String yahoo = item.getYahooTicker();
             if (yahoo == null || yahoo.isBlank()) {
                 log.warn("Watchlist: {} sin Yahoo Ticker, omitido", item.getTicker());
+                continue;
+            }
+
+            // Comprobar horario de mercado (salvo forzado)
+            if (!force && !marketScheduleService.isMarketOpen(yahoo)) {
+                log.debug("⏸ Watchlist: {} ({}) omitido: mercado cerrado", item.getTicker(), yahoo);
                 continue;
             }
 

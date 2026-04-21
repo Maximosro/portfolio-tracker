@@ -29,6 +29,7 @@ public class PriceUpdateService {
     private final ExchangeRateService exchangeRateService;
     private final ActivityLogService activityLog;
     private final TelegramService telegramService;
+    private final MarketScheduleService marketScheduleService;
 
     private final AtomicReference<Instant> lastUpdate = new AtomicReference<>(null);
 
@@ -86,8 +87,16 @@ public class PriceUpdateService {
      *                 Si false, usa fetchQuote (range=1d, más ligero).
      */
     public PriceUpdateResult updateAllPrices(boolean extended) {
+        return updateAllPrices(extended, false);
+    }
+
+    /**
+     * @param force si true, ignora horarios de mercado (para refresh manual).
+     */
+    public PriceUpdateResult updateAllPrices(boolean extended, boolean force) {
         List<Position> positions = positionRepository.findAll();
         int updated = 0;
+        int skippedMarketClosed = 0;
         List<String> failed = new ArrayList<>();
         Instant now = Instant.now();
 
@@ -104,6 +113,13 @@ public class PriceUpdateService {
                             .rawPrice(position.getCurrentPrice()).currency("EUR")
                             .priceEur(position.getCurrentPrice()).build());
                 }
+                continue;
+            }
+
+            // Comprobar horario de mercado (salvo refresh manual forzado)
+            if (!force && !marketScheduleService.isMarketOpen(yahoo)) {
+                log.debug("⏸ {} ({}) omitido: mercado cerrado", position.getTicker(), yahoo);
+                skippedMarketClosed++;
                 continue;
             }
 
@@ -162,8 +178,8 @@ public class PriceUpdateService {
         lastUpdate.set(now);
 
         PriceUpdateResult result = new PriceUpdateResult(updated, failed.size(), now, failed);
-        log.info("Actualización completada: {} OK, {} errores", updated, failed.size());
-        activityLog.success("PRICE", "Actualización completada: " + updated + " OK, " + failed.size() + " errores", null, "✅");
+        log.info("Actualización completada: {} OK, {} errores, {} omitidos (mercado cerrado)", updated, failed.size(), skippedMarketClosed);
+        activityLog.success("PRICE", "Actualización completada: " + updated + " OK, " + failed.size() + " errores, " + skippedMarketClosed + " omitidos (mercado cerrado)", null, "✅");
 
         try {
             telegramService.checkAndNotifyAlerts();
@@ -174,8 +190,8 @@ public class PriceUpdateService {
         return result;
     }
 
-    /** Sobrecarga para compatibilidad (refresh manual = siempre extendido) */
+    /** Sobrecarga para compatibilidad (refresh manual = siempre extendido + forzado) */
     public PriceUpdateResult updateAllPrices() {
-        return updateAllPrices(true);
+        return updateAllPrices(true, true);
     }
 }
