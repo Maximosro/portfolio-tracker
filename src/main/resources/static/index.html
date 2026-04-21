@@ -2682,7 +2682,7 @@ function getChartTimeConfig(range) {
     case '6m': return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 6 };
     case '1y': return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 12 };
     case 'ytd':return { unit: 'month', fmt: 'MMM',     ttFmt: 'dd MMM yyyy',        ticks: 12 };
-    case 'all':return { unit: 'day',   fmt: 'dd MMM yy', ttFmt: 'dd MMM yyyy',       ticks: 20 };
+    case 'all':return { unit: 'week',  fmt: 'dd MMM yy', ttFmt: 'dd MMM yyyy',       ticks: 52 };
     default:   return { unit: 'day',   fmt: 'dd MMM',  ttFmt: 'dd MMM yyyy',        ticks: 10 };
   }
 }
