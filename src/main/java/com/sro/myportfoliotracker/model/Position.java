@@ -49,6 +49,12 @@ public class Position {
     @Column(name = "previous_close")
     private Double previousClose;
 
+    @Column
+    private Long volume;
+
+    @Column(name = "avg_volume")
+    private Long avgVolume;
+
     @Column(name = "last_price_update")
     @Convert(converter = InstantStringConverter.class)
     private Instant lastPriceUpdate;

@@ -497,6 +497,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
                 <th>P.Medio</th>
                 <th>P.Actual</th>
                 <th>Día</th>
+                <th>Vol</th>
                 <th>Invertido</th>
                 <th>Valor</th>
                 <th>P&amp;L</th>
@@ -1780,7 +1781,7 @@ function renderTable() {
   const closed = positions.filter(p => p.shares <= 0);
 
   if (active.length === 0 && closed.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:var(--space-12);color:var(--color-text-faint)">
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:var(--space-12);color:var(--color-text-faint)">
       <div style="font-size:var(--text-lg);margin-bottom:var(--space-3)">📊</div>
       <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-2)">Sin posiciones aún</div>
       <div style="font-size:var(--text-sm)">Pulsa <strong>"Nueva posición"</strong> para empezar</div>
@@ -1837,6 +1838,7 @@ function renderTable() {
       <td>${fmtEur(pos.avgPrice, 4)}</td>
       <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
+      <td>${wlVolumeBadge(pos.volume, pos.avgVolume)}</td>
       <td>${fmtEur(invested)}</td>
       <td>${value !== null ? fmtEur(value) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span>${realizedTag}</td>
@@ -1862,7 +1864,7 @@ function renderTable() {
     const totalXirr = metrics ? metrics.portfolioXirr : null;
     tbody.insertAdjacentHTML('beforeend', `
       <tr style="background:var(--color-surface-offset);font-weight:700">
-        <td colspan="5" style="text-align:left;color:var(--color-text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">TOTAL CARTERA</td>
+        <td colspan="6" style="text-align:left;color:var(--color-text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">TOTAL CARTERA</td>
         <td>${fmtEur(ti)}</td>
         <td>${tvActive !== null ? fmtEur(tvActive) : '—'}</td>
         <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
@@ -2788,7 +2790,7 @@ function wlChangeBadge(label, value) {
 }
 
 function wlVolumeBadge(volume, avgVolume) {
-  if (volume == null || avgVolume == null || avgVolume === 0) return '';
+  if (volume == null || avgVolume == null || avgVolume === 0) return '<span class="wl-badge" style="background:oklch(from var(--color-notification) l c h / .12);color:var(--color-notification)" title="Sin datos de volumen">⚫ —</span>';
   const ratio = volume / avgVolume;
   let cls, icon;
   if (ratio >= 1.5) { cls = 'vol-high'; icon = '🔥'; }

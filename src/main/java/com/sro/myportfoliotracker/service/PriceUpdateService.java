@@ -2,6 +2,7 @@ package com.sro.myportfoliotracker.service;
 
 import com.sro.myportfoliotracker.dto.PriceUpdateResult;
 import com.sro.myportfoliotracker.dto.YahooQuote;
+import com.sro.myportfoliotracker.dto.YahooQuoteExtended;
 import com.sro.myportfoliotracker.model.Position;
 import com.sro.myportfoliotracker.model.PriceHistory;
 import com.sro.myportfoliotracker.repository.PositionRepository;
@@ -102,10 +103,12 @@ public class PriceUpdateService {
             }
 
             try {
-                YahooQuote quote = yahooFinanceService.fetchQuote(yahoo);
+                YahooQuoteExtended quote = yahooFinanceService.fetchQuoteExtended(yahoo);
                 double priceEur = Math.round(exchangeRateService.convertToEur(quote.price(), quote.currency()) * 10000.0) / 10000.0;
 
                 position.setCurrentPrice(priceEur);
+                position.setVolume(quote.volume());
+                position.setAvgVolume(quote.avgVolume());
                 position.setLastPriceUpdate(now);
                 positionRepository.save(position);
                 updated++;
