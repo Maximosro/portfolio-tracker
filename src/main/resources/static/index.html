@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
 /* ===================== DESIGN TOKENS ===================== */
@@ -2497,7 +2498,7 @@ function renderHistoryChart(data, tickerFilter) {
       borderWidth: 2.5, pointRadius: points.length > 50 ? 0 : 3, pointHoverRadius: 5,
       tension: 0, fill: true, spanGaps: true
     }];
-    createLineChart(ctx, c, datasets);
+    createLineChart(ctx, c, datasets, tickerFilter);
   } else {
     // All tickers — show price lines per ticker
     const tsMap = new Map();
@@ -2542,12 +2543,127 @@ function renderHistoryChart(data, tickerFilter) {
       borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0, fill: true, spanGaps: true
     });
 
-    createLineChart(ctx, c, datasets);
+    createLineChart(ctx, c, datasets, 'ALL');
   }
 }
 
 function getTimeUnit() {
   return getChartTimeConfig(currentRange);
+}
+
+// ===================== MARKET SCHEDULE ANNOTATIONS =====================
+let marketSchedules = [];
+
+/**
+ * Extrae el sufijo de un Yahoo ticker: "SXR8.DE" → ".DE", "AAPL" → null
+ */
+function extractTickerSuffix(yahooTicker) {
+  if (!yahooTicker) return null;
+  const dot = yahooTicker.lastIndexOf('.');
+  if (dot > 0 && dot < yahooTicker.length - 1) return yahooTicker.substring(dot).toUpperCase();
+  return null;
+}
+
+/**
+ * Genera annotations de líneas verticales de apertura/cierre para gráficas con rango 1D.
+ * @param {string} range - rango actual ('1d', '1w', etc.)
+ * @param {string|null} tickerFilter - ticker seleccionado o 'ALL'/null
+ * @returns {object} objeto annotations para chartjs-plugin-annotation, o {}
+ */
+function buildMarketHourAnnotations(range, tickerFilter) {
+  if (range !== '1d' || !marketSchedules || marketSchedules.length === 0) return {};
+
+  // Determinar qué sufijos son relevantes
+  let relevantSuffixes = new Set();
+  if (tickerFilter && tickerFilter !== 'ALL') {
+    const pos = positions.find(p => p.ticker === tickerFilter);
+    if (pos && pos.yahooTicker) relevantSuffixes.add(extractTickerSuffix(pos.yahooTicker));
+  } else {
+    positions.filter(p => p.shares > 0 && p.yahooTicker).forEach(p => {
+      relevantSuffixes.add(extractTickerSuffix(p.yahooTicker));
+    });
+  }
+
+  const annotations = {};
+  const colors = ['#01696f', '#d19900', '#a13544', '#437a22', '#da7101', '#6a5acd'];
+  let colorIdx = 0;
+  const today = new Date();
+
+  // Deduplicar por open/close time (varios sufijos pueden compartir horario)
+  const seen = new Set();
+
+  relevantSuffixes.forEach(suffix => {
+    const schedule = marketSchedules.find(s =>
+      (suffix === null && s.tickerSuffix === null) || (s.tickerSuffix && s.tickerSuffix.toUpperCase() === (suffix || ''))
+    );
+    if (!schedule || !schedule.enabled) return;
+
+    const key = schedule.openTime + '-' + schedule.closeTime + '-' + schedule.timezone;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    // Convertir hora del mercado a hora local del navegador
+    const openLocal = marketTimeToLocal(today, schedule.openTime, schedule.timezone);
+    const closeLocal = marketTimeToLocal(today, schedule.closeTime, schedule.timezone);
+    if (!openLocal || !closeLocal) return;
+
+    const color = colors[colorIdx % colors.length];
+    colorIdx++;
+    const label = schedule.marketName || (schedule.tickerSuffix || 'US');
+
+    annotations['open_' + key] = {
+      type: 'line', scaleID: 'x', value: openLocal.getTime(),
+      borderColor: color + 'AA', borderWidth: 1.5, borderDash: [6, 3],
+      label: {
+        display: true, content: '🔔 ' + label, position: 'start',
+        backgroundColor: color + '22', color: color, font: { size: 9, weight: 'bold' },
+        padding: { top: 2, bottom: 2, left: 4, right: 4 }, borderRadius: 3
+      }
+    };
+    annotations['close_' + key] = {
+      type: 'line', scaleID: 'x', value: closeLocal.getTime(),
+      borderColor: color + 'AA', borderWidth: 1.5, borderDash: [6, 3],
+      label: {
+        display: true, content: '🔕 ' + label, position: 'start',
+        backgroundColor: color + '22', color: color, font: { size: 9, weight: 'bold' },
+        padding: { top: 2, bottom: 2, left: 4, right: 4 }, borderRadius: 3
+      }
+    };
+  });
+
+  return annotations;
+}
+
+/**
+ * Convierte una hora HH:mm en una zona horaria dada a un Date local del navegador para hoy.
+ */
+function marketTimeToLocal(today, timeStr, timezone) {
+  try {
+    const [h, m] = timeStr.split(':').map(Number);
+    // Crear fecha en la zona del mercado usando formato ISO
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    // Truco: formatear en la zona del mercado y obtener offset
+    const marketDate = new Date(`${yyyy}-${mm}-${dd}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+    // Calcular offset entre zona del mercado y local
+    const localStr = marketDate.toLocaleString('en-US', { timeZone: timezone });
+    const utcStr = marketDate.toLocaleString('en-US', { timeZone: 'UTC' });
+    const localDate = new Date(localStr);
+    const utcDate = new Date(utcStr);
+    const marketOffset = localDate.getTime() - utcDate.getTime();
+
+    const browserStr = marketDate.toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    const browserDate = new Date(browserStr);
+    const browserOffset = browserDate.getTime() - utcDate.getTime();
+
+    // La hora del mercado en UTC
+    const marketUTC = new Date(today.getFullYear(), today.getMonth(), today.getDate(), h, m, 0).getTime() - marketOffset;
+    // Convertir a hora local del navegador
+    return new Date(marketUTC + browserOffset);
+  } catch(e) {
+    return null;
+  }
 }
 
 /**
@@ -2618,10 +2734,11 @@ function calcYBounds10(datasets) {
   return { min: Math.max(0, minY - margin), max: maxY + margin };
 }
 
-function createLineChart(ctx, c, datasets) {
+function createLineChart(ctx, c, datasets, tickerFilter) {
   const tu = getTimeUnit();
   const bounds = getRangeBounds();
   const yBounds = calcYBounds10(datasets);
+  const marketAnnotations = buildMarketHourAnnotations(currentRange, tickerFilter);
 
   histChartInst = new Chart(ctx, {
     type: 'line',
@@ -2655,6 +2772,7 @@ function createLineChart(ctx, c, datasets) {
         }
       },
       plugins: {
+        annotation: { annotations: marketAnnotations },
         legend: {
           display: datasets.length > 1,
           position: 'top',
@@ -4510,6 +4628,7 @@ function renderPdPortfolioChart(data, c, ctx) {
   const yBounds = calcYBounds10(datasets);
   const xBounds = getPdRangeBounds();
   const pdTu = getChartTimeConfig(pdHistRange);
+  const mktAnnotations = buildMarketHourAnnotations(pdHistRange, 'ALL');
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
@@ -4520,6 +4639,7 @@ function renderPdPortfolioChart(data, c, ctx) {
         y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
+        annotation: { annotations: mktAnnotations },
         legend: { display: false },
         tooltip: {
           backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` }
@@ -4546,6 +4666,7 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
   const yBounds = calcYBounds10(datasets);
   const xBounds = getPdRangeBounds();
   const pdTu = getChartTimeConfig(pdHistRange);
+  const mktAnnotations = buildMarketHourAnnotations(pdHistRange, ticker);
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
@@ -4556,6 +4677,7 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
         y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
+        annotation: { annotations: mktAnnotations },
         legend: { display: false },
         tooltip: {
           backgroundColor: c.tooltipBg, borderColor: c.border, borderWidth: 1, titleColor: c.text, bodyColor: c.textMuted, callbacks: { label: item => ` ${item.dataset.label}: ${fmtEur(item.raw.y)}` }
@@ -4936,6 +5058,7 @@ async function loadAll() {
       positionDetailsMap = {};
       details.forEach(d => positionDetailsMap[d.ticker] = d);
     } catch(e) { positionDetailsMap = {}; }
+    try { marketSchedules = await (await fetch(`${BASE}/api/market-schedules`)).json(); } catch(e) { marketSchedules = []; }
     await loadInvestmentPlan();
     await loadCashFlows();
     renderAll();
