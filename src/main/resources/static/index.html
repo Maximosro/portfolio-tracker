@@ -443,11 +443,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)">
           <!-- Toggle: Precios / Cartera -->
           <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-            <button class="range-btn chart-toggle active" onclick="switchChartView('price')">Evolución de Precios</button>
-            <button class="range-btn chart-toggle" onclick="switchChartView('portfolio')">Evolución de Cartera</button>
+            <button class="range-btn chart-toggle" onclick="switchChartView('price')">Evolución de Precios</button>
+            <button class="range-btn chart-toggle active" onclick="switchChartView('portfolio')">Evolución de Cartera</button>
           </div>
           <!-- Controles gráfica de PRECIOS -->
-          <div id="priceChartControls" style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          <div id="priceChartControls" style="display:none;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="histTicker" onchange="loadHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
@@ -462,24 +462,24 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
             </div>
           </div>
           <!-- Controles gráfica de CARTERA -->
-          <div id="portfolioChartControls" style="display:none;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          <div id="portfolioChartControls" style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <select class="form-input" id="pdTicker" onchange="loadPdHistory()" style="width:auto;padding:var(--space-1) var(--space-3);font-size:var(--text-xs)">
               <option value="ALL">Toda la cartera</option>
             </select>
             <div style="display:flex;gap:2px;background:var(--color-surface-2);border-radius:var(--radius-md);padding:2px;border:1px solid var(--color-border)">
-              <button class="range-btn pd-range" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
+              <button class="range-btn pd-range active" data-pdrange="1d" onclick="setPdRange('1d')">1D</button>
               <button class="range-btn pd-range" data-pdrange="1w" onclick="setPdRange('1w')">1S</button>
               <button class="range-btn pd-range" data-pdrange="1m" onclick="setPdRange('1m')">1M</button>
               <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
               <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
               <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
               <button class="range-btn pd-range" data-pdrange="ytd" onclick="setPdRange('ytd')">ActY</button>
-              <button class="range-btn pd-range active" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
+              <button class="range-btn pd-range" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
             </div>
           </div>
         </div>
-        <div id="priceChartWrap" style="position:relative;height:400px"><canvas id="historyChart"></canvas></div>
-        <div id="portfolioChartWrap" style="position:relative;height:400px;display:none"><canvas id="pdHistChart"></canvas></div>
+        <div id="priceChartWrap" style="position:relative;height:400px;display:none"><canvas id="historyChart"></canvas></div>
+        <div id="portfolioChartWrap" style="position:relative;height:400px"><canvas id="pdHistChart"></canvas></div>
       </div>
     </div>
 
@@ -2426,7 +2426,7 @@ function showToast(msg, type = 'success') {
 
 
 // ===================== CHART VIEW TOGGLE =====================
-let currentChartView = 'price';
+let currentChartView = 'portfolio';
 
 function switchChartView(view) {
   currentChartView = view;
@@ -4424,7 +4424,7 @@ function renderEquityChart(data) {
 // ===================== PORTFOLIO DETAIL SCREEN =====================
 let pdPieInst = null;
 let pdHistInst = null;
-let pdHistRange = 'all';
+let pdHistRange = '1d';
 
 function openPortfolioDetail() {
   document.getElementById('portfolioDetailOverlay').classList.add('open');
