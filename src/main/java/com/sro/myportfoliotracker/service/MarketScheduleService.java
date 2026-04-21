@@ -85,6 +85,30 @@ public class MarketScheduleService {
     }
 
     /**
+     * Indica si un ticker está actualmente en la ventana post-cierre
+     * (entre closeTime y closeTime + gracia).
+     */
+    public boolean isInPostCloseGrace(String yahooTicker) {
+        if (yahooTicker == null || yahooTicker.isBlank()) return false;
+        String suffix = extractSuffix(yahooTicker);
+        Optional<MarketSchedule> opt = marketScheduleRepository.findByTickerSuffix(suffix);
+        if (opt.isEmpty()) return false;
+        MarketSchedule schedule = opt.get();
+        if (!Boolean.TRUE.equals(schedule.getEnabled())) return false;
+        try {
+            ZoneId zone = ZoneId.of(schedule.getTimezone());
+            ZonedDateTime now = ZonedDateTime.now(zone);
+            DayOfWeek day = now.getDayOfWeek();
+            if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) return false;
+            LocalTime closeTime = LocalTime.parse(schedule.getCloseTime(), TIME_FMT);
+            LocalTime currentTime = now.toLocalTime();
+            return currentTime.isAfter(closeTime) && !currentTime.isAfter(closeTime.plusMinutes(POST_CLOSE_GRACE_MINUTES));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Extrae el sufijo del ticker Yahoo.
      * "SXR8.DE" → ".DE", "AAPL" → null, "VUAA.L" → ".L"
      */

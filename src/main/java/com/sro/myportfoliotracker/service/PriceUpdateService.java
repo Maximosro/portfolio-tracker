@@ -44,6 +44,11 @@ public class PriceUpdateService {
     }
 
 
+    /** Máximo de reintentos para posiciones en ventana post-cierre */
+    private static final int POST_CLOSE_MAX_RETRIES = 3;
+    /** Espera entre reintentos (ms) */
+    private static final long POST_CLOSE_RETRY_DELAY_MS = 60_000; // 1 minuto
+
     /**
      * Cada 10 minutos, 24/7.
      */
@@ -53,7 +58,91 @@ public class PriceUpdateService {
         boolean extended = (cycle % EXTENDED_FETCH_EVERY == 0);
         log.info("⏰ Actualización programada de precios (ciclo {}, {})", cycle, extended ? "extendido" : "ligero");
         activityLog.info("PRICE", "Actualización programada de precios iniciada" + (extended ? " (extendido)" : ""), null, "⏰");
-        updateAllPrices(extended);
+        PriceUpdateResult result = updateAllPrices(extended);
+
+        // Reintentar posiciones fallidas que estén en ventana post-cierre
+        retryPostCloseFailures(result, extended);
+    }
+
+    /**
+     * Si hay posiciones que fallaron y están en la ventana post-cierre,
+     * reintentar hasta POST_CLOSE_MAX_RETRIES veces para capturar el precio de cierre.
+     */
+    private void retryPostCloseFailures(PriceUpdateResult result, boolean extended) {
+        if (result.failedTickers() == null || result.failedTickers().isEmpty()) return;
+
+        // Filtrar solo los fallos que están en ventana post-cierre
+        List<String> postCloseFailures = result.failedTickers().stream()
+                .filter(ticker -> {
+                    return positionRepository.findById(ticker.replaceAll("\\s*\\(.*\\)", "").trim())
+                            .map(p -> p.getYahooTicker() != null && marketScheduleService.isInPostCloseGrace(p.getYahooTicker()))
+                            .orElse(false);
+                })
+                .toList();
+
+        if (postCloseFailures.isEmpty()) return;
+
+        log.info("🔄 {} posiciones en post-cierre fallaron, reintentando (máx {} intentos, 1 por minuto)",
+                postCloseFailures.size(), POST_CLOSE_MAX_RETRIES);
+        activityLog.info("PRICE", postCloseFailures.size() + " posiciones en post-cierre fallaron, reintentando...", null, "🔄");
+
+        for (int attempt = 1; attempt <= POST_CLOSE_MAX_RETRIES; attempt++) {
+            try {
+                Thread.sleep(POST_CLOSE_RETRY_DELAY_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+
+            List<String> stillFailing = new ArrayList<>();
+            Instant now = Instant.now();
+
+            for (String tickerRaw : postCloseFailures) {
+                String ticker = tickerRaw.replaceAll("\\s*\\(.*\\)", "").trim();
+                Position position = positionRepository.findById(ticker).orElse(null);
+                if (position == null || position.getYahooTicker() == null) continue;
+
+                try {
+                    double rawPrice;
+                    String currency;
+                    if (extended) {
+                        var quote = yahooFinanceService.fetchQuoteExtended(position.getYahooTicker());
+                        rawPrice = quote.price(); currency = quote.currency();
+                        position.setVolume(quote.volume()); position.setAvgVolume(quote.avgVolume());
+                    } else {
+                        var quote = yahooFinanceService.fetchQuote(position.getYahooTicker());
+                        rawPrice = quote.price(); currency = quote.currency();
+                    }
+                    double priceEur = Math.round(exchangeRateService.convertToEur(rawPrice, currency) * 10000.0) / 10000.0;
+                    position.setCurrentPrice(priceEur);
+                    position.setLastPriceUpdate(now);
+                    positionRepository.save(position);
+                    priceHistoryRepository.save(PriceHistory.builder()
+                            .ticker(ticker).timestamp(now).rawPrice(rawPrice).currency(currency).priceEur(priceEur).build());
+                    log.info("✓ Reintento {}/{}: {} → {} EUR", attempt, POST_CLOSE_MAX_RETRIES, ticker, priceEur);
+                    activityLog.success("PRICE", "Reintento post-cierre OK: " + ticker + " → " + priceEur + " EUR", ticker, "🔄");
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (Exception e) {
+                    log.warn("✗ Reintento {}/{}: {} — {}", attempt, POST_CLOSE_MAX_RETRIES, ticker, e.getMessage());
+                    stillFailing.add(tickerRaw);
+                }
+            }
+
+            if (stillFailing.isEmpty()) {
+                log.info("✅ Todos los precios post-cierre recuperados en intento {}", attempt);
+                activityLog.success("PRICE", "Precios post-cierre recuperados tras " + attempt + " reintento(s)", null, "✅");
+                return;
+            }
+            // Para la siguiente iteración solo reintentar los que siguen fallando
+            postCloseFailures = stillFailing;
+        }
+
+        log.warn("⚠ {} posiciones post-cierre no pudieron actualizarse tras {} reintentos: {}",
+                postCloseFailures.size(), POST_CLOSE_MAX_RETRIES, postCloseFailures);
+        activityLog.error("PRICE", postCloseFailures.size() + " posiciones post-cierre sin precio real tras reintentos: " + postCloseFailures, null, "⚠");
     }
 
     /**
