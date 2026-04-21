@@ -212,6 +212,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .wl-badge.down{background:oklch(from var(--color-notification) l c h / .12);color:var(--color-notification)}
 .wl-badge.flat{background:var(--color-surface-dynamic);color:var(--color-text-muted)}
 .wl-badge-label{opacity:.7;margin-right:2px}
+.wl-badge.vol-high{background:oklch(from orange l c h / .15);color:orange}
+.wl-badge.vol-low{background:oklch(from dodgerblue l c h / .12);color:dodgerblue}
 .wl-item-footer{display:flex;align-items:center;justify-content:space-between;margin-top:var(--space-2)}
 .wl-item-note{font-size:10px;color:var(--color-text-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
 .wl-item-actions{display:flex;gap:2px}
@@ -738,6 +740,38 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div style="display:flex;justify-content:flex-end;gap:var(--space-3);margin-top:var(--space-5)">
       <button class="btn btn-secondary btn-sm" onclick="closeWatchlistModal()">Cancelar</button>
       <button class="btn btn-primary btn-sm" id="wlSaveBtn" onclick="saveWatchlistItem()">Añadir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ALERTAS DE WATCHLIST -->
+<div id="wlAlertModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1001;align-items:center;justify-content:center;padding:var(--space-4)">
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:480px;box-shadow:var(--shadow-md);max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
+      <h2 style="font-size:var(--text-base);font-weight:700">🔔 Alertas — <span id="wlAlertTicker"></span></h2>
+      <button class="btn-ghost btn" onclick="closeWlAlertModal()">✕</button>
+    </div>
+    <div id="wlAlertList" style="margin-bottom:var(--space-4)"></div>
+    <div style="border-top:1px solid var(--color-border);padding-top:var(--space-4)">
+      <div style="font-weight:600;font-size:var(--text-sm);margin-bottom:var(--space-3)">Nueva alerta</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-input" id="wlAlertType">
+            <option value="PRICE_ABOVE">📈 Precio sube sobre</option>
+            <option value="PRICE_BELOW">📉 Precio baja de</option>
+            <option value="VOLUME_ABOVE">🔥 Volumen superior a</option>
+            <option value="VOLUME_BELOW">🧊 Volumen inferior a</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="wlAlertThresholdLabel">Precio (€)</label>
+          <input class="form-input" type="number" id="wlAlertThreshold" step="0.01" placeholder="150.00">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:var(--space-3)">
+        <button class="btn btn-primary btn-sm" onclick="addWlAlert()">Añadir alerta</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2753,6 +2787,18 @@ function wlChangeBadge(label, value) {
   return `<span class="wl-badge ${cls}"><span class="wl-badge-label">${label}</span>${sign}${value.toFixed(2)}%</span>`;
 }
 
+function wlVolumeBadge(volume, avgVolume) {
+  if (volume == null || avgVolume == null || avgVolume === 0) return '';
+  const ratio = volume / avgVolume;
+  let cls, icon;
+  if (ratio >= 1.5) { cls = 'vol-high'; icon = '🔥'; }
+  else if (ratio <= 0.5) { cls = 'vol-low'; icon = '🧊'; }
+  else { cls = 'flat'; icon = '📊'; }
+  const label = ratio >= 1.5 ? 'Alta' : ratio <= 0.5 ? 'Baja' : 'Media';
+  const fmtVol = v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v;
+  return `<span class="wl-badge ${cls}" title="Actividad ${label} — Vol: ${fmtVol(volume)} / Avg: ${fmtVol(avgVolume)}">${icon} ${ratio.toFixed(1)}x</span>`;
+}
+
 function renderWatchlist() {
   const body = document.getElementById('wlPanelBody');
   const count = document.getElementById('wlCount');
@@ -2779,10 +2825,14 @@ function renderWatchlist() {
         ${wlChangeBadge('1D', item.changePctDay)}
         ${wlChangeBadge('1S', item.changePctWeek)}
         ${wlChangeBadge('1M', item.changePctMonth)}
+        ${wlVolumeBadge(item.volume, item.avgVolume)}
       </div>
       <div class="wl-item-footer">
         <span class="wl-item-note" title="${(item.notes || '').replace(/"/g, '&quot;')}">${item.notes || ''}</span>
         <div class="wl-item-actions">
+          <button class="btn-ghost btn btn-sm" onclick="openWlAlertModal(${item.id})" title="Alertas" style="padding:1px 4px;color:var(--color-warning)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
           <button class="btn-ghost btn btn-sm" onclick="openWatchlistAddModal(${item.id})" title="Editar" style="padding:1px 4px">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
@@ -2801,6 +2851,114 @@ async function loadWatchlist() {
   } catch (e) {
     console.error('Error cargando watchlist:', e);
   }
+}
+
+// ===================== WATCHLIST ALERTS =====================
+let wlAlertCurrentItemId = null;
+
+document.getElementById('wlAlertType').addEventListener('change', function() {
+  const lbl = document.getElementById('wlAlertThresholdLabel');
+  const input = document.getElementById('wlAlertThreshold');
+  if (this.value.startsWith('VOLUME')) {
+    lbl.textContent = 'Ratio (x media)';
+    input.step = '0.1';
+    input.placeholder = '2.0';
+  } else {
+    lbl.textContent = 'Precio (€)';
+    input.step = '0.01';
+    input.placeholder = '150.00';
+  }
+});
+
+async function openWlAlertModal(itemId) {
+  wlAlertCurrentItemId = itemId;
+  const item = watchlistItems.find(w => w.id === itemId);
+  document.getElementById('wlAlertTicker').textContent = item ? item.ticker : '';
+  document.getElementById('wlAlertModal').style.display = 'flex';
+  document.getElementById('wlAlertThreshold').value = '';
+  document.getElementById('wlAlertType').value = 'PRICE_ABOVE';
+  document.getElementById('wlAlertType').dispatchEvent(new Event('change'));
+  await renderWlAlerts();
+}
+
+function closeWlAlertModal() {
+  document.getElementById('wlAlertModal').style.display = 'none';
+  wlAlertCurrentItemId = null;
+}
+
+async function renderWlAlerts() {
+  const list = document.getElementById('wlAlertList');
+  try {
+    const resp = await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts`);
+    const alerts = await resp.json();
+    if (!alerts.length) {
+      list.innerHTML = '<div style="text-align:center;color:var(--color-text-muted);font-size:var(--text-sm);padding:var(--space-3)">Sin alertas configuradas</div>';
+      return;
+    }
+    list.innerHTML = alerts.map(a => {
+      const typeLabels = {
+        PRICE_ABOVE: '📈 Precio ≥',
+        PRICE_BELOW: '📉 Precio ≤',
+        VOLUME_ABOVE: '🔥 Vol ≥',
+        VOLUME_BELOW: '🧊 Vol ≤'
+      };
+      const unit = a.alertType.startsWith('VOLUME') ? 'x' : ' €';
+      const val = a.alertType.startsWith('VOLUME') ? parseFloat(a.threshold).toFixed(1) : parseFloat(a.threshold).toFixed(2);
+      const statusIcon = a.triggered ? '🔴' : '🟢';
+      const enabledCls = a.enabled ? '' : 'opacity:.4;';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) 0;border-bottom:1px solid var(--color-border);font-size:var(--text-sm);${enabledCls}">
+        <div>
+          <span>${statusIcon}</span>
+          <span style="font-weight:600">${typeLabels[a.alertType] || a.alertType}</span>
+          <span>${val}${unit}</span>
+          ${!a.enabled ? '<span style="color:var(--color-text-muted);font-size:var(--text-xs);margin-left:4px">(pausada)</span>' : ''}
+        </div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="btn-ghost btn btn-sm" onclick="toggleWlAlert(${a.id}, ${!a.enabled})" title="${a.enabled ? 'Pausar' : 'Activar'}" style="padding:1px 4px;font-size:10px">${a.enabled ? '⏸' : '▶️'}</button>
+          <button class="btn-ghost btn btn-sm" onclick="deleteWlAlert(${a.id})" title="Eliminar" style="padding:1px 4px;color:var(--color-notification);opacity:.6" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=.6">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div style="color:var(--color-notification);font-size:var(--text-sm)">Error cargando alertas</div>';
+  }
+}
+
+async function addWlAlert() {
+  const alertType = document.getElementById('wlAlertType').value;
+  const threshold = parseFloat(document.getElementById('wlAlertThreshold').value);
+  if (isNaN(threshold) || threshold <= 0) { showToast('Introduce un umbral válido', 'error'); return; }
+  try {
+    const resp = await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ alertType, threshold, enabled: true })
+    });
+    if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || 'Error'); }
+    showToast('Alerta añadida', 'success');
+    document.getElementById('wlAlertThreshold').value = '';
+    await renderWlAlerts();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function toggleWlAlert(alertId, enabled) {
+  try {
+    await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts/${alertId}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ enabled })
+    });
+    await renderWlAlerts();
+  } catch (e) { showToast('Error actualizando alerta', 'error'); }
+}
+
+async function deleteWlAlert(alertId) {
+  if (!confirm('¿Eliminar esta alerta?')) return;
+  try {
+    await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts/${alertId}`, { method: 'DELETE' });
+    showToast('Alerta eliminada', 'success');
+    await renderWlAlerts();
+  } catch (e) { showToast('Error eliminando', 'error'); }
 }
 
 // ===================== NEWS =====================

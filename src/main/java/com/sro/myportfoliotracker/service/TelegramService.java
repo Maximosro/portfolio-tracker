@@ -3,6 +3,8 @@ package com.sro.myportfoliotracker.service;
 import com.sro.myportfoliotracker.dto.AlertDto;
 import com.sro.myportfoliotracker.model.AppSetting;
 import com.sro.myportfoliotracker.model.Position;
+import com.sro.myportfoliotracker.model.WatchlistAlert;
+import com.sro.myportfoliotracker.model.WatchlistItem;
 import com.sro.myportfoliotracker.repository.AppSettingRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -292,6 +294,39 @@ public class TelegramService {
                 alert.getCurrentPrice(),
                 TIME_FMT.format(Instant.now())
         );
+    }
+
+    /**
+     * Envía una notificación de alerta de watchlist por Telegram.
+     */
+    public boolean sendWatchlistAlert(WatchlistItem item, WatchlistAlert alert, String message) {
+        if (!isEnabled()) return false;
+
+        String icon = switch (alert.getAlertType()) {
+            case PRICE_ABOVE -> "📈";
+            case PRICE_BELOW -> "📉";
+            case VOLUME_ABOVE -> "🔥";
+            case VOLUME_BELOW -> "🧊";
+        };
+
+        String typeLabel = switch (alert.getAlertType()) {
+            case PRICE_ABOVE -> "ALERTA PRECIO ↑";
+            case PRICE_BELOW -> "ALERTA PRECIO ↓";
+            case VOLUME_ABOVE -> "ALERTA VOLUMEN ALTO";
+            case VOLUME_BELOW -> "ALERTA VOLUMEN BAJO";
+        };
+
+        String text = String.format(
+                "%s <b>👁 WATCHLIST — %s — %s</b>\n\n%s\n\n💰 Precio actual: <b>%.2f €</b>\n🕐 %s",
+                icon, item.getTicker(), typeLabel, message,
+                item.getCurrentPrice(), TIME_FMT.format(Instant.now())
+        );
+
+        boolean sent = sendMessage(text);
+        if (sent) {
+            activityLog.info("TELEGRAM", "Alerta watchlist: " + item.getTicker() + " — " + typeLabel, item.getTicker(), "👁");
+        }
+        return sent;
     }
 
     /**

@@ -133,7 +133,30 @@ public class YahooFinanceService {
                 }
             }
 
-            return new YahooQuoteExtended(currentPrice, currency, changePctDay, changePctWeek, changePctMonth);
+            // Volumen de la sesión actual (del meta)
+            Long volume = meta.has("regularMarketVolume") ? meta.path("regularMarketVolume").asLong(0) : null;
+
+            // Volumen medio mensual (del array de volúmenes, excluyendo la última sesión incompleta)
+            Long avgVolume = null;
+            if (!closePrices.isMissingNode() && closePrices.isArray() && !closePrices.isEmpty()) {
+                JsonNode volumeArray = closePrices.get(0).path("volume");
+                if (!volumeArray.isMissingNode() && volumeArray.isArray() && volumeArray.size() > 1) {
+                    long sum = 0;
+                    int count = 0;
+                    // Excluir último elemento (sesión actual, posiblemente incompleta)
+                    for (int i = 0; i < volumeArray.size() - 1; i++) {
+                        if (!volumeArray.get(i).isNull() && volumeArray.get(i).asLong(0) > 0) {
+                            sum += volumeArray.get(i).asLong();
+                            count++;
+                        }
+                    }
+                    if (count > 0) {
+                        avgVolume = sum / count;
+                    }
+                }
+            }
+
+            return new YahooQuoteExtended(currentPrice, currency, changePctDay, changePctWeek, changePctMonth, volume, avgVolume);
 
         } catch (Exception e) {
             log.error("Error obteniendo cotización extendida de {}: {}", yahooTicker, e.getMessage());

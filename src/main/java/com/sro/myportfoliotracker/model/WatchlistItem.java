@@ -56,6 +56,12 @@ public class WatchlistItem {
     @Convert(converter = InstantStringConverter.class)
     private Instant createdAt;
 
+    @Column
+    private Long volume;
+
+    @Column(name = "avg_volume")
+    private Long avgVolume;
+
     @Column(length = 200)
     private String notes;
 }

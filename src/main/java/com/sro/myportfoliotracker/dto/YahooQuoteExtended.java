@@ -8,6 +8,8 @@ public record YahooQuoteExtended(
         String currency,
         Double changePctDay,
         Double changePctWeek,
-        Double changePctMonth
+        Double changePctMonth,
+        Long volume,
+        Long avgVolume
 ) {}
 

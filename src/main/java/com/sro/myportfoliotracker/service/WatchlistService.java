@@ -23,9 +23,11 @@ public class WatchlistService {
     private final YahooFinanceService yahooFinanceService;
     private final ExchangeRateService exchangeRateService;
     private final ActivityLogService activityLog;
+    private final WatchlistAlertService watchlistAlertService;
+    private final TelegramService telegramService;
 
-    /** Solo actualizar precios si han pasado más de 20 horas desde la última actualización */
-    private static final Duration UPDATE_COOLDOWN = Duration.ofHours(20);
+    /** Solo actualizar precios si han pasado más de 25 minutos desde la última actualización */
+    private static final Duration UPDATE_COOLDOWN = Duration.ofMinutes(25);
 
     public List<WatchlistItem> findAll() {
         return watchlistRepository.findAll();
@@ -64,6 +66,8 @@ public class WatchlistService {
             saved.setChangePctDay(quote.changePctDay());
             saved.setChangePctWeek(quote.changePctWeek());
             saved.setChangePctMonth(quote.changePctMonth());
+            saved.setVolume(quote.volume());
+            saved.setAvgVolume(quote.avgVolume());
             saved.setLastPriceUpdate(Instant.now());
             saved = watchlistRepository.save(saved);
             log.info("✓ Watchlist: precio inicial de {} → {} EUR (1d:{}% 1w:{}% 1m:{}%)",
@@ -101,17 +105,17 @@ public class WatchlistService {
         if (!watchlistRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe item de watchlist con id: " + id);
         }
+        watchlistAlertService.deleteByWatchlistItemId(id);
         watchlistRepository.deleteById(id);
     }
 
 
     /**
-     * Actualiza precios de watchlist una vez al día a las 09:00.
+     * Actualiza precios de watchlist cada 30 minutos (sincronizado con la actualización de posiciones).
      */
-    @Scheduled(cron = "0 0 9 * * *")
+    @Scheduled(cron = "0 */30 * * * *")
     public void scheduledWatchlistUpdate() {
-        log.info("⏰ Actualización diaria programada de watchlist");
-        activityLog.info("WATCHLIST", "Actualización diaria programada de watchlist iniciada", null, "⏰");
+        log.info("⏰ Actualización programada de watchlist");
         updateWatchlistPrices();
     }
 
@@ -169,6 +173,8 @@ public class WatchlistService {
                 item.setChangePctDay(quote.changePctDay());
                 item.setChangePctWeek(quote.changePctWeek());
                 item.setChangePctMonth(quote.changePctMonth());
+                item.setVolume(quote.volume());
+                item.setAvgVolume(quote.avgVolume());
                 item.setLastPriceUpdate(now);
                 watchlistRepository.save(item);
                 updated++;
@@ -190,6 +196,19 @@ public class WatchlistService {
 
         log.info("Watchlist: {} de {} actualizados", updated, items.size());
         activityLog.success("WATCHLIST", "Watchlist: " + updated + " de " + items.size() + " actualizados", null, "✅");
+
+        // Comprobar alertas de watchlist tras actualizar precios
+        if (updated > 0) {
+            try {
+                var triggered = watchlistAlertService.checkAlerts();
+                for (var ta : triggered) {
+                    telegramService.sendWatchlistAlert(ta.item(), ta.alert(), ta.message());
+                }
+            } catch (Exception e) {
+                log.debug("Error comprobando alertas watchlist: {}", e.getMessage());
+            }
+        }
+
         return updated;
     }
 }
