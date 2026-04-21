@@ -3,6 +3,7 @@ package com.sro.myportfoliotracker.controller;
 import com.sro.myportfoliotracker.dto.PriceUpdateResult;
 import com.sro.myportfoliotracker.model.PriceHistory;
 import com.sro.myportfoliotracker.repository.PriceHistoryRepository;
+import com.sro.myportfoliotracker.service.PriceHistoryPurgeService;
 import com.sro.myportfoliotracker.service.PriceUpdateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class PriceController {
 
     private final PriceUpdateService priceUpdateService;
     private final PriceHistoryRepository priceHistoryRepository;
+    private final PriceHistoryPurgeService purgeService;
 
     /**
      * Dispara una actualización manual de precios.
@@ -76,6 +78,29 @@ public class PriceController {
                 : priceHistoryRepository.findByTimestampAfterOrderByTimestampAsc(from);
 
         return ResponseEntity.ok(history);
+    }
+
+    /**
+     * Estadísticas de la tabla price_history.
+     */
+    @GetMapping("/history/stats")
+    public ResponseEntity<Map<String, Object>> getHistoryStats() {
+        return ResponseEntity.ok(purgeService.getStats());
+    }
+
+    /**
+     * Ejecuta la compactación manualmente.
+     */
+    @PostMapping("/history/purge")
+    public ResponseEntity<Map<String, Object>> purgeHistory() {
+        Map<String, Object> before = purgeService.getStats();
+        int removed = purgeService.purge();
+        Map<String, Object> after = purgeService.getStats();
+        return ResponseEntity.ok(Map.of(
+                "removed", removed,
+                "before", before,
+                "after", after
+        ));
     }
 
     private Instant calculateFrom(String range) {
