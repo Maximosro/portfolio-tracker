@@ -21,12 +21,19 @@ public class MarketScheduleService {
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     /**
-     * Determina si el mercado del ticker dado está abierto en este momento.
+     * Minutos de gracia tras el cierre para hacer una última actualización
+     * y capturar el precio de cierre real.
+     */
+    private static final int POST_CLOSE_GRACE_MINUTES = 10;
+
+    /**
+     * Determina si el mercado del ticker dado está abierto en este momento,
+     * o si está dentro de la ventana de gracia post-cierre (10 min).
      * - Extrae el sufijo del ticker (ej: ".DE" de "SXR8.DE")
      * - Busca la configuración en BD
      * - Si no hay registro o no está habilitado → siempre abierto (true)
      * - Si es fin de semana en la zona horaria del mercado → cerrado
-     * - Si la hora local está fuera del rango open/close → cerrado
+     * - Si la hora local está dentro del horario o en la ventana de gracia → abierto
      */
     public boolean isMarketOpen(String yahooTicker) {
         if (yahooTicker == null || yahooTicker.isBlank()) {
@@ -37,7 +44,6 @@ public class MarketScheduleService {
         Optional<MarketSchedule> opt = marketScheduleRepository.findByTickerSuffix(suffix);
 
         if (opt.isEmpty()) {
-            // Sin configuración para este sufijo → consultar siempre
             return true;
         }
 
@@ -59,18 +65,22 @@ public class MarketScheduleService {
 
             LocalTime openTime = LocalTime.parse(schedule.getOpenTime(), TIME_FMT);
             LocalTime closeTime = LocalTime.parse(schedule.getCloseTime(), TIME_FMT);
+            LocalTime closeWithGrace = closeTime.plusMinutes(POST_CLOSE_GRACE_MINUTES);
             LocalTime currentTime = now.toLocalTime();
 
-            boolean open = !currentTime.isBefore(openTime) && !currentTime.isAfter(closeTime);
+            boolean open = !currentTime.isBefore(openTime) && !currentTime.isAfter(closeWithGrace);
             if (!open) {
-                log.debug("Mercado {} cerrado (hora local: {}, horario: {}-{})",
-                        schedule.getMarketName(), currentTime, openTime, closeTime);
+                log.debug("Mercado {} cerrado (hora local: {}, horario: {}-{}, gracia hasta {})",
+                        schedule.getMarketName(), currentTime, openTime, closeTime, closeWithGrace);
+            } else if (currentTime.isAfter(closeTime)) {
+                log.debug("Mercado {} en ventana post-cierre (hora local: {}, cierre: {}, gracia hasta {})",
+                        schedule.getMarketName(), currentTime, closeTime, closeWithGrace);
             }
             return open;
 
         } catch (Exception e) {
             log.warn("Error evaluando horario de mercado para {}: {}", yahooTicker, e.getMessage());
-            return true; // En caso de error, consultar igualmente
+            return true;
         }
     }
 
