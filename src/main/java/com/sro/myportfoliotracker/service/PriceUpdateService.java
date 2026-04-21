@@ -118,8 +118,15 @@ public class PriceUpdateService {
 
             // Comprobar horario de mercado (salvo refresh manual forzado)
             if (!force && !marketScheduleService.isMarketOpen(yahoo)) {
-                log.debug("⏸ {} ({}) omitido: mercado cerrado", position.getTicker(), yahoo);
+                log.debug("⏸ {} ({}) mercado cerrado — manteniendo último precio", position.getTicker(), yahoo);
                 skippedMarketClosed++;
+                // Guardar histórico con último precio conocido para no romper gráficas/totales
+                if (position.getCurrentPrice() != null) {
+                    priceHistoryRepository.save(PriceHistory.builder()
+                            .ticker(position.getTicker()).timestamp(now)
+                            .rawPrice(position.getCurrentPrice()).currency("EUR")
+                            .priceEur(position.getCurrentPrice()).build());
+                }
                 continue;
             }
 
