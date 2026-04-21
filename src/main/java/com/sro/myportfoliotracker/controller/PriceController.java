@@ -12,9 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 
 @RestController
 @RequestMapping("/api/prices")
@@ -49,7 +50,7 @@ public class PriceController {
 
     /**
      * Histórico de precios de un ticker.
-     * @param range rango temporal: 1d, 1w, 1m, 3m, 6m, 1y, all
+     * Los datos se devuelven con resolución adaptada al rango para evitar gráficas ilegibles.
      */
     @GetMapping("/history/{ticker}")
     public ResponseEntity<List<PriceHistory>> getHistory(
@@ -61,12 +62,12 @@ public class PriceController {
                 ? priceHistoryRepository.findByTickerOrderByTimestampDesc(ticker.toUpperCase())
                 : priceHistoryRepository.findByTickerAndTimestampAfterOrderByTimestampAsc(ticker.toUpperCase(), from);
 
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(downsample(history, range));
     }
 
     /**
      * Histórico global (todas las posiciones).
-     * @param range rango temporal: 1d, 1w, 1m, 3m, 6m, 1y, all
+     * Los datos se devuelven con resolución adaptada al rango.
      */
     @GetMapping("/history")
     public ResponseEntity<List<PriceHistory>> getAllHistory(
@@ -77,7 +78,7 @@ public class PriceController {
                 ? priceHistoryRepository.findAll()
                 : priceHistoryRepository.findByTimestampAfterOrderByTimestampAsc(from);
 
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(downsample(history, range));
     }
 
     /**
@@ -101,6 +102,51 @@ public class PriceController {
                 "before", before,
                 "after", after
         ));
+    }
+
+    /**
+     * Downsample: reduce los puntos devueltos según el rango solicitado
+     * para que la gráfica tenga densidad uniforme.
+     *
+     *   1d              → 1 punto cada 30 min
+     *   1w              → 1 punto por hora
+     *   1m              → 1 punto por día
+     *   3m/6m/1y/ytd/all → 1 punto por semana
+     */
+    private List<PriceHistory> downsample(List<PriceHistory> data, String range) {
+        if (data == null || data.size() <= 1) return data;
+
+        Function<PriceHistory, Long> bucketFn = switch (range.toLowerCase()) {
+            case "1d" -> null; // sin downsample, todos los puntos
+            case "1w" -> ph -> ph.getTimestamp().truncatedTo(ChronoUnit.HOURS).toEpochMilli();
+            case "1m" -> ph -> ph.getTimestamp().truncatedTo(ChronoUnit.DAYS).toEpochMilli();
+            default -> ph -> {
+                // Bucket semanal: año * 100 + semana
+                LocalDate date = ph.getTimestamp().atZone(ZoneOffset.UTC).toLocalDate();
+                int year = date.getYear();
+                int week = date.get(ChronoField.ALIGNED_WEEK_OF_YEAR);
+                return (long) year * 100 + week;
+            };
+        };
+
+
+        if (bucketFn == null) return data;
+
+        // Por cada ticker+bucket, quedarnos con el ÚLTIMO punto
+        Map<String, Map<Long, PriceHistory>> byTicker = new LinkedHashMap<>();
+        for (PriceHistory ph : data) {
+            byTicker
+                    .computeIfAbsent(ph.getTicker(), k -> new LinkedHashMap<>())
+                    .put(bucketFn.apply(ph), ph); // sobrescribe → se queda el último
+        }
+
+        // Reconstruir lista ordenada por timestamp
+        List<PriceHistory> result = new ArrayList<>();
+        for (Map<Long, PriceHistory> buckets : byTicker.values()) {
+            result.addAll(buckets.values());
+        }
+        result.sort(Comparator.comparing(PriceHistory::getTimestamp));
+        return result;
     }
 
     private Instant calculateFrom(String range) {

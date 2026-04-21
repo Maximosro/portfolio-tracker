@@ -474,6 +474,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
               <button class="range-btn pd-range" data-pdrange="3m" onclick="setPdRange('3m')">3M</button>
               <button class="range-btn pd-range" data-pdrange="6m" onclick="setPdRange('6m')">6M</button>
               <button class="range-btn pd-range" data-pdrange="1y" onclick="setPdRange('1y')">1A</button>
+              <button class="range-btn pd-range" data-pdrange="ytd" onclick="setPdRange('ytd')">ActY</button>
               <button class="range-btn pd-range active" data-pdrange="all" onclick="setPdRange('all')">Todo</button>
             </div>
           </div>
@@ -2530,16 +2531,27 @@ function renderHistoryChart(data, tickerFilter) {
 }
 
 function getTimeUnit() {
-  switch (currentRange) {
-    case '1d': return { unit: 'hour', fmt: 'HH:mm', ttFmt: 'dd MMM HH:mm' };
-    case '1w': return { unit: 'day', fmt: 'EEE dd', ttFmt: 'EEE dd MMM HH:mm' };
-    case '1m': return { unit: 'day', fmt: 'dd MMM', ttFmt: 'dd MMM yyyy' };
-    case '3m': return { unit: 'week', fmt: 'dd MMM', ttFmt: 'dd MMM yyyy' };
-    case '6m': return { unit: 'month', fmt: 'MMM yy', ttFmt: 'dd MMM yyyy' };
-    case '1y': return { unit: 'month', fmt: 'MMM yy', ttFmt: 'dd MMM yyyy' };
-    case 'ytd': return { unit: 'month', fmt: 'MMM', ttFmt: 'dd MMM yyyy' };
-    case 'all': return { unit: 'month', fmt: 'MMM yy', ttFmt: 'dd MMM yyyy' };
-    default: return { unit: 'day', fmt: 'dd MMM', ttFmt: 'dd MMM yyyy' };
+  return getChartTimeConfig(currentRange);
+}
+
+/**
+ * Configuración de eje X compartida por todas las gráficas temporales.
+ *   1D      → todos los puntos, etiquetas cada 30 min
+ *   1S      → 1 punto/hora, etiquetas por día
+ *   1M      → 1 punto/día, etiquetas por día
+ *   3M/6M/1Y/ActY/Todo → 1 punto/semana, etiquetas por semana/mes
+ */
+function getChartTimeConfig(range) {
+  switch (range) {
+    case '1d': return { unit: 'minute', stepSize: 30, fmt: 'HH:mm', ttFmt: 'dd MMM HH:mm', ticks: 24 };
+    case '1w': return { unit: 'day',   fmt: 'EEE dd',  ttFmt: 'EEE dd MMM HH:mm',  ticks: 7 };
+    case '1m': return { unit: 'day',   fmt: 'dd MMM',  ttFmt: 'dd MMM yyyy',        ticks: 10 };
+    case '3m': return { unit: 'week',  fmt: 'dd MMM',  ttFmt: 'dd MMM yyyy',        ticks: 12 };
+    case '6m': return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 6 };
+    case '1y': return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 12 };
+    case 'ytd':return { unit: 'month', fmt: 'MMM',     ttFmt: 'dd MMM yyyy',        ticks: 12 };
+    case 'all':return { unit: 'month', fmt: 'MMM yy',  ttFmt: 'dd MMM yyyy',        ticks: 12 };
+    default:   return { unit: 'day',   fmt: 'dd MMM',  ttFmt: 'dd MMM yyyy',        ticks: 10 };
   }
 }
 
@@ -2605,10 +2617,11 @@ function createLineChart(ctx, c, datasets) {
           max: bounds.max,
           time: {
             unit: tu.unit,
-            displayFormats: { hour: tu.fmt, day: tu.fmt, week: tu.fmt, month: tu.fmt },
+            displayFormats: { minute: tu.fmt, hour: tu.fmt, day: tu.fmt, week: tu.fmt, month: tu.fmt },
+            stepSize: tu.stepSize,
             tooltipFormat: tu.ttFmt
           },
-          ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 14, maxRotation: 0, source: 'auto' },
+          ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: tu.ticks, maxRotation: 0, autoSkip: true, autoSkipPadding: 20, source: 'auto' },
           grid: { color: c.border + '40' }
         },
         y: {
@@ -4418,6 +4431,9 @@ function getPdRangeBounds() {
     case '1y':
       min = new Date(now); min.setFullYear(min.getFullYear() - 1); min.setHours(0, 0, 0, 0);
       return { min, max: now };
+    case 'ytd':
+      min = new Date(now.getFullYear(), 0, 1);
+      return { min, max: now };
     case 'all':
       return { min: undefined, max: undefined };
     default:
@@ -4473,13 +4489,14 @@ function renderPdPortfolioChart(data, c, ctx) {
 
   const yBounds = calcYBounds10(datasets);
   const xBounds = getPdRangeBounds();
+  const pdTu = getChartTimeConfig(pdHistRange);
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
     options: {
       responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { type: 'time', min: xBounds.min, max: xBounds.max, time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
+        x: { type: 'time', min: xBounds.min, max: xBounds.max, time: { unit: pdTu.unit, stepSize: pdTu.stepSize, displayFormats: { minute: pdTu.fmt, hour: pdTu.fmt, day: pdTu.fmt, week: pdTu.fmt, month: pdTu.fmt }, tooltipFormat: pdTu.ttFmt }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: pdTu.ticks, maxRotation: 0, autoSkip: true, autoSkipPadding: 20, source: 'auto' }, grid: { color: c.border + '40' } },
         y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
@@ -4508,13 +4525,14 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
 
   const yBounds = calcYBounds10(datasets);
   const xBounds = getPdRangeBounds();
+  const pdTu = getChartTimeConfig(pdHistRange);
 
   pdHistInst = new Chart(ctx, {
     type: 'line', data: { datasets },
     options: {
       responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { type: 'time', min: xBounds.min, max: xBounds.max, time: { tooltipFormat: 'dd MMM yyyy HH:mm' }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: c.border + '40' } },
+        x: { type: 'time', min: xBounds.min, max: xBounds.max, time: { unit: pdTu.unit, stepSize: pdTu.stepSize, displayFormats: { minute: pdTu.fmt, hour: pdTu.fmt, day: pdTu.fmt, week: pdTu.fmt, month: pdTu.fmt }, tooltipFormat: pdTu.ttFmt }, ticks: { color: c.textMuted, font: { size: 10 }, maxTicksLimit: pdTu.ticks, maxRotation: 0, autoSkip: true, autoSkipPadding: 20, source: 'auto' }, grid: { color: c.border + '40' } },
         y: { min: yBounds.min, max: yBounds.max, ticks: { color: c.textMuted, font: { size: 10 }, callback: v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }, grid: { color: c.border + '40' } }
       },
       plugins: {
