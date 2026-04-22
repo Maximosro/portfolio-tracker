@@ -692,14 +692,40 @@ function chartDefaults(){
   return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},scales:{x:{ticks:{color:c.text,font:{size:9},maxTicksLimit:6},grid:{color:c.grid+'33'}},y:{ticks:{color:c.text,font:{size:9}},grid:{color:c.grid+'33'}}}}
 }
 
+function getTimeConfig(range){
+  switch(range){
+    case '1d': return{unit:'minute',stepSize:30,fmt:'HH:mm',ttFmt:'dd MMM HH:mm',ticks:24};
+    case '1w': return{unit:'day',fmt:'EEE dd',ttFmt:'EEE dd MMM HH:mm',ticks:7};
+    case '1m': return{unit:'day',fmt:'dd MMM',ttFmt:'dd MMM yyyy',ticks:10};
+    case '3m': return{unit:'week',fmt:'dd MMM',ttFmt:'dd MMM yyyy',ticks:12};
+    case '6m': return{unit:'month',fmt:'MMM yy',ttFmt:'dd MMM yyyy',ticks:6};
+    case '1y': return{unit:'month',fmt:'MMM yy',ttFmt:'dd MMM yyyy',ticks:12};
+    case 'ytd':return{unit:'month',fmt:'MMM',ttFmt:'dd MMM yyyy',ticks:12};
+    case 'all':return{unit:false,fmt:'dd MMM yy',ttFmt:'dd MMM yyyy',ticks:15};
+    default:   return{unit:'day',fmt:'dd MMM',ttFmt:'dd MMM yyyy',ticks:10};
+  }
+}
+function getXBounds(range){
+  const now=new Date();let min;
+  switch(range){
+    case '1d': min=new Date(now);min.setHours(0,0,0,0);return{min,max:new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59)};
+    case '1w': min=new Date(now);min.setDate(min.getDate()-7);min.setHours(0,0,0,0);return{min,max:now};
+    case '1m': min=new Date(now);min.setDate(min.getDate()-30);min.setHours(0,0,0,0);return{min,max:now};
+    case '3m': min=new Date(now);min.setMonth(min.getMonth()-3);min.setHours(0,0,0,0);return{min,max:now};
+    case '6m': min=new Date(now);min.setMonth(min.getMonth()-6);min.setHours(0,0,0,0);return{min,max:now};
+    case '1y': min=new Date(now);min.setFullYear(min.getFullYear()-1);min.setHours(0,0,0,0);return{min,max:now};
+    case 'ytd':min=new Date(now.getFullYear(),0,1);return{min,max:now};
+    case 'all':return{min:undefined,max:undefined};
+    default: min=new Date(now);min.setDate(min.getDate()-30);min.setHours(0,0,0,0);return{min,max:now};
+  }
+}
+
 async function loadMPdChart(){
   try{
     const r=await fetch(`${BASE}/api/prices/history?range=${mPdRange}`);
     if(!r.ok)return;const data=await r.json();
     if(!data||data.length===0)return;
 
-    // Data format: [{timestamp, ticker, priceEur}, ...] — same as desktop
-    // Aggregate: group by timestamp, multiply priceEur * shares per ticker, sum = portfolio value
     const tsMap=new Map();
     data.forEach(e=>{
       if(!tsMap.has(e.timestamp))tsMap.set(e.timestamp,{});
@@ -708,7 +734,6 @@ async function loadMPdChart(){
     const timestamps=[...tsMap.keys()].sort();
     const tickers=[...new Set(data.map(d=>d.ticker))];
 
-    // Carry-forward: keep last known price per ticker
     const lastKnown={};
     timestamps.forEach(ts=>{
       const prices=tsMap.get(ts);
@@ -718,8 +743,7 @@ async function loadMPdChart(){
       });
     });
 
-    // Build total portfolio value points
-    const totalPoints=timestamps.map(ts=>{
+    let totalPoints=timestamps.map(ts=>{
       const prices=tsMap.get(ts);let sum=0;let hasAny=false;
       tickers.forEach(t=>{
         const pos=positions.find(p=>p.ticker===t);
@@ -729,23 +753,31 @@ async function loadMPdChart(){
       return{x:new Date(ts),y:hasAny?sum:null};
     });
 
-    // Invested line (constant)
-    const totalInv=positions.filter(p=>p.shares>0).reduce((s,p)=>s+calcInvested(p),0);
-    const investedPoints=totalPoints.length>0?[{x:totalPoints[0].x,y:totalInv},{x:totalPoints[totalPoints.length-1].x,y:totalInv}]:[];
+    // Pad from range start (like desktop)
+    if(mPdRange!=='all'&&totalPoints.length>0){
+      const bounds=getXBounds(mPdRange);
+      if(totalPoints[0].x>bounds.min){totalPoints.unshift({x:bounds.min,y:totalPoints[0].y})}
+    }
 
+    const totalInv=positions.filter(p=>p.shares>0).reduce((s,p)=>s+calcInvested(p),0);
+    const xBounds=getXBounds(mPdRange);
+    const tc=getTimeConfig(mPdRange);
     const c=chartColors();
+
     if(mPdChart)mPdChart.destroy();
+    const timeOpts=tc.unit?{unit:tc.unit,stepSize:tc.stepSize||1,displayFormats:{minute:tc.fmt,hour:tc.fmt,day:tc.fmt,week:tc.fmt,month:tc.fmt},tooltipFormat:tc.ttFmt}:{tooltipFormat:tc.ttFmt};
+
     mPdChart=new Chart(document.getElementById('mPdChart'),{
       type:'line',
       data:{datasets:[
         {label:'Cartera Total',data:totalPoints,borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:0,pointRadius:totalPoints.length>50?0:2,borderWidth:2,spanGaps:true},
-        {label:'Invertido',data:investedPoints,borderColor:c.text+'55',borderDash:[5,5],pointRadius:0,borderWidth:1,fill:false,spanGaps:true}
+        {label:'Invertido',data:[{x:xBounds.min||totalPoints[0].x,y:totalInv},{x:xBounds.max||totalPoints[totalPoints.length-1].x,y:totalInv}],borderColor:c.text+'55',borderDash:[5,5],pointRadius:0,borderWidth:1,fill:false,spanGaps:true}
       ]},
       options:{
         responsive:true,maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
         scales:{
-          x:{type:'time',ticks:{color:c.text,font:{size:9},maxTicksLimit:6,maxRotation:0,autoSkip:true},grid:{color:c.grid+'33'}},
+          x:{type:'time',min:xBounds.min,max:xBounds.max,time:timeOpts,ticks:{color:c.text,font:{size:9},maxTicksLimit:tc.ticks,maxRotation:0,autoSkip:true,autoSkipPadding:12,source:'auto'},grid:{color:c.grid+'33'}},
           y:{ticks:{color:c.text,font:{size:9},callback:v=>v.toLocaleString('es-ES',{maximumFractionDigits:0})+' €'},grid:{color:c.grid+'33'}}
         },
         plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:item=>' '+item.dataset.label+': '+fmtEur(item.raw.y)}}}
