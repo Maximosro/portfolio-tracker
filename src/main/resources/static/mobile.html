@@ -629,17 +629,38 @@ function chartDefaults(){
 
 async function loadMPdChart(){
   try{
-    const r=await fetch(`${BASE}/api/snapshots?range=${mPdRange}`);
+    const r=await fetch(`${BASE}/api/prices/history?range=${mPdRange}`);
     if(!r.ok)return;const data=await r.json();
-    if(data.length===0)return;
-    const labels=data.map(d=>d.date);const values=data.map(d=>d.totalValue);const invested=data.map(d=>d.totalInvested);
+    if(!data||data.length===0)return;
+    // Portfolio aggregation: data is array of {date, tickers: {TICKER: {close,open,...}}}
+    // or flat array — detect format
+    let labels, values, invested;
+    if(data[0] && data[0].tickers){
+      // Aggregated portfolio format
+      labels=data.map(d=>d.date);
+      values=data.map(d=>{
+        let sum=0;
+        for(const t in d.tickers){const p=positions.find(x=>x.ticker===t||x.yahooTicker===t);if(p&&p.shares>0)sum+=p.shares*(d.tickers[t].close||0)}
+        return sum;
+      });
+      invested=data.map(()=>{return positions.filter(p=>p.shares>0).reduce((s,p)=>s+calcInvested(p),0)});
+    } else if(data[0] && data[0].totalValue!==undefined){
+      // Snapshot format
+      labels=data.map(d=>d.date);values=data.map(d=>d.totalValue);invested=data.map(d=>d.totalInvested);
+    } else {
+      // Flat price history — try snapshots as fallback
+      const r2=await fetch(`${BASE}/api/snapshots?range=${mPdRange}`);
+      if(!r2.ok)return;const data2=await r2.json();
+      if(data2.length===0)return;
+      labels=data2.map(d=>d.date);values=data2.map(d=>d.totalValue);invested=data2.map(d=>d.totalInvested);
+    }
     const c=chartColors();
     if(mPdChart)mPdChart.destroy();
     mPdChart=new Chart(document.getElementById('mPdChart'),{type:'line',data:{labels,datasets:[
       {label:'Valor',data:values,borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
       {label:'Invertido',data:invested,borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1,fill:false}
     ]},options:chartDefaults()});
-  }catch(e){}
+  }catch(e){console.error('loadMPdChart',e)}
 }
 
 function setMPdRange(r){
