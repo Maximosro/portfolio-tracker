@@ -71,11 +71,11 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .m-tab.active{color:var(--color-primary);font-weight:700}
 .m-tab svg{width:22px;height:22px}
 /* ===================== PAGES ===================== */
-.m-page{display:none;padding:16px}
+.m-page{display:none;padding:12px 10px}
 .m-page.active{display:block}
 /* ===================== KPI CARDS ===================== */
-.m-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.m-kpi{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px}
+.m-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.m-kpi{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px 16px}
 .m-kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);font-weight:500;margin-bottom:4px}
 .m-kpi-value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
 .m-kpi-sub{font-size:10px;color:var(--color-text-muted);margin-top:4px;font-variant-numeric:tabular-nums}
@@ -228,12 +228,31 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 <!-- ===================== PAGE: DASHBOARD ===================== -->
 <div class="m-page active" id="page-dashboard">
-  <div class="m-kpi-grid" id="mKpiGrid">
-    <div class="m-kpi"><div class="m-kpi-label">Capital Invertido</div><div class="m-kpi-value" id="mKpiInvested">—</div><div class="m-kpi-sub" id="mKpiPositions">0 posiciones</div></div>
-    <div class="m-kpi"><div class="m-kpi-label">Valor Actual</div><div class="m-kpi-value" id="mKpiValue">—</div></div>
-    <div class="m-kpi"><div class="m-kpi-label">Ganancia / Pérdida</div><div class="m-kpi-value" id="mKpiPL">—</div><div class="m-kpi-sub" id="mKpiPLSub">—</div><div class="m-kpi-sub" id="mKpiPLDay">—</div></div>
-    <div class="m-kpi"><div class="m-kpi-label">DCA este Mes</div><div class="m-kpi-value" id="mKpiDca">—</div><div class="m-kpi-sub" id="mKpiDcaSub">—</div></div>
-    <div class="m-kpi full"><div class="m-kpi-label">Rentab. Anualizada (XIRR)</div><div class="m-kpi-value" id="mKpiXirr">—</div></div>
+  <div class="m-kpi-grid" style="grid-template-columns:1fr 1fr" id="mKpiGrid">
+    <div class="m-kpi" style="padding:10px 12px">
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-bottom:6px">
+        <div style="flex:1;min-width:0"><div class="m-kpi-label">Invertido</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiInvested">—</div></div>
+        <div style="flex:1;min-width:0;text-align:right"><div class="m-kpi-label">Valor Mercado</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiValue">—</div></div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+        <div><div class="m-kpi-label">DCA Mes</div><div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiDca">—</div></div>
+        <div style="text-align:right"><div class="m-kpi-sub" id="mKpiDcaSub">—</div><div class="m-kpi-sub" id="mKpiPositions">0 pos.</div></div>
+      </div>
+    </div>
+    <div class="m-kpi" style="padding:10px 12px">
+      <div style="display:flex;gap:4px;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+        <div style="flex:1;min-width:0"><div class="m-kpi-label">P&L Total</div><div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiPL">—</div></div>
+        <div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right" id="mKpiPLSub">—</div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+        <div class="m-kpi-label" style="margin:0">Hoy</div>
+        <div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiPLDay">—</div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:6px;margin-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+        <div class="m-kpi-label" style="margin:0">XIRR</div>
+        <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiXirr">—</div>
+      </div>
+    </div>
   </div>
 
   <!-- Quick portfolio chart -->
@@ -321,10 +340,10 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
   <!-- Projection -->
   <div class="m-sim-form" id="sim-projection">
-    <div class="m-form-group"><label class="m-form-label">Capital Inicial (€)</label><input class="m-form-input" type="number" id="sProjectionInitial" value="10000"></div>
-    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€)</label><input class="m-form-input" type="number" id="sProjectionMonthly" value="500"></div>
-    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%)</label><input class="m-form-input" type="number" id="sProjectionRate" value="8" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€) — vacío = plan inversión</label><input class="m-form-input" type="number" id="sProjectionMonthly" placeholder="Auto"></div>
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%) — vacío = XIRR real</label><input class="m-form-input" type="number" id="sProjectionRate" placeholder="Auto" step="0.1"></div>
     <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sProjectionYears" value="20"></div>
+    <div class="m-form-group"><label class="m-form-label">Inflación Anual (%)</label><input class="m-form-input" type="number" id="sProjectionInflation" value="2.5" step="0.1"></div>
     <button class="m-btn m-btn-primary" onclick="runProjection()">Calcular Proyección</button>
   </div>
   <div class="m-sim-result" id="simResult-projection">
@@ -334,12 +353,11 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
   <!-- Compound -->
   <div class="m-sim-form" id="sim-compound" style="display:none">
-    <div class="m-form-group"><label class="m-form-label">Capital Inicial (€)</label><input class="m-form-input" type="number" id="sCompoundInitial" value="10000"></div>
-    <div class="m-form-group"><label class="m-form-label">Tasa Anual (%)</label><input class="m-form-input" type="number" id="sCompoundRate" value="7" step="0.1"></div>
-    <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sCompoundYears" value="30"></div>
-    <div class="m-form-group"><label class="m-form-label">Capitalización</label>
-      <select class="m-form-input" id="sCompoundFreq"><option value="MONTHLY">Mensual</option><option value="QUARTERLY">Trimestral</option><option value="YEARLY">Anual</option></select>
-    </div>
+    <div class="m-form-group"><label class="m-form-label">Capital Inicial (€)</label><input class="m-form-input" type="number" id="sCompoundInitial" value="0"></div>
+    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€)</label><input class="m-form-input" type="number" id="sCompoundMonthly" value="500"></div>
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%)</label><input class="m-form-input" type="number" id="sCompoundRate" value="7" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sCompoundYears" value="20"></div>
+    <div class="m-form-group"><label class="m-form-label">Comisión Anual TER (%)</label><input class="m-form-input" type="number" id="sCompoundFee" value="0" step="0.01"></div>
     <button class="m-btn m-btn-primary" onclick="runCompound()">Calcular</button>
   </div>
   <div class="m-sim-result" id="simResult-compound">
@@ -349,22 +367,23 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
   <!-- Mortgage -->
   <div class="m-sim-form" id="sim-mortgage" style="display:none">
-    <div class="m-form-group"><label class="m-form-label">Importe Préstamo (€)</label><input class="m-form-input" type="number" id="sMortgagePrincipal" value="200000"></div>
-    <div class="m-form-group"><label class="m-form-label">TIN Anual (%)</label><input class="m-form-input" type="number" id="sMortgageRate" value="3" step="0.01"></div>
-    <div class="m-form-group"><label class="m-form-label">Plazo (años)</label><input class="m-form-input" type="number" id="sMortgageYears" value="25"></div>
-    <button class="m-btn m-btn-primary" onclick="runMortgage()">Calcular Hipoteca</button>
+    <div class="m-form-group"><label class="m-form-label">Capital Pendiente (€)</label><input class="m-form-input" type="number" id="sMortgagePrincipal" value="200000"></div>
+    <div class="m-form-group"><label class="m-form-label">Tipo Interés Anual (%)</label><input class="m-form-input" type="number" id="sMortgageRate" value="3" step="0.01"></div>
+    <div class="m-form-group"><label class="m-form-label">Años Restantes</label><input class="m-form-input" type="number" id="sMortgageYears" value="25"></div>
+    <div class="m-form-group"><label class="m-form-label">Extra Mensual (€)</label><input class="m-form-input" type="number" id="sMortgageExtra" value="200"></div>
+    <button class="m-btn m-btn-primary" onclick="runMortgage()">Simular Hipoteca vs Inversión</button>
   </div>
   <div class="m-sim-result" id="simResult-mortgage">
     <div class="m-kpi-grid" id="simKpi-mortgage"></div>
-    <div class="m-chart-card"><div class="m-chart-title">Amortización</div><div class="m-chart-wrap" style="height:280px"><canvas id="simChart-mortgage"></canvas></div></div>
+    <div class="m-chart-card"><div class="m-chart-title">Hipoteca vs Inversión</div><div class="m-chart-wrap" style="height:280px"><canvas id="simChart-mortgage"></canvas></div></div>
   </div>
 
   <!-- Withdrawal -->
   <div class="m-sim-form" id="sim-withdrawal" style="display:none">
-    <div class="m-form-group"><label class="m-form-label">Capital Acumulado (€)</label><input class="m-form-input" type="number" id="sWithdrawalCapital" value="500000"></div>
-    <div class="m-form-group"><label class="m-form-label">Retirada Mensual (€)</label><input class="m-form-input" type="number" id="sWithdrawalMonthly" value="2000"></div>
-    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%)</label><input class="m-form-input" type="number" id="sWithdrawalRate" value="5" step="0.1"></div>
-    <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sWithdrawalYears" value="30"></div>
+    <div class="m-form-group"><label class="m-form-label">Tasa de Retirada Anual (%)</label><input class="m-form-input" type="number" id="sWithdrawalRate" value="4" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Retirada Fija Mensual (€) — vacío = usa tasa</label><input class="m-form-input" type="number" id="sWithdrawalFixed" placeholder="Auto"></div>
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%) — vacío = XIRR</label><input class="m-form-input" type="number" id="sWithdrawalReturn" placeholder="Auto" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Años máximos</label><input class="m-form-input" type="number" id="sWithdrawalYears" value="35"></div>
     <button class="m-btn m-btn-primary" onclick="runWithdrawal()">Calcular Retirada</button>
   </div>
   <div class="m-sim-result" id="simResult-withdrawal">
@@ -374,11 +393,11 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
   <!-- Monte Carlo -->
   <div class="m-sim-form" id="sim-montecarlo" style="display:none">
-    <div class="m-form-group"><label class="m-form-label">Capital Inicial (€)</label><input class="m-form-input" type="number" id="sMonteInitial" value="10000"></div>
-    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€)</label><input class="m-form-input" type="number" id="sMonteMonthly" value="500"></div>
-    <div class="m-form-group"><label class="m-form-label">Retorno Medio Anual (%)</label><input class="m-form-input" type="number" id="sMonteMean" value="8" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Media (%) — vacío = XIRR</label><input class="m-form-input" type="number" id="sMonteMean" placeholder="Auto" step="0.1"></div>
     <div class="m-form-group"><label class="m-form-label">Volatilidad Anual (%)</label><input class="m-form-input" type="number" id="sMonteVol" value="15" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€) — vacío = plan</label><input class="m-form-input" type="number" id="sMonteMonthly" placeholder="Auto"></div>
     <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sMonteYears" value="20"></div>
+    <div class="m-form-group"><label class="m-form-label">Objetivo (€) — opcional</label><input class="m-form-input" type="number" id="sMonteGoal" placeholder="Opcional"></div>
     <button class="m-btn m-btn-primary" onclick="runMonteCarlo()">Simular</button>
   </div>
   <div class="m-sim-result" id="simResult-montecarlo">
@@ -401,9 +420,6 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 <!-- ===================== POSITION DETAIL OVERLAY ===================== -->
 <div class="m-detail-overlay" id="mDetailOverlay">
   <div class="m-detail-header">
-    <button class="m-detail-back" onclick="closeMDetail()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
-    </button>
     <div>
       <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px">
         <span class="m-pos-dot" id="mDetailDot"></span>
@@ -412,7 +428,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
       <div style="font-size:11px;color:var(--color-text-muted)" id="mDetailName"></div>
     </div>
   </div>
-  <div class="m-detail-body">
+  <div class="m-detail-body" style="padding-bottom:72px">
     <div class="m-detail-stat-grid" id="mDetailStats"></div>
     <!-- Position chart -->
     <div class="m-chart-card">
@@ -431,6 +447,12 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
     <!-- Limits & notes (read-only) -->
     <div id="mDetailLimits"></div>
     <div id="mDetailNotes"></div>
+  </div>
+  <div style="position:fixed;bottom:0;left:0;right:0;z-index:210;padding:10px 16px env(safe-area-inset-bottom,10px);background:var(--color-surface);border-top:1px solid var(--color-divider);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)">
+    <button class="m-btn m-btn-primary" onclick="closeMDetail()" style="gap:6px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+      Volver
+    </button>
   </div>
 </div>
 
@@ -565,17 +587,20 @@ function renderKPIs(){
   const plEl = document.getElementById('mKpiPL');
   plEl.textContent = pl!==null?fmtEur(pl):'—';
   plEl.className = 'm-kpi-value '+(pl==null?'':pl>=0?'positive':'negative');
-  document.getElementById('mKpiPLSub').textContent = plPct!==null?fmtPct(plPct):'';
+  const plSubEl = document.getElementById('mKpiPLSub');
+  plSubEl.textContent = plPct!==null?fmtPct(plPct):'';
+  plSubEl.style.color = pl==null?'':pl>=0?'var(--color-success)':'var(--color-notification)';
 
   // Day P&L
   const posWithClose = active.filter(p=>p.currentPrice&&p.previousClose&&p.previousClose>0);
+  const dayEl=document.getElementById('mKpiPLDay');
   if(posWithClose.length>0){
     const vNow=posWithClose.reduce((s,p)=>s+p.shares*p.currentPrice,0);
     const vClose=posWithClose.reduce((s,p)=>s+p.shares*p.previousClose,0);
     const dPL=vNow-vClose;const dPct=vClose>0?(dPL/vClose)*100:0;
     const c=dPL>=0?'var(--color-success)':'var(--color-notification)';
-    document.getElementById('mKpiPLDay').innerHTML=`<span style="color:${c};font-weight:600">Hoy: ${fmtEur(dPL)} (${fmtPct(dPct)})</span>`;
-  }
+    dayEl.innerHTML=`<span style="color:${c}">${fmtEur(dPL)}</span> <span style="color:${c};font-size:13px">(${fmtPct(dPct)})</span>`;
+  }else{dayEl.textContent='—'}
 
   // DCA mensual
   const now=new Date();const curMonth=now.getFullYear()*100+(now.getMonth()+1);
@@ -930,13 +955,16 @@ async function loadPortfolioDetail(){
 
   // Period returns
   try{
-    const periods=['today','week','month','quarter','ytd','year'];
-    const ids=['mRetToday','mRetWeek','mRetMonth','mRetQuarter','mRetYtd','mRetYear'];
-    for(let i=0;i<periods.length;i++){
-      try{
-        const r=await fetch(`${BASE}/api/snapshots/period-return?period=${periods[i]}`);
-        if(r.ok){const d=await r.json();const el=document.getElementById(ids[i]);el.textContent=fmtPct(d.returnPct);el.className='m-pd-ret-value '+(d.returnPct>=0?'pl-positive':'pl-negative')}
-      }catch(e){}
+    const r=await fetch(`${BASE}/api/metrics/returns`);
+    if(r.ok){
+      const data=await r.json();
+      const p=data.periods||{};
+      const mapping=[['today','mRetToday'],['week','mRetWeek'],['month','mRetMonth'],['quarter','mRetQuarter'],['ytd','mRetYtd'],['year','mRetYear']];
+      mapping.forEach(([key,id])=>{
+        const entry=p[key];const el=document.getElementById(id);
+        if(entry&&entry.returnPct!=null){el.textContent=fmtPct(entry.returnPct);el.className='m-pd-ret-value '+(entry.returnPct>=0?'pl-positive':'pl-negative')}
+        else{el.textContent='—';el.className='m-pd-ret-value'}
+      });
     }
   }catch(e){}
 
@@ -1095,92 +1123,170 @@ function switchSim(id){
   event.target.classList.add('active');
 }
 
-function simKpiHtml(items){return items.map(([label,value])=>`<div class="m-kpi"><div class="m-kpi-label">${label}</div><div class="m-kpi-value">${value}</div></div>`).join('')}
+function simKpiHtml(items){return items.map(([label,value,cls])=>`<div class="m-kpi"><div class="m-kpi-label">${label}</div><div class="m-kpi-value ${cls||''}">${value}</div></div>`).join('')}
+function fmtK(v){if(v==null)return'—';return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v.toFixed(0)}
 
+// --- PROJECTION ---
 async function runProjection(){
-  const body={initialCapital:+document.getElementById('sProjectionInitial').value,monthlyContribution:+document.getElementById('sProjectionMonthly').value,annualReturnPct:+document.getElementById('sProjectionRate').value,years:+document.getElementById('sProjectionYears').value};
+  const body={years:+document.getElementById('sProjectionYears').value||20,inflationPct:+document.getElementById('sProjectionInflation').value||2.5,showScenarios:true};
+  const monthly=document.getElementById('sProjectionMonthly').value;
+  const ret=document.getElementById('sProjectionRate').value;
+  if(monthly)body.monthlyContribution=parseFloat(monthly);
+  if(ret)body.expectedReturnPct=parseFloat(ret);
   try{
     const r=await fetch(`${BASE}/api/simulator/projection`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
-    document.getElementById('simKpi-projection').innerHTML=simKpiHtml([['Capital Final',fmtEur(d.finalCapital)],['Total Aportado',fmtEur(d.totalContributed)],['Intereses',fmtEur(d.totalInterest)],['Rentab.',fmtPct(d.totalReturnPct)]]);
+    const s=d.summary;
+    document.getElementById('simKpi-projection').innerHTML=simKpiHtml([
+      ['Valor Final ('+d.years+'a)',fmtK(s.finalValueBase)+' €','positive'],
+      ['Total Aportado',fmtK(s.totalContributed)+' €'],
+      ['Ganancias',fmtK(s.totalGainsBase)+' €','positive'],
+      ['Renta Pasiva 4%',fmtEur(s.monthlyPassiveIncome4Pct)+'/mes']
+    ]);
     const c=chartColors();
     if(simCharts.projection)simCharts.projection.destroy();
-    if(d.yearByYear){
-      simCharts.projection=new Chart(document.getElementById('simChart-projection'),{type:'line',data:{labels:d.yearByYear.map(y=>y.year),datasets:[
-        {label:'Capital',data:d.yearByYear.map(y=>y.endCapital),borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
-        {label:'Aportado',data:d.yearByYear.map(y=>y.totalContributed),borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1}
-      ]},options:chartDefaults()});
+    if(d.baseProjection){
+      const datasets=[
+        {label:'Capital',data:d.baseProjection.map(y=>y.portfolioValue),borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Aportado',data:d.baseProjection.map(y=>y.totalContributed),borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1}
+      ];
+      if(d.pessimisticProjection)datasets.push({label:'Pesimista',data:d.pessimisticProjection.map(y=>y.portfolioValue),borderColor:c.notification+'88',borderDash:[3,3],pointRadius:0,borderWidth:1});
+      if(d.optimisticProjection)datasets.push({label:'Optimista',data:d.optimisticProjection.map(y=>y.portfolioValue),borderColor:c.success+'88',borderDash:[3,3],pointRadius:0,borderWidth:1});
+      simCharts.projection=new Chart(document.getElementById('simChart-projection'),{type:'line',data:{labels:d.baseProjection.map(y=>'Año '+y.year),datasets},options:chartDefaults()});
     }
     document.getElementById('simResult-projection').classList.add('visible');
   }catch(e){showToast('Error en simulación','error')}
 }
 
+// --- COMPOUND ---
 async function runCompound(){
-  const body={principal:+document.getElementById('sCompoundInitial').value,annualRatePct:+document.getElementById('sCompoundRate').value,years:+document.getElementById('sCompoundYears').value,frequency:document.getElementById('sCompoundFreq').value};
+  const body={
+    initialCapital:+document.getElementById('sCompoundInitial').value||0,
+    monthlyContribution:+document.getElementById('sCompoundMonthly').value||500,
+    annualReturnPct:+document.getElementById('sCompoundRate').value||7,
+    years:+document.getElementById('sCompoundYears').value||20,
+    annualFeePct:+document.getElementById('sCompoundFee').value||0
+  };
   try{
     const r=await fetch(`${BASE}/api/simulator/compound`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
-    document.getElementById('simKpi-compound').innerHTML=simKpiHtml([['Capital Final',fmtEur(d.finalAmount)],['Intereses',fmtEur(d.totalInterest)],['Multiplicador',d.multiplier?d.multiplier.toFixed(2)+'x':'—']]);
+    document.getElementById('simKpi-compound').innerHTML=simKpiHtml([
+      ['Valor Final',fmtK(d.finalValue)+' €','positive'],
+      ['Total Aportado',fmtK(d.totalContributed)+' €'],
+      ['Ganancias Netas',fmtK(d.totalGainsAfterFees)+' €','positive'],
+      ['Multiplicador','×'+d.multiplier.toFixed(2)]
+    ]);
     const c=chartColors();
     if(simCharts.compound)simCharts.compound.destroy();
-    if(d.yearByYear){
-      simCharts.compound=new Chart(document.getElementById('simChart-compound'),{type:'bar',data:{labels:d.yearByYear.map(y=>y.year),datasets:[
-        {label:'Capital',data:d.yearByYear.map(y=>y.amount),backgroundColor:c.primary+'88',borderRadius:4}
-      ]},options:chartDefaults()});
+    if(d.yearlyEvolution){
+      simCharts.compound=new Chart(document.getElementById('simChart-compound'),{type:'bar',data:{labels:d.yearlyEvolution.map(y=>'Año '+y.year),datasets:[
+        {label:'Aportaciones',data:d.yearlyEvolution.map(y=>y.totalContributed),backgroundColor:'rgba(127,127,127,.3)',borderRadius:3,order:2},
+        {label:'Ganancias',data:d.yearlyEvolution.map(y=>Math.max(y.totalGains,0)),backgroundColor:'rgba(109,170,69,.4)',borderRadius:3,order:2},
+        {type:'line',label:'Valor total',data:d.yearlyEvolution.map(y=>y.portfolioValue),borderColor:c.primary,borderWidth:2,pointRadius:0,tension:.3,order:1}
+      ]},options:{...chartDefaults(),scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,stacked:true},y:{...chartDefaults().scales.y,stacked:true}}}});
     }
     document.getElementById('simResult-compound').classList.add('visible');
   }catch(e){showToast('Error en simulación','error')}
 }
 
+// --- MORTGAGE ---
 async function runMortgage(){
-  const body={principal:+document.getElementById('sMortgagePrincipal').value,annualRatePct:+document.getElementById('sMortgageRate').value,years:+document.getElementById('sMortgageYears').value};
+  const body={
+    outstandingPrincipal:+document.getElementById('sMortgagePrincipal').value,
+    annualInterestRate:+document.getElementById('sMortgageRate').value,
+    remainingYears:+document.getElementById('sMortgageYears').value,
+    extraMonthly:+document.getElementById('sMortgageExtra').value||0
+  };
   try{
     const r=await fetch(`${BASE}/api/simulator/mortgage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
-    document.getElementById('simKpi-mortgage').innerHTML=simKpiHtml([['Cuota Mensual',fmtEur(d.monthlyPayment)],['Total Pagado',fmtEur(d.totalPaid)],['Total Intereses',fmtEur(d.totalInterest)]]);
+    const winColor=d.winnerStrategy==='INVERTIR'?'var(--color-success)':'var(--color-gold)';
+    const winIcon=d.winnerStrategy==='INVERTIR'?'📈':'🏠';
+    document.getElementById('simKpi-mortgage').innerHTML=simKpiHtml([
+      [winIcon+' Mejor Estrategia',d.winnerStrategy],
+      ['Ventaja','+'+fmtK(d.advantageEur)+' €'],
+      ['Cuota Mensual',fmtEur(d.monthlyPayment)],
+      ['🏠 Amortizar — Neto',fmtK(d.strategyAmortize.netWealthEnd)+' €'],
+      ['📈 Invertir — Neto',fmtK(d.strategyInvest.netWealthEnd)+' €'],
+      ['Intereses Ahorrados',fmtK(d.strategyInvest.totalInterestPaid-d.strategyAmortize.totalInterestPaid)+' €']
+    ]);
     const c=chartColors();
     if(simCharts.mortgage)simCharts.mortgage.destroy();
-    if(d.yearByYear){
-      simCharts.mortgage=new Chart(document.getElementById('simChart-mortgage'),{type:'bar',data:{labels:d.yearByYear.map(y=>y.year),datasets:[
-        {label:'Capital',data:d.yearByYear.map(y=>y.principalPaid),backgroundColor:c.primary+'88',borderRadius:4},
-        {label:'Intereses',data:d.yearByYear.map(y=>y.interestPaid),backgroundColor:c.notification+'88',borderRadius:4}
-      ]},options:{...chartDefaults(),scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,stacked:true},y:{...chartDefaults().scales.y,stacked:true}}}});
+    if(d.yearlyEvolution){
+      simCharts.mortgage=new Chart(document.getElementById('simChart-mortgage'),{type:'line',data:{labels:d.yearlyEvolution.map(y=>'Año '+y.year),datasets:[
+        {label:'Cartera',data:d.yearlyEvolution.map(y=>y.portfolioValue),borderColor:c.success,backgroundColor:c.success+'11',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Deuda',data:d.yearlyEvolution.map(y=>y.debtRemaining),borderColor:c.notification,backgroundColor:c.notification+'11',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Patrimonio Neto',data:d.yearlyEvolution.map(y=>y.netWealth),borderColor:c.primary,borderDash:[6,3],pointRadius:0,borderWidth:2,tension:.3}
+      ]},options:chartDefaults()});
     }
     document.getElementById('simResult-mortgage').classList.add('visible');
   }catch(e){showToast('Error en simulación','error')}
 }
 
+// --- WITHDRAWAL ---
 async function runWithdrawal(){
-  const body={initialCapital:+document.getElementById('sWithdrawalCapital').value,monthlyWithdrawal:+document.getElementById('sWithdrawalMonthly').value,annualReturnPct:+document.getElementById('sWithdrawalRate').value,years:+document.getElementById('sWithdrawalYears').value};
+  const body={
+    withdrawalRatePct:+document.getElementById('sWithdrawalRate').value||4,
+    maxYears:+document.getElementById('sWithdrawalYears').value||35,
+    showComparison:true
+  };
+  const fixed=document.getElementById('sWithdrawalFixed').value;
+  const ret=document.getElementById('sWithdrawalReturn').value;
+  if(fixed)body.fixedMonthlyWithdrawal=parseFloat(fixed);
+  if(ret)body.expectedReturnPct=parseFloat(ret);
   try{
     const r=await fetch(`${BASE}/api/simulator/withdrawal`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
-    document.getElementById('simKpi-withdrawal').innerHTML=simKpiHtml([['Capital Restante',fmtEur(d.remainingCapital)],['Total Retirado',fmtEur(d.totalWithdrawn)],['Duración',d.yearsLasted?d.yearsLasted+' años':'∞']]);
+    const survIcon=d.portfolioSurvives?'✅':'⚠️';
+    document.getElementById('simKpi-withdrawal').innerHTML=simKpiHtml([
+      [survIcon+(d.portfolioSurvives?' Sostenible':' Se agota'),d.portfolioSurvives?'Sobrevive '+d.maxYears+'a':'Agotada año '+d.depletionYear],
+      ['Retirada Mensual',fmtEur(d.initialMonthlyWithdrawal)],
+      ['Total Retirado',fmtK(d.totalWithdrawn)+' €'],
+      [d.portfolioSurvives?'Valor Residual':'Duración',d.portfolioSurvives?fmtK(d.finalPortfolioValue)+' €':d.depletionYear+' años']
+    ]);
     const c=chartColors();
     if(simCharts.withdrawal)simCharts.withdrawal.destroy();
-    if(d.yearByYear){
-      simCharts.withdrawal=new Chart(document.getElementById('simChart-withdrawal'),{type:'line',data:{labels:d.yearByYear.map(y=>y.year),datasets:[
-        {label:'Capital',data:d.yearByYear.map(y=>y.remainingCapital),borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2}
+    if(d.yearlyEvolution){
+      simCharts.withdrawal=new Chart(document.getElementById('simChart-withdrawal'),{type:'line',data:{labels:d.yearlyEvolution.map(y=>'Año '+y.year),datasets:[
+        {label:'Cartera',data:d.yearlyEvolution.map(y=>y.portfolioValueEnd),borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Acumulado retirado',data:d.yearlyEvolution.map(y=>y.cumulativeWithdrawn),borderColor:c.gold||'#e8af34',borderDash:[4,4],pointRadius:0,borderWidth:1,tension:.3}
       ]},options:chartDefaults()});
     }
     document.getElementById('simResult-withdrawal').classList.add('visible');
   }catch(e){showToast('Error en simulación','error')}
 }
 
+// --- MONTE CARLO ---
 async function runMonteCarlo(){
-  const body={initialCapital:+document.getElementById('sMonteInitial').value,monthlyContribution:+document.getElementById('sMonteMonthly').value,annualMeanReturnPct:+document.getElementById('sMonteMean').value,annualVolatilityPct:+document.getElementById('sMonteVol').value,years:+document.getElementById('sMonteYears').value};
+  const body={
+    years:+document.getElementById('sMonteYears').value||20,
+    volatilityPct:+document.getElementById('sMonteVol').value||15
+  };
+  const ret=document.getElementById('sMonteMean').value;
+  const monthly=document.getElementById('sMonteMonthly').value;
+  const goal=document.getElementById('sMonteGoal').value;
+  if(ret)body.expectedReturnPct=parseFloat(ret);
+  if(monthly)body.monthlyContribution=parseFloat(monthly);
+  if(goal)body.goalAmount=parseFloat(goal);
   try{
     const r=await fetch(`${BASE}/api/simulator/montecarlo`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
-    document.getElementById('simKpi-montecarlo').innerHTML=simKpiHtml([['Mediana',fmtEur(d.median)],['P10 (pesimista)',fmtEur(d.percentile10)],['P90 (optimista)',fmtEur(d.percentile90)]]);
+    const kpis=[
+      ['Mediana (P50)',fmtK(d.p50Median)+' €','positive'],
+      ['Media',fmtK(d.mean)+' €'],
+      ['Prob. Pérdida',d.probabilityOfLossPct.toFixed(1)+'%',d.probabilityOfLossPct>20?'negative':d.probabilityOfLossPct>5?'':'positive']
+    ];
+    if(d.goalAmount)kpis.push(['Prob. Objetivo',d.goalProbabilityPct.toFixed(1)+'%']);
+    document.getElementById('simKpi-montecarlo').innerHTML=simKpiHtml(kpis);
     const c=chartColors();
     if(simCharts.montecarlo)simCharts.montecarlo.destroy();
-    if(d.percentileTimeSeries){
-      const ts=d.percentileTimeSeries;
-      simCharts.montecarlo=new Chart(document.getElementById('simChart-montecarlo'),{type:'line',data:{labels:ts.map((_,i)=>i),datasets:[
-        {label:'P90',data:ts.map(t=>t.p90),borderColor:c.success+'88',backgroundColor:c.success+'11',fill:'+1',tension:.3,pointRadius:0,borderWidth:1},
-        {label:'Mediana',data:ts.map(t=>t.median),borderColor:c.primary,tension:.3,pointRadius:0,borderWidth:2},
-        {label:'P10',data:ts.map(t=>t.p10),borderColor:c.notification+'88',backgroundColor:c.notification+'11',fill:'-1',tension:.3,pointRadius:0,borderWidth:1}
+    if(d.yearlyPercentiles){
+      const yp=d.yearlyPercentiles;
+      simCharts.montecarlo=new Chart(document.getElementById('simChart-montecarlo'),{type:'line',data:{labels:yp.map(y=>'Año '+y.year),datasets:[
+        {label:'P90',data:yp.map(y=>y.p90),borderColor:c.success+'88',backgroundColor:c.success+'11',fill:'+1',tension:.3,pointRadius:0,borderWidth:1},
+        {label:'P50 (Mediana)',data:yp.map(y=>y.p50),borderColor:c.primary,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'P10',data:yp.map(y=>y.p10),borderColor:c.notification+'88',backgroundColor:c.notification+'11',fill:'-1',tension:.3,pointRadius:0,borderWidth:1},
+        {label:'Aportado',data:yp.map(y=>y.totalContributed),borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1,tension:0}
       ]},options:chartDefaults()});
     }
     document.getElementById('simResult-montecarlo').classList.add('visible');
