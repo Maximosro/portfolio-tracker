@@ -525,6 +525,43 @@ const BASE = location.origin + '/portfoliotracker';
 const COLORS = ['#4f98a3','#e8af34','#6daa45','#5591c7','#fdab43','#a86fdf','#dd6974','#bb653b','#d163a7','#01696f'];
 
 let positions = [], dcaEntries = [], metrics = null, investmentPlan = null;
+let marketSchedules = [];
+
+function extractTickerSuffix(t){if(!t)return null;const d=t.lastIndexOf('.');return(d>0&&d<t.length-1)?t.substring(d).toUpperCase():null}
+
+function marketTimeToLocal(today,timeStr,tz){
+  try{
+    const[h,m]=timeStr.split(':').map(Number);
+    const yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,'0'),dd=String(today.getDate()).padStart(2,'0');
+    const md=new Date(`${yyyy}-${mm}-${dd}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+    const lS=md.toLocaleString('en-US',{timeZone:tz}),uS=md.toLocaleString('en-US',{timeZone:'UTC'});
+    const lD=new Date(lS),uD=new Date(uS),mOff=lD.getTime()-uD.getTime();
+    const bS=md.toLocaleString('en-US',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone});
+    const bD=new Date(bS),bOff=bD.getTime()-uD.getTime();
+    const mUTC=new Date(today.getFullYear(),today.getMonth(),today.getDate(),h,m,0).getTime()-mOff;
+    return new Date(mUTC+bOff);
+  }catch(e){return null}
+}
+
+function getDailyMarketBounds(){
+  if(!marketSchedules||marketSchedules.length===0)return null;
+  const active=positions.filter(p=>p.shares>0&&p.yahooTicker);
+  if(active.length===0)return null;
+  const suffixes=new Set();
+  active.forEach(p=>suffixes.add(extractTickerSuffix(p.yahooTicker)));
+  const today=new Date();let earliest=null,latest=null;
+  suffixes.forEach(suffix=>{
+    const s=marketSchedules.find(s=>(suffix===null&&s.tickerSuffix===null)||(s.tickerSuffix&&s.tickerSuffix.toUpperCase()===(suffix||'')));
+    if(!s||!s.enabled)return;
+    const ol=marketTimeToLocal(today,s.openTime,s.timezone),cl=marketTimeToLocal(today,s.closeTime,s.timezone);
+    if(!ol||!cl)return;
+    if(earliest===null||ol.getTime()<earliest.getTime())earliest=ol;
+    if(latest===null||cl.getTime()>latest.getTime())latest=cl;
+  });
+  if(!earliest||!latest)return null;
+  const M=15*60*1000;
+  return{min:new Date(earliest.getTime()-M),max:new Date(latest.getTime()+M)};
+}
 let mPdRange = '1d', mEqRange = '3m';
 let mDcaLimit = 20;
 let mPdChart = null, mPieChart = null, mEquityChart = null, mDetailChart = null;
@@ -600,6 +637,7 @@ async function loadAll(){
     if(metricsResp && metricsResp.ok) metrics = await metricsResp.json(); else metrics = null;
     try{ const r = await fetch(`${BASE}/api/investment-plan`); if(r.ok) investmentPlan = await r.json(); }catch(e){}
     try{ const r = await fetch(`${BASE}/api/alerts`); if(r.ok) currentAlerts = await r.json(); else currentAlerts=[]; }catch(e){ currentAlerts=[]; }
+    try{ marketSchedules = await (await fetch(`${BASE}/api/market-schedules`)).json(); }catch(e){ marketSchedules=[]; }
     renderAll();
     renderMAlerts();
   }catch(e){ showToast('Error conectando con el servidor','error') }
@@ -870,7 +908,7 @@ function getTimeConfig(range){
 function getXBounds(range){
   const now=new Date();let min;
   switch(range){
-    case '1d': min=new Date(now);min.setHours(0,0,0,0);return{min,max:new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59)};
+    case '1d':{const mb=getDailyMarketBounds();if(mb)return mb;}min=new Date(now);min.setHours(0,0,0,0);return{min,max:new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59)};
     case '1w': min=new Date(now);min.setDate(min.getDate()-7);min.setHours(0,0,0,0);return{min,max:now};
     case '1m': min=new Date(now);min.setDate(min.getDate()-30);min.setHours(0,0,0,0);return{min,max:now};
     case '3m': min=new Date(now);min.setMonth(min.getMonth()-3);min.setHours(0,0,0,0);return{min,max:now};
