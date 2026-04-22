@@ -697,34 +697,60 @@ async function loadMPdChart(){
     const r=await fetch(`${BASE}/api/prices/history?range=${mPdRange}`);
     if(!r.ok)return;const data=await r.json();
     if(!data||data.length===0)return;
-    // Portfolio aggregation: data is array of {date, tickers: {TICKER: {close,open,...}}}
-    // or flat array — detect format
-    let labels, values, invested;
-    if(data[0] && data[0].tickers){
-      // Aggregated portfolio format
-      labels=data.map(d=>d.date);
-      values=data.map(d=>{
-        let sum=0;
-        for(const t in d.tickers){const p=positions.find(x=>x.ticker===t||x.yahooTicker===t);if(p&&p.shares>0)sum+=p.shares*(d.tickers[t].close||0)}
-        return sum;
+
+    // Data format: [{timestamp, ticker, priceEur}, ...] — same as desktop
+    // Aggregate: group by timestamp, multiply priceEur * shares per ticker, sum = portfolio value
+    const tsMap=new Map();
+    data.forEach(e=>{
+      if(!tsMap.has(e.timestamp))tsMap.set(e.timestamp,{});
+      tsMap.get(e.timestamp)[e.ticker]=e.priceEur;
+    });
+    const timestamps=[...tsMap.keys()].sort();
+    const tickers=[...new Set(data.map(d=>d.ticker))];
+
+    // Carry-forward: keep last known price per ticker
+    const lastKnown={};
+    timestamps.forEach(ts=>{
+      const prices=tsMap.get(ts);
+      tickers.forEach(t=>{
+        if(prices[t]!=null){lastKnown[t]=prices[t]}
+        else if(lastKnown[t]!=null){prices[t]=lastKnown[t]}
       });
-      invested=data.map(()=>{return positions.filter(p=>p.shares>0).reduce((s,p)=>s+calcInvested(p),0)});
-    } else if(data[0] && data[0].totalValue!==undefined){
-      // Snapshot format
-      labels=data.map(d=>d.date);values=data.map(d=>d.totalValue);invested=data.map(d=>d.totalInvested);
-    } else {
-      // Flat price history — try snapshots as fallback
-      const r2=await fetch(`${BASE}/api/snapshots?range=${mPdRange}`);
-      if(!r2.ok)return;const data2=await r2.json();
-      if(data2.length===0)return;
-      labels=data2.map(d=>d.date);values=data2.map(d=>d.totalValue);invested=data2.map(d=>d.totalInvested);
-    }
+    });
+
+    // Build total portfolio value points
+    const totalPoints=timestamps.map(ts=>{
+      const prices=tsMap.get(ts);let sum=0;let hasAny=false;
+      tickers.forEach(t=>{
+        const pos=positions.find(p=>p.ticker===t);
+        const shares=pos?pos.shares:1;
+        if(prices[t]!=null){sum+=prices[t]*shares;hasAny=true}
+      });
+      return{x:new Date(ts),y:hasAny?sum:null};
+    });
+
+    // Invested line (constant)
+    const totalInv=positions.filter(p=>p.shares>0).reduce((s,p)=>s+calcInvested(p),0);
+    const investedPoints=totalPoints.length>0?[{x:totalPoints[0].x,y:totalInv},{x:totalPoints[totalPoints.length-1].x,y:totalInv}]:[];
+
     const c=chartColors();
     if(mPdChart)mPdChart.destroy();
-    mPdChart=new Chart(document.getElementById('mPdChart'),{type:'line',data:{labels,datasets:[
-      {label:'Valor',data:values,borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
-      {label:'Invertido',data:invested,borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1,fill:false}
-    ]},options:chartDefaults()});
+    mPdChart=new Chart(document.getElementById('mPdChart'),{
+      type:'line',
+      data:{datasets:[
+        {label:'Cartera Total',data:totalPoints,borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:0,pointRadius:totalPoints.length>50?0:2,borderWidth:2,spanGaps:true},
+        {label:'Invertido',data:investedPoints,borderColor:c.text+'55',borderDash:[5,5],pointRadius:0,borderWidth:1,fill:false,spanGaps:true}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        scales:{
+          x:{type:'time',ticks:{color:c.text,font:{size:9},maxTicksLimit:6,maxRotation:0,autoSkip:true},grid:{color:c.grid+'33'}},
+          y:{ticks:{color:c.text,font:{size:9},callback:v=>v.toLocaleString('es-ES',{maximumFractionDigits:0})+' €'},grid:{color:c.grid+'33'}}
+        },
+        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:item=>' '+item.dataset.label+': '+fmtEur(item.raw.y)}}}
+      }
+    });
   }catch(e){console.error('loadMPdChart',e)}
 }
 
