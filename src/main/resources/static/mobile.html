@@ -559,8 +559,8 @@ function getDailyMarketBounds(){
     if(latest===null||cl.getTime()>latest.getTime())latest=cl;
   });
   if(!earliest||!latest)return null;
-  const M=15*60*1000;
-  return{min:new Date(earliest.getTime()-M),max:new Date(latest.getTime()+M)};
+  const PRE=15*60*1000,POST=30*60*1000;
+  return{min:new Date(earliest.getTime()-PRE),max:new Date(latest.getTime()+POST)};
 }
 let mPdRange = '1d', mEqRange = '3m';
 let mDcaLimit = 20;

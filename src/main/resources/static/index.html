@@ -2751,11 +2751,12 @@ function getDailyMarketBounds() {
 
   if (!earliest || !latest) return null;
 
-  // Margen de 15 min antes de la apertura más temprana y después del cierre más tardío
-  const MARGIN_MS = 15 * 60 * 1000;
+  // Margen de 15 min antes de la apertura y 30 min después del cierre (por retrasos en precios)
+  const PRE_MS = 15 * 60 * 1000;
+  const POST_MS = 30 * 60 * 1000;
   return {
-    min: new Date(earliest.getTime() - MARGIN_MS),
-    max: new Date(latest.getTime() + MARGIN_MS)
+    min: new Date(earliest.getTime() - PRE_MS),
+    max: new Date(latest.getTime() + POST_MS)
   };
 }
 
