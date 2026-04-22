@@ -1,5 +1,7 @@
 # GitLab Pages deployment
 # Sirve los archivos estáticos de docs/public/ como GitLab Pages
+image: alpine:latest
+
 pages:
   stage: deploy
   script:
@@ -8,6 +10,7 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - master
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+
 
