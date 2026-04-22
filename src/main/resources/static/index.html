@@ -2717,13 +2717,58 @@ function getChartTimeConfig(range) {
   }
 }
 
+/**
+ * Calcula los límites del eje X para el rango diario (1d) basándose en los
+ * horarios de apertura/cierre de los mercados de las posiciones activas.
+ * Devuelve {min, max} en hora local del navegador, o null si no hay datos.
+ */
+function getDailyMarketBounds() {
+  if (!marketSchedules || marketSchedules.length === 0) return null;
+
+  const activePositions = positions.filter(p => p.shares > 0 && p.yahooTicker);
+  if (activePositions.length === 0) return null;
+
+  const suffixes = new Set();
+  activePositions.forEach(p => suffixes.add(extractTickerSuffix(p.yahooTicker)));
+
+  const today = new Date();
+  let earliest = null;
+  let latest = null;
+
+  suffixes.forEach(suffix => {
+    const schedule = marketSchedules.find(s =>
+      (suffix === null && s.tickerSuffix === null) || (s.tickerSuffix && s.tickerSuffix.toUpperCase() === (suffix || ''))
+    );
+    if (!schedule || !schedule.enabled) return;
+
+    const openLocal = marketTimeToLocal(today, schedule.openTime, schedule.timezone);
+    const closeLocal = marketTimeToLocal(today, schedule.closeTime, schedule.timezone);
+    if (!openLocal || !closeLocal) return;
+
+    if (earliest === null || openLocal.getTime() < earliest.getTime()) earliest = openLocal;
+    if (latest === null || closeLocal.getTime() > latest.getTime()) latest = closeLocal;
+  });
+
+  if (!earliest || !latest) return null;
+
+  // Margen de 15 min antes de la apertura más temprana y después del cierre más tardío
+  const MARGIN_MS = 15 * 60 * 1000;
+  return {
+    min: new Date(earliest.getTime() - MARGIN_MS),
+    max: new Date(latest.getTime() + MARGIN_MS)
+  };
+}
+
 function getRangeBounds() {
   const now = new Date();
   let min;
   switch (currentRange) {
-    case '1d':
+    case '1d': {
+      const mb = getDailyMarketBounds();
+      if (mb) return mb;
       min = new Date(now); min.setHours(0, 0, 0, 0);
       return { min, max: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59) };
+    }
     case '1w':
       min = new Date(now); min.setDate(min.getDate() - 7); min.setHours(0, 0, 0, 0);
       return { min, max: now };
@@ -4581,9 +4626,12 @@ function getPdRangeBounds() {
   const now = new Date();
   let min;
   switch (pdHistRange) {
-    case '1d':
+    case '1d': {
+      const mb = getDailyMarketBounds();
+      if (mb) return mb;
       min = new Date(now); min.setHours(0, 0, 0, 0);
       return { min, max: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59) };
+    }
     case '1w':
       min = new Date(now); min.setDate(min.getDate() - 7); min.setHours(0, 0, 0, 0);
       return { min, max: now };
