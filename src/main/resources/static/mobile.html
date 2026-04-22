@@ -920,15 +920,16 @@ function getXBounds(range){
   }
 }
 // Y-axis bounds with 10% margin and minimum ±2% of avg (same as desktop)
-function calcYBounds(datasets){
+function calcYBounds(datasets,range){
   let allY=[];
   datasets.forEach(ds=>ds.data.forEach(p=>{if(p.y!=null)allY.push(p.y)}));
   if(allY.length===0)return{};
   const minY=Math.min(...allY),maxY=Math.max(...allY);
-  const range=maxY-minY||1;
+  const dataRange=maxY-minY||1;
   const avg=(minY+maxY)/2;
-  const minMargin=avg*0.02;
-  const margin=Math.max(range*0.1,minMargin);
+  const minMarginPct=range==='1d'?0.003:0.02;
+  const minMargin=avg*minMarginPct;
+  const margin=Math.max(dataRange*0.1,minMargin);
   return{min:Math.max(0,minY-margin),max:maxY+margin};
 }
 
@@ -978,7 +979,7 @@ async function loadMPdChart(){
       borderWidth:2.5,pointRadius:totalPoints.length>50?0:3,pointHoverRadius:5,tension:0,fill:true,spanGaps:true
     }];
 
-    const yBounds=calcYBounds(datasets);
+    const yBounds=calcYBounds(datasets,mPdRange);
     const xBounds=getXBounds(mPdRange);
     const tc=getTimeConfig(mPdRange);
 
@@ -1167,7 +1168,7 @@ async function loadMDetailChart(range){
       tension:0,fill:true,spanGaps:true
     }];
 
-    const yBounds=calcYBounds(datasets);
+    const yBounds=calcYBounds(datasets,range);
     const xBounds=getXBounds(range);
     const tc=getTimeConfig(range);
     const c=chartColors();

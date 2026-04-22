@@ -2796,24 +2796,26 @@ function getRangeBounds() {
   }
 }
 
-function calcYBounds10(datasets) {
+function calcYBounds10(datasets, range) {
   let allY = [];
   datasets.forEach(ds => ds.data.forEach(p => { if (p.y != null) allY.push(p.y); }));
   if (allY.length === 0) return {};
   const minY = Math.min(...allY);
   const maxY = Math.max(...allY);
-  const range = maxY - minY || 1;
+  const dataRange = maxY - minY || 1;
   const avg = (minY + maxY) / 2;
-  // Margen mínimo: al menos ±2% del precio medio, para no exagerar movimientos de céntimos
-  const minMargin = avg * 0.02;
-  const margin = Math.max(range * 0.1, minMargin);
+  // Para 1d: margen mínimo ±0.3% del precio medio (movimientos intradiarios pequeños)
+  // Para otros rangos: ±2% del precio medio
+  const minMarginPct = range === '1d' ? 0.003 : 0.02;
+  const minMargin = avg * minMarginPct;
+  const margin = Math.max(dataRange * 0.1, minMargin);
   return { min: Math.max(0, minY - margin), max: maxY + margin };
 }
 
 function createLineChart(ctx, c, datasets, tickerFilter) {
   const tu = getTimeUnit();
   const bounds = getRangeBounds();
-  const yBounds = calcYBounds10(datasets);
+    const yBounds = calcYBounds10(datasets, currentRange);
   const marketAnnotations = buildMarketHourAnnotations(currentRange, tickerFilter);
 
   histChartInst = new Chart(ctx, {
@@ -4704,7 +4706,7 @@ function renderPdPortfolioChart(data, c, ctx) {
     borderWidth: 2.5, pointRadius: totalPoints.length > 50 ? 0 : 3, pointHoverRadius: 5, tension: 0, fill: true, spanGaps: true
   }];
 
-  const yBounds = calcYBounds10(datasets);
+    const yBounds = calcYBounds10(datasets, pdHistRange);
   const xBounds = getPdRangeBounds();
   const pdTu = getChartTimeConfig(pdHistRange);
   const mktAnnotations = buildMarketHourAnnotations(pdHistRange, 'ALL');
@@ -4742,7 +4744,7 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
     tension: 0, fill: true, spanGaps: true
   }];
 
-  const yBounds = calcYBounds10(datasets);
+    const yBounds = calcYBounds10(datasets, pdHistRange);
   const xBounds = getPdRangeBounds();
   const pdTu = getChartTimeConfig(pdHistRange);
   const mktAnnotations = buildMarketHourAnnotations(pdHistRange, ticker);
