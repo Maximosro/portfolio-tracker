@@ -88,21 +88,26 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 /* ===================== POSITION CARD ===================== */
 .m-pos-card{
   padding:14px 16px;border-bottom:1px solid var(--color-divider);
-  display:flex;align-items:center;gap:12px;cursor:pointer;
-  transition:background var(--transition-interactive);min-height:60px;
+  cursor:pointer;transition:background var(--transition-interactive);
 }
 .m-pos-card:last-child{border-bottom:none}
 .m-pos-card:active{background:var(--color-surface-offset)}
+.m-pos-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .m-pos-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .m-pos-info{flex:1;min-width:0}
-.m-pos-ticker{font-weight:700;font-size:13px;letter-spacing:.02em}
-.m-pos-name{font-size:10px;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.m-pos-right{text-align:right;flex-shrink:0}
-.m-pos-value{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
-.m-pos-pl{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.m-pos-ticker{font-weight:700;font-size:14px;letter-spacing:.02em}
+.m-pos-name{font-size:10px;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.m-pos-pl-main{text-align:right;flex-shrink:0}
+.m-pos-pl-value{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.m-pos-pl-pct{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.m-pos-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.m-pos-metric{background:var(--color-surface-2);border-radius:var(--radius-sm);padding:6px 8px}
+.m-pos-metric-label{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-faint);font-weight:500}
+.m-pos-metric-value{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px}
 .pl-positive{color:var(--color-success)}
 .pl-negative{color:var(--color-notification)}
 .pl-zero{color:var(--color-text-muted)}
+.m-pos-day{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
 /* ===================== CHART ===================== */
 .m-chart-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px;margin-bottom:16px}
 .m-chart-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:12px}
@@ -543,16 +548,39 @@ function renderPositions(){
   const active=positions.filter(p=>p.shares>0);
   const closed=positions.filter(p=>p.shares<=0);
   document.getElementById('mPosCount').textContent=`(${active.length})`;
+  const totalVal=active.filter(p=>p.currentPrice).reduce((s,p)=>s+calcValue(p),0);
 
   const body=document.getElementById('mPositionsBody');
   if(active.length===0){body.innerHTML='<div class="m-empty">No hay posiciones activas</div>';return}
   body.innerHTML=active.map((p,i)=>{
-    const val=calcValue(p);const pl=calcPL(p);const pct=calcPLPct(p);
+    const val=calcValue(p);const pl=calcPL(p);const pct=calcPLPct(p);const inv=calcInvested(p);
     const color=p.color||COLORS[i%COLORS.length];
+    // Day change
+    let dayHtml='';
+    if(p.currentPrice&&p.previousClose&&p.previousClose>0){
+      const dayPL=(p.currentPrice-p.previousClose)*p.shares;
+      const dayPct=((p.currentPrice-p.previousClose)/p.previousClose)*100;
+      const dc=dayPL>=0?'pl-positive':'pl-negative';
+      dayHtml=`<div class="m-pos-day ${dc}">Hoy: ${fmtEur(dayPL)} (${fmtPct(dayPct)})</div>`;
+    }
     return `<div class="m-pos-card" onclick="openMDetail('${p.ticker}')">
-      <div class="m-pos-dot" style="background:${color}"></div>
-      <div class="m-pos-info"><div class="m-pos-ticker">${p.ticker}</div><div class="m-pos-name">${p.name||''}</div></div>
-      <div class="m-pos-right"><div class="m-pos-value">${val!==null?fmtEur(val):'—'}</div><div class="m-pos-pl ${plClass(pl)}">${pl!==null?fmtEur(pl):''} ${pct!==null?'('+fmtPct(pct)+')':''}</div></div>
+      <div class="m-pos-top">
+        <div class="m-pos-dot" style="background:${color}"></div>
+        <div class="m-pos-info"><div class="m-pos-ticker">${p.ticker}</div><div class="m-pos-name">${p.name||''}</div></div>
+        <div class="m-pos-pl-main">
+          <div class="m-pos-pl-value ${plClass(pl)}">${pl!==null?fmtEur(pl):'—'}</div>
+          <div class="m-pos-pl-pct ${plClass(pl)}">${pct!==null?fmtPct(pct):''}</div>
+          ${dayHtml}
+        </div>
+      </div>
+      <div class="m-pos-metrics">
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Invertido</div><div class="m-pos-metric-value">${fmtEur(inv,0)}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Valor</div><div class="m-pos-metric-value">${val!==null?fmtEur(val,0):'—'}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Precio</div><div class="m-pos-metric-value">${p.currentPrice?fmtEur(p.currentPrice,2):'—'}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">P.Medio</div><div class="m-pos-metric-value">${fmtEur(p.avgPrice,2)}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Acciones</div><div class="m-pos-metric-value">${fmtShares(p.shares)}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Peso</div><div class="m-pos-metric-value">${totalVal>0?((val||0)/totalVal*100).toFixed(1)+'%':'—'}</div></div>
+      </div>
     </div>`;
   }).join('');
 
