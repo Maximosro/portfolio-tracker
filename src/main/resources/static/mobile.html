@@ -455,10 +455,10 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
     <div class="m-chart-card">
       <div class="m-chart-title">Evolución del Precio</div>
       <div class="m-range-row" id="mDetailRangeRow">
-        <button class="m-range-btn" data-dr="1d" onclick="setMDetailRange('1d')">1D</button>
+        <button class="m-range-btn active" data-dr="1d" onclick="setMDetailRange('1d')">1D</button>
         <button class="m-range-btn" data-dr="1w" onclick="setMDetailRange('1w')">1S</button>
         <button class="m-range-btn" data-dr="1m" onclick="setMDetailRange('1m')">1M</button>
-        <button class="m-range-btn active" data-dr="3m" onclick="setMDetailRange('3m')">3M</button>
+        <button class="m-range-btn" data-dr="3m" onclick="setMDetailRange('3m')">3M</button>
         <button class="m-range-btn" data-dr="6m" onclick="setMDetailRange('6m')">6M</button>
         <button class="m-range-btn" data-dr="1y" onclick="setMDetailRange('1y')">1A</button>
         <button class="m-range-btn" data-dr="all" onclick="setMDetailRange('all')">Todo</button>
@@ -1089,7 +1089,7 @@ async function openMDetail(ticker){
 
   document.getElementById('mDetailOverlay').classList.add('open');
   history.pushState({detail:ticker},'','#detail-'+encodeURIComponent(ticker));
-  loadMDetailChart('3m');
+  loadMDetailChart('1d');
 }
 
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
