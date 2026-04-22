@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Tracker — Gestor de inversiones 100% local y gratuito</title>
+<meta name="description" content="Aplicación gratuita y open source para gestionar tu cartera de inversiones con DCA, alertas, simuladores, Telegram y exportación para IA. 100% local, sin registro, sin cloud.">
+<meta name="keywords" content="portfolio tracker, inversiones, DCA, dollar cost averaging, XIRR, alertas, simulador financiero, FIRE, self-hosted, open source, gratuito">
+<meta property="og:title" content="Portfolio Tracker — Gestor de inversiones 100% local">
+<meta property="og:description" content="Gestiona tu cartera con DCA, alertas, simuladores y IA. Gratis, sin registro, tus datos nunca salen de tu PC.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════ RESET ═══════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#e8e6e3;background:#0b0d11;line-height:1.7;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+
+/* ═══════ VARIABLES ═══════ */
+:root{
+  --accent:#00b4d8;--accent-dim:#0077b6;--accent-glow:rgba(0,180,216,.15);
+  --surface:#12151c;--surface-2:#181c25;--surface-3:#1e222d;
+  --border:#252a36;--text:#e8e6e3;--text-muted:#8b8d94;--text-faint:#555860;
+  --success:#34d399;--danger:#f87171;--gold:#fbbf24;
+  --max-w:1140px;
+}
+
+/* ═══════ NAV ═══════ */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(11,13,17,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);transition:box-shadow .3s}
+.nav.scrolled{box-shadow:0 4px 30px rgba(0,0,0,.4)}
+.nav-inner{max-width:var(--max-w);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:.85rem 2rem}
+.nav-logo{font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:.5rem}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:1.8rem;font-size:.88rem;font-weight:500}
+.nav-links a{color:var(--text-muted);transition:color .2s}
+.nav-links a:hover{color:var(--accent)}
+.nav-cta{background:var(--accent);color:#000;padding:.5rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;transition:all .2s}
+.nav-cta:hover{background:#33c5e0;transform:translateY(-1px)}
+@media(max-width:700px){.nav-links{display:none}}
+
+/* ═══════ HERO ═══════ */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none}
+.hero-content{position:relative;max-width:800px}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:.35rem 1rem;font-size:.78rem;color:var(--text-muted);margin-bottom:1.5rem}
+.hero-badge span{color:var(--success);font-weight:600}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:800;line-height:1.15;letter-spacing:-.03em;margin-bottom:1.2rem}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:clamp(1rem,2vw,1.2rem);color:var(--text-muted);max-width:600px;margin:0 auto 2.5rem;line-height:1.8}
+.hero-buttons{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.6rem;border-radius:10px;font-weight:600;font-size:.95rem;transition:all .25s}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{background:#33c5e0;transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,180,216,.25)}
+.btn-secondary{background:var(--surface-2);border:1px solid var(--border);color:var(--text)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.hero-meta{margin-top:2.5rem;display:flex;gap:2rem;justify-content:center;font-size:.82rem;color:var(--text-faint)}
+.hero-meta strong{color:var(--text-muted)}
+
+/* ═══════ SECTION ═══════ */
+section{padding:5rem 2rem}
+.section-inner{max-width:var(--max-w);margin:0 auto}
+.section-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:700;margin-bottom:.5rem}
+.section-title{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;margin-bottom:1rem;letter-spacing:-.02em}
+.section-subtitle{color:var(--text-muted);font-size:1.05rem;max-width:600px;margin-bottom:3rem}
+
+/* ═══════ FEATURES GRID ═══════ */
+#features{background:var(--surface)}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem}
+.feature-card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:1.6rem;transition:all .25s}
+.feature-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,180,216,.08)}
+.feature-icon{font-size:1.8rem;margin-bottom:.8rem}
+.feature-card h3{font-size:1.05rem;font-weight:600;margin-bottom:.5rem}
+.feature-card p{font-size:.88rem;color:var(--text-muted);line-height:1.65}
+
+/* ═══════ HIGHLIGHTS ═══════ */
+.highlights{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.5rem;margin:3rem 0}
+.highlight{text-align:center;padding:2rem 1.2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:14px}
+.highlight-number{font-size:2.5rem;font-weight:800;color:var(--accent);line-height:1}
+.highlight-label{font-size:.85rem;color:var(--text-muted);margin-top:.4rem}
+
+/* ═══════ SCREENSHOTS ═══════ */
+#screenshots{background:var(--surface)}
+.screenshots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:1.5rem}
+@media(max-width:560px){.screenshots-grid{grid-template-columns:1fr}}
+.screenshot-card{background:var(--surface-3);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .3s}
+.screenshot-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+.screenshot-bar{height:32px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:0 12px}
+.screenshot-dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+.screenshot-body{padding:1.5rem;min-height:220px;display:flex;align-items:center;justify-content:center}
+.screenshot-body img{border-radius:8px;width:100%;height:auto}
+.screenshot-placeholder{color:var(--text-faint);font-size:.85rem;text-align:center}
+.screenshot-caption{padding:0 1.5rem 1.2rem;font-size:.85rem;color:var(--text-muted)}
+
+/* ═══════ STACK ═══════ */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.stack-item{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:1.2rem;text-align:center}
+.stack-item strong{display:block;font-size:.95rem;margin-bottom:.25rem}
+.stack-item span{font-size:.82rem;color:var(--text-muted)}
+
+/* ═══════ QUICKSTART ═══════ */
+#quickstart{background:var(--surface)}
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;margin-top:2rem}
+.step{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:1.8rem;position:relative}
+.step-number{position:absolute;top:-14px;left:20px;background:var(--accent);color:#000;font-weight:800;font-size:.85rem;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.step h3{font-size:1rem;font-weight:600;margin-bottom:.4rem;margin-top:.3rem}
+.step p{font-size:.85rem;color:var(--text-muted)}
+.step code{background:var(--surface-3);padding:.15rem .4rem;border-radius:4px;font-size:.82rem;color:var(--accent);border:1px solid var(--border)}
+
+/* ═══════ CTA FINAL ═══════ */
+.cta-section{text-align:center;padding:6rem 2rem;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;bottom:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none}
+.cta-section h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:1rem;position:relative}
+.cta-section p{color:var(--text-muted);font-size:1.05rem;margin-bottom:2rem;position:relative}
+.cta-section .btn{position:relative}
+
+/* ═══════ FOOTER ═══════ */
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center;font-size:.8rem;color:var(--text-faint)}
+footer a{color:var(--accent)}
+
+/* ═══════ ANIMATIONS ═══════ */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* ═══════ RESPONSIVE ═══════ */
+@media(max-width:600px){
+  section{padding:3rem 1.2rem}
+  .features-grid{grid-template-columns:1fr}
+  .hero{padding:7rem 1.2rem 3rem}
+  .hero-meta{flex-direction:column;gap:.5rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ NAV ═══════ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">📊 <span>Portfolio Tracker</span></div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#screenshots">Capturas</a>
+      <a href="#stack">Stack</a>
+      <a href="#quickstart">Instalar</a>
+    </div>
+    <a href="#quickstart" class="nav-cta">Descargar gratis</a>
+  </div>
+</nav>
+
+<!-- ═══════ HERO ═══════ -->
+<section class="hero">
+  <div class="hero-content fade-in">
+    <div class="hero-badge">🟢 <span>Open Source</span> · 100% gratuito · Sin registro</div>
+    <h1>Tu cartera de inversiones,<br><em>en tu ordenador.</em></h1>
+    <p>
+      Gestiona tus inversiones con DCA, alertas en tiempo real, simuladores financieros
+      y exportación para IA. Tus datos nunca salen de tu PC.
+    </p>
+    <div class="hero-buttons">
+      <a href="#quickstart" class="btn btn-primary">⬇ Descargar ZIP</a>
+      <a href="https://gitlab.com/sroyola/portfolio-tracker" target="_blank" class="btn btn-secondary">Código fuente →</a>
+    </div>
+    <div class="hero-meta">
+      <span><strong>Java 21</strong> · Único requisito</span>
+      <span><strong>SQLite</strong> · Zero config</span>
+      <span><strong>EUR</strong> · Conversión automática</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ NUMBERS ═══════ -->
+<section>
+  <div class="section-inner">
+    <div class="highlights fade-in">
+      <div class="highlight">
+        <div class="highlight-number">0 €</div>
+        <div class="highlight-label">Coste. Para siempre.</div>
+      </div>
+      <div class="highlight">
+        <div class="highlight-number">0</div>
+        <div class="highlight-label">Datos enviados al cloud</div>
+      </div>
+      <div class="highlight">
+        <div class="highlight-number">5</div>
+        <div class="highlight-label">Simuladores financieros</div>
+      </div>
+      <div class="highlight">
+        <div class="highlight-number">7</div>
+        <div class="highlight-label">Tipos de alerta</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ FEATURES ═══════ -->
+<section id="features">
+  <div class="section-inner">
+    <div class="section-label">Funcionalidades</div>
+    <h2 class="section-title">Todo lo que necesitas para gestionar tu cartera</h2>
+    <p class="section-subtitle">Diseñado para inversores DCA que quieren control total sobre sus datos y métricas reales.</p>
+
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">📈</div>
+        <h3>Dashboard completo</h3>
+        <p>KPIs de un vistazo: capital invertido, valor actual, P&L no realizado y realizado, XIRR anualizada, inversión del mes con barra de progreso. Tabla de posiciones con variación diaria y TIR individual.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔄</div>
+        <h3>Gestión DCA con compras y ventas</h3>
+        <p>Registra operaciones BUY/SELL. Se recalcula automáticamente el precio medio y las participaciones. P&L realizado por cada venta. Importación masiva desde JSON.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">💰</div>
+        <h3>Precios en tiempo real</h3>
+        <p>Yahoo Finance cada 10 min con conversión automática a EUR. Horarios de mercado configurables por bolsa. Ventana post-cierre con reintentos automáticos.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔔</div>
+        <h3>Alertas avanzadas</h3>
+        <p>Stop-loss, take-profit, trailing stop, DCA target, precio arriba/abajo, peso desviado. 3 severidades. Notificación por Telegram.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">📊</div>
+        <h3>XIRR y métricas reales</h3>
+        <p>TIR anualizada con flujos de caja reales, no aproximaciones. Rentabilidad por periodos ajustada por DCA. Equity curve con valor de mercado vs capital invertido.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🧮</div>
+        <h3>5 Simuladores financieros</h3>
+        <p>Proyección de cartera, hipoteca, retiradas FIRE, interés compuesto y Monte Carlo con miles de escenarios probabilísticos.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🤖</div>
+        <h3>Asistente IA por posición</h3>
+        <p>Genera un prompt con todos los datos de la posición, pégalo en Claude o ChatGPT, recibe un JSON con recomendaciones e impórtalo con un clic.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">👁️</div>
+        <h3>Watchlist con alertas</h3>
+        <p>Vigila activos que aún no has comprado. Alertas de precio y volumen configurables con cooldown de 24h y notificación Telegram.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">✈️</div>
+        <h3>Telegram (opcional)</h3>
+        <p>Alertas en tiempo real, resumen diario L-V a las 18:00 con top movers y TIR. Configurable en caliente desde la app, persistente en BD.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">📄</div>
+        <h3>Informes para IA</h3>
+        <p>Exporta un Markdown completo con resumen ejecutivo, detalle, historial DCA, distribución, riesgo (HHI) y plan de inversión. Listo para pegar en tu LLM.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🎯</div>
+        <h3>Plan de inversión</h3>
+        <p>Presupuesto mensual con barra de progreso. Flujos de caja planificados: aportaciones extraordinarias o recurrentes con estado pendiente/ejecutado.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔒</div>
+        <h3>Privacidad total</h3>
+        <p>SQLite local, sin cloud, sin registro, sin telemetría. Tus datos son tuyos. Copia de seguridad = copiar un archivo. Portable en un ZIP.</p>
+      </div>
+    </div>
+
+    <!-- Extra features list -->
+    <div style="margin-top:2.5rem;padding:1.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:14px">
+      <h3 style="font-size:.95rem;margin-bottom:.8rem;color:var(--text)">Y también...</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">🌙 Tema claro/oscuro</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">📱 Versión móvil</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">🕐 Horarios de mercado</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">📰 Noticias Google News</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">📋 Registro de actividad</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">🧹 Compactación automática</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">📥 Import JSON masivo</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">📖 Guía integrada</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">🔒 Posiciones cerradas</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">💱 Multi-divisa (EUR, USD, GBP, CHF...)</span>
+        <span style="background:var(--surface-3);border:1px solid var(--border);padding:.3rem .8rem;border-radius:999px;font-size:.78rem;color:var(--text-muted)">⚡ Servicio Windows</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SCREENSHOTS ═══════ -->
+<section id="screenshots">
+  <div class="section-inner">
+    <div class="section-label">Capturas</div>
+    <h2 class="section-title">Mira cómo queda</h2>
+    <p class="section-subtitle">Interfaz limpia con tema oscuro y claro. Todo pensado para entender tu cartera de un vistazo.</p>
+
+    <div class="screenshots-grid">
+      <div class="screenshot-card fade-in">
+        <div class="screenshot-bar"><div class="screenshot-dot"></div><div class="screenshot-dot"></div><div class="screenshot-dot"></div></div>
+        <div class="screenshot-body">
+          <img src="screenshots/dashboard.png" alt="Dashboard principal de Portfolio Tracker" loading="lazy">
+        </div>
+        <div class="screenshot-caption">Dashboard con KPIs, distribución de cartera y tabla de posiciones</div>
+      </div>
+      <div class="screenshot-card fade-in">
+        <div class="screenshot-bar"><div class="screenshot-dot"></div><div class="screenshot-dot"></div><div class="screenshot-dot"></div></div>
+        <div class="screenshot-body">
+          <img src="screenshots/simuladores.png" alt="Simuladores financieros" loading="lazy">
+        </div>
+        <div class="screenshot-caption">5 simuladores: proyección, hipoteca, FIRE, interés compuesto y Monte Carlo</div>
+      </div>
+      <div class="screenshot-card fade-in">
+        <div class="screenshot-bar"><div class="screenshot-dot"></div><div class="screenshot-dot"></div><div class="screenshot-dot"></div></div>
+        <div class="screenshot-body">
+          <img src="screenshots/guia.png" alt="Guía de usuario integrada" loading="lazy">
+        </div>
+        <div class="screenshot-caption">Guía de usuario completa integrada en la aplicación</div>
+      </div>
+      <div class="screenshot-card fade-in">
+        <div class="screenshot-bar"><div class="screenshot-dot"></div><div class="screenshot-dot"></div><div class="screenshot-dot"></div></div>
+        <div class="screenshot-body">
+          <img src="screenshots/mobile.jpg" alt="Versión móvil" loading="lazy" style="max-width:390px;margin:0 auto">
+        </div>
+        <div class="screenshot-caption">Vista móvil optimizada accesible desde cualquier dispositivo de tu red</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ STACK ═══════ -->
+<section id="stack">
+  <div class="section-inner">
+    <div class="section-label">Tecnología</div>
+    <h2 class="section-title">Stack simple y robusto</h2>
+    <p class="section-subtitle">Sin frameworks frontend pesados. Sin Docker. Sin base de datos externa. Un JAR y un archivo SQLite.</p>
+
+    <div class="stack-grid fade-in">
+      <div class="stack-item">
+        <strong>Spring Boot 4</strong>
+        <span>Java 21 · Backend</span>
+      </div>
+      <div class="stack-item">
+        <strong>SQLite</strong>
+        <span>BD local · Zero config</span>
+      </div>
+      <div class="stack-item">
+        <strong>HTML + JS vanilla</strong>
+        <span>Sin React, sin Angular</span>
+      </div>
+      <div class="stack-item">
+        <strong>Chart.js</strong>
+        <span>Gráficos interactivos</span>
+      </div>
+      <div class="stack-item">
+        <strong>Yahoo Finance</strong>
+        <span>Precios en tiempo real</span>
+      </div>
+      <div class="stack-item">
+        <strong>Telegram Bot API</strong>
+        <span>Notificaciones (opcional)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ QUICKSTART ═══════ -->
+<section id="quickstart">
+  <div class="section-inner">
+    <div class="section-label">Instalación</div>
+    <h2 class="section-title">Funcionando en 2 minutos</h2>
+    <p class="section-subtitle">No necesitas Docker, ni base de datos, ni configurar nada. Solo Java 21.</p>
+
+    <div class="steps">
+      <div class="step fade-in">
+        <div class="step-number">1</div>
+        <h3>Descarga</h3>
+        <p>Descarga <code>PortfolioTracker-dist.zip</code> desde el repositorio.</p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-number">2</div>
+        <h3>Descomprime</h3>
+        <p>Extrae el ZIP en cualquier carpeta. No necesita instalación.</p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-number">3</div>
+        <h3>Ejecuta</h3>
+        <p><strong>Windows:</strong> doble clic en <code>start.bat</code><br><strong>Linux/Mac:</strong> <code>./start.sh</code></p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-number">4</div>
+        <h3>Listo</h3>
+        <p>Se abre automáticamente en <code>localhost:19480/portfoliotracker/</code></p>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem;padding:1.2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;font-size:.88rem;color:var(--text-muted)">
+      <strong style="color:var(--text)">💡 Extra:</strong>
+      Viene con datos de ejemplo para que puedas probar sin meter nada tuyo.
+      Se puede instalar como <strong>servicio de Windows</strong> para que arranque solo con el PC.
+      Escucha en <code>0.0.0.0</code> — accesible desde cualquier dispositivo de tu red local, incluido el móvil.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ CTA FINAL ═══════ -->
+<section class="cta-section">
+  <h2 class="fade-in">Tus inversiones. Tu ordenador.<br>Tu control total.</h2>
+  <p class="fade-in">Gratis, open source y sin letra pequeña.</p>
+  <div class="hero-buttons fade-in">
+    <a href="https://gitlab.com/sroyola/portfolio-tracker" target="_blank" class="btn btn-primary">⬇ Descargar ahora</a>
+    <a href="https://gitlab.com/sroyola/portfolio-tracker/-/tree/master" target="_blank" class="btn btn-secondary">Ver código fuente →</a>
+  </div>
+</section>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer>
+  <p>📊 Portfolio Tracker · Desarrollado por <strong style="color:var(--accent)">Maximosro</strong> · <a href="https://gitlab.com/sroyola/portfolio-tracker" target="_blank">Repositorio</a></p>
+  <p style="margin-top:.3rem">Spring Boot 4 + Java 21 · SQLite · 100% privado · Open Source</p>
+</footer>
+
+<!-- ═══════ SCRIPTS ═══════ -->
+<script>
+// Nav scroll effect
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// Fade-in on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
+
+
+
+
