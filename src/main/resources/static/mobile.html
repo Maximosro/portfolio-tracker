@@ -108,6 +108,19 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .pl-negative{color:var(--color-notification)}
 .pl-zero{color:var(--color-text-muted)}
 .m-pos-day{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+/* ===================== DASH POSITION (simplified) ===================== */
+.m-dash-pos{
+  padding:10px 16px;border-bottom:1px solid var(--color-divider);
+  display:flex;align-items:center;gap:10px;cursor:pointer;min-height:48px;
+}
+.m-dash-pos:last-child{border-bottom:none}
+.m-dash-pos:active{background:var(--color-surface-offset)}
+.m-dash-pos-info{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.m-dash-pos-ticker{font-weight:700;font-size:13px;letter-spacing:.02em;min-width:52px}
+.m-dash-pos-price{font-size:11px;color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.m-dash-pos-right{text-align:right;flex-shrink:0}
+.m-dash-pos-val{font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.m-dash-pos-pl{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums}
 /* ===================== CHART ===================== */
 .m-chart-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px;margin-bottom:16px}
 .m-chart-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:12px}
@@ -228,10 +241,10 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
     <div class="m-chart-wrap"><canvas id="mPdChart"></canvas></div>
   </div>
 
-  <!-- Distribution pie -->
-  <div class="m-chart-card">
-    <div class="m-chart-title">Distribución de Cartera</div>
-    <div class="m-chart-wrap" style="height:260px"><canvas id="mPieChart"></canvas></div>
+  <!-- Quick positions summary -->
+  <div class="m-section">
+    <div class="m-section-title">Posiciones <span id="mDashPosCount" style="font-weight:400;color:var(--color-text-faint)"></span></div>
+    <div id="mDashPositions"></div>
   </div>
 </div>
 
@@ -277,6 +290,12 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
       <button class="m-range-btn" data-eq="all" onclick="setMEqRange('all')">Todo</button>
     </div>
     <div class="m-chart-wrap"><canvas id="mEquityChart"></canvas></div>
+  </div>
+
+  <!-- Distribution pie -->
+  <div class="m-chart-card">
+    <div class="m-chart-title">Distribución de Cartera</div>
+    <div class="m-chart-wrap" style="height:280px"><canvas id="mPieChart"></canvas></div>
   </div>
 </div>
 
@@ -495,10 +514,10 @@ async function loadAll(){
 // ===================== RENDER =====================
 function renderAll(){
   renderKPIs();
+  renderDashPositions();
   renderPositions();
   renderDcaHistory();
   loadMPdChart();
-  renderPieChart();
 }
 
 function renderKPIs(){
@@ -541,6 +560,31 @@ function renderKPIs(){
   const xirrEl=document.getElementById('mKpiXirr');
   xirrEl.textContent=xirr!=null?fmtPct(xirr*100)+' anual':'—';
   xirrEl.className='m-kpi-value '+(xirr==null?'':xirr>=0?'positive':'negative');
+}
+
+// ===================== DASHBOARD POSITIONS (simplified) =====================
+function renderDashPositions(){
+  const active=positions.filter(p=>p.shares>0);
+  document.getElementById('mDashPosCount').textContent=`(${active.length})`;
+  const body=document.getElementById('mDashPositions');
+  if(active.length===0){body.innerHTML='<div class="m-empty">No hay posiciones</div>';return}
+  const totalVal=active.filter(p=>p.currentPrice).reduce((s,p)=>s+calcValue(p),0);
+  body.innerHTML=active.map((p,i)=>{
+    const val=calcValue(p);const pl=calcPL(p);const pct=calcPLPct(p);
+    const color=p.color||COLORS[i%COLORS.length];
+    const weight=totalVal>0&&val?((val/totalVal)*100).toFixed(1)+'%':'';
+    return `<div class="m-dash-pos" onclick="switchPage('positions');setTimeout(()=>openMDetail('${p.ticker}'),100)">
+      <div class="m-pos-dot" style="background:${color}"></div>
+      <div class="m-dash-pos-info">
+        <span class="m-dash-pos-ticker">${p.ticker}</span>
+        <span class="m-dash-pos-price">${p.currentPrice?fmtEur(p.currentPrice,2):''}</span>
+      </div>
+      <div class="m-dash-pos-right">
+        <div class="m-dash-pos-val">${val!==null?fmtEur(val,0):'—'} <span style="font-size:9px;color:var(--color-text-faint);font-weight:400">${weight}</span></div>
+        <div class="m-dash-pos-pl ${plClass(pl)}">${pl!==null?fmtEur(pl,0):''} ${pct!==null?fmtPct(pct):''}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ===================== POSITIONS =====================
@@ -707,8 +751,9 @@ async function loadPortfolioDetail(){
     }
   }catch(e){}
 
-  // Equity chart
+  // Equity chart + pie
   loadMEquityChart();
+  renderPieChart();
 }
 
 async function loadMEquityChart(){
