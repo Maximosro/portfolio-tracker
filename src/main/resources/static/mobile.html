@@ -719,6 +719,18 @@ function getXBounds(range){
     default: min=new Date(now);min.setDate(min.getDate()-30);min.setHours(0,0,0,0);return{min,max:now};
   }
 }
+// Y-axis bounds with 10% margin and minimum ±2% of avg (same as desktop)
+function calcYBounds(datasets){
+  let allY=[];
+  datasets.forEach(ds=>ds.data.forEach(p=>{if(p.y!=null)allY.push(p.y)}));
+  if(allY.length===0)return{};
+  const minY=Math.min(...allY),maxY=Math.max(...allY);
+  const range=maxY-minY||1;
+  const avg=(minY+maxY)/2;
+  const minMargin=avg*0.02;
+  const margin=Math.max(range*0.1,minMargin);
+  return{min:Math.max(0,minY-margin),max:maxY+margin};
+}
 
 async function loadMPdChart(){
   try{
@@ -753,32 +765,35 @@ async function loadMPdChart(){
       return{x:new Date(ts),y:hasAny?sum:null};
     });
 
-    // Pad from range start (like desktop)
+    // Pad from range start
     if(mPdRange!=='all'&&totalPoints.length>0){
       const bounds=getXBounds(mPdRange);
       if(totalPoints[0].x>bounds.min){totalPoints.unshift({x:bounds.min,y:totalPoints[0].y})}
     }
 
-    const totalInv=positions.filter(p=>p.shares>0).reduce((s,p)=>s+calcInvested(p),0);
+    // Dataset — same styling as desktop: borderColor=text, fill with border+'30'
+    const c=chartColors();
+    const datasets=[{
+      label:'Cartera Total',data:totalPoints,borderColor:c.text,backgroundColor:c.grid+'30',
+      borderWidth:2.5,pointRadius:totalPoints.length>50?0:3,pointHoverRadius:5,tension:0,fill:true,spanGaps:true
+    }];
+
+    const yBounds=calcYBounds(datasets);
     const xBounds=getXBounds(mPdRange);
     const tc=getTimeConfig(mPdRange);
-    const c=chartColors();
 
     if(mPdChart)mPdChart.destroy();
     const timeOpts=tc.unit?{unit:tc.unit,stepSize:tc.stepSize||1,displayFormats:{minute:tc.fmt,hour:tc.fmt,day:tc.fmt,week:tc.fmt,month:tc.fmt},tooltipFormat:tc.ttFmt}:{tooltipFormat:tc.ttFmt};
 
     mPdChart=new Chart(document.getElementById('mPdChart'),{
       type:'line',
-      data:{datasets:[
-        {label:'Cartera Total',data:totalPoints,borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:0,pointRadius:totalPoints.length>50?0:2,borderWidth:2,spanGaps:true},
-        {label:'Invertido',data:[{x:xBounds.min||totalPoints[0].x,y:totalInv},{x:xBounds.max||totalPoints[totalPoints.length-1].x,y:totalInv}],borderColor:c.text+'55',borderDash:[5,5],pointRadius:0,borderWidth:1,fill:false,spanGaps:true}
-      ]},
+      data:{datasets},
       options:{
         responsive:true,maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
         scales:{
-          x:{type:'time',min:xBounds.min,max:xBounds.max,time:timeOpts,ticks:{color:c.text,font:{size:9},maxTicksLimit:tc.ticks,maxRotation:0,autoSkip:true,autoSkipPadding:12,source:'auto'},grid:{color:c.grid+'33'}},
-          y:{ticks:{color:c.text,font:{size:9},callback:v=>v.toLocaleString('es-ES',{maximumFractionDigits:0})+' €'},grid:{color:c.grid+'33'}}
+          x:{type:'time',min:xBounds.min,max:xBounds.max,time:timeOpts,ticks:{color:c.text,font:{size:9},maxTicksLimit:tc.ticks,maxRotation:0,autoSkip:true,autoSkipPadding:12,source:'auto'},grid:{color:c.grid+'40'}},
+          y:{min:yBounds.min,max:yBounds.max,ticks:{color:c.text,font:{size:9},callback:v=>v.toLocaleString('es-ES',{maximumFractionDigits:0})+' €'},grid:{color:c.grid+'40'}}
         },
         plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:item=>' '+item.dataset.label+': '+fmtEur(item.raw.y)}}}
       }
