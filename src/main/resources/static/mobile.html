@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Portfolio Tracker — Móvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+/* ===================== DESIGN TOKENS ===================== */
+:root,[data-theme="light"]{
+  --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
+  --color-surface-offset:#f3f0ec;--color-surface-dynamic:#e6e4df;
+  --color-divider:#dcd9d5;--color-border:#d4d1ca;
+  --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
+  --color-primary:#01696f;--color-primary-hover:#0c4e54;
+  --color-success:#437a22;--color-notification:#a13544;--color-gold:#d19900;
+  --color-orange:#da7101;
+  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--radius-full:9999px;
+  --shadow-sm:0 1px 2px oklch(0.2 0.01 80/.06);--shadow-md:0 4px 12px oklch(0.2 0.01 80/.08);
+  --transition-interactive:180ms cubic-bezier(.16,1,.3,1);
+  --font-body:'Inter','Helvetica Neue',sans-serif;
+}
+[data-theme="dark"]{
+  --color-bg:#111318;--color-surface:#191b22;--color-surface-2:#1e2028;
+  --color-surface-offset:#1b1d24;--color-surface-dynamic:#2a2d36;
+  --color-divider:#262830;--color-border:#32353f;
+  --color-text:#d0d1d8;--color-text-muted:#7a7d8a;--color-text-faint:#4a4d58;
+  --color-primary:#4f98a3;--color-primary-hover:#3d8490;
+  --color-success:#6daa45;--color-notification:#dd6974;--color-gold:#e8af34;
+  --color-orange:#fdab43;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.25);--shadow-md:0 4px 12px oklch(0 0 0/.35);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);font-size:14px;color:var(--color-text);background:var(--color-bg);
+  line-height:1.5;min-height:100dvh;padding-bottom:72px;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
+/* ===================== MOBILE HEADER ===================== */
+.m-header{
+  position:sticky;top:0;z-index:100;background:var(--color-surface);
+  border-bottom:1px solid var(--color-divider);padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+.m-header-title{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px}
+.m-header-title svg{width:24px;height:24px;color:var(--color-primary)}
+.m-header-actions{display:flex;gap:8px;align-items:center}
+.m-icon-btn{width:36px;height:36px;border-radius:var(--radius-md);border:1px solid var(--color-border);
+  background:var(--color-surface-2);color:var(--color-text-muted);display:flex;align-items:center;justify-content:center}
+/* ===================== TAB BAR ===================== */
+.m-tabbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--color-surface);border-top:1px solid var(--color-divider);
+  display:flex;padding:6px 0 env(safe-area-inset-bottom,8px);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+.m-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 0;font-size:10px;font-weight:500;color:var(--color-text-muted);
+  transition:color var(--transition-interactive);min-height:44px;justify-content:center;
+}
+.m-tab.active{color:var(--color-primary);font-weight:700}
+.m-tab svg{width:22px;height:22px}
+/* ===================== PAGES ===================== */
+.m-page{display:none;padding:12px 10px}
+.m-page.active{display:block}
+/* ===================== KPI CARDS ===================== */
+.m-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.m-kpi{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px 16px}
+.m-kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);font-weight:500;margin-bottom:4px}
+.m-kpi-value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
+.m-kpi-sub{font-size:10px;color:var(--color-text-muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.m-kpi-value.positive{color:var(--color-success)}
+.m-kpi-value.negative{color:var(--color-notification)}
+.m-kpi.full{grid-column:1/-1}
+/* ===================== SECTION ===================== */
+.m-section{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:16px;overflow:hidden}
+.m-section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);padding:14px 16px;border-bottom:1px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between}
+/* ===================== POSITION CARD ===================== */
+.m-pos-card{
+  padding:14px 16px;border-bottom:1px solid var(--color-divider);
+  cursor:pointer;transition:background var(--transition-interactive);
+}
+.m-pos-card:last-child{border-bottom:none}
+.m-pos-card:active{background:var(--color-surface-offset)}
+.m-pos-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.m-pos-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.m-pos-info{flex:1;min-width:0}
+.m-pos-ticker{font-weight:700;font-size:14px;letter-spacing:.02em}
+.m-pos-name{font-size:10px;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.m-pos-pl-main{text-align:right;flex-shrink:0}
+.m-pos-pl-value{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.m-pos-pl-pct{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.m-pos-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.m-pos-metric{background:var(--color-surface-2);border-radius:var(--radius-sm);padding:8px 10px}
+.m-pos-metric-label{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-faint);font-weight:500;margin-bottom:2px}
+.m-pos-metric-value{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.pl-positive{color:var(--color-success)}
+.pl-negative{color:var(--color-notification)}
+.pl-zero{color:var(--color-text-muted)}
+.m-pos-day{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+/* Variation row */
+.m-pos-var-row{display:flex;gap:6px;flex-wrap:wrap}
+.m-pos-var-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;padding:4px 8px;border-radius:var(--radius-sm);background:var(--color-surface-2)}
+.m-pos-var-badge .var-label{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-faint);margin-right:2px}
+/* ===================== DASH POSITION (simplified table) ===================== */
+.m-dash-table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.m-dash-table th{text-align:right;padding:10px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-faint);border-bottom:1px solid var(--color-divider);white-space:nowrap}
+.m-dash-table th:first-child{text-align:left}
+.m-dash-table td{padding:12px 10px;text-align:right;border-bottom:1px solid var(--color-divider);white-space:nowrap;vertical-align:middle}
+.m-dash-table td:first-child{text-align:left}
+.m-dash-table tr:last-child td{border-bottom:none}
+.m-dash-table tr:active td{background:var(--color-surface-offset)}
+.m-dash-ticker{font-weight:700;font-size:14px;letter-spacing:.02em;display:flex;align-items:center;gap:6px}
+.m-dash-name{font-size:10px;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.m-dash-vol{font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block}
+.m-dash-vol.vol-high{background:oklch(from orange l c h / .15);color:orange}
+.m-dash-vol.vol-low{background:oklch(from dodgerblue l c h / .12);color:dodgerblue}
+.m-dash-vol.vol-flat{background:var(--color-surface-dynamic);color:var(--color-text-muted)}
+.m-dash-vol.vol-none{background:oklch(from var(--color-notification) l c h / .12);color:var(--color-notification)}
+.m-dash-total{background:var(--color-surface-offset);font-weight:700}
+/* ===================== CHART ===================== */
+.m-chart-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px;margin-bottom:16px}
+.m-chart-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:12px}
+.m-chart-wrap{position:relative;height:240px}
+.m-range-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.m-range-btn{padding:10px 14px;font-size:13px;font-weight:600;border-radius:var(--radius-md);color:var(--color-text-muted);background:var(--color-surface-2);border:1px solid var(--color-border);min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center}
+.m-range-btn.active{color:#fff;background:var(--color-primary);border-color:var(--color-primary)}
+/* ===================== DCA LIST ===================== */
+.m-dca-item{padding:12px 16px;border-bottom:1px solid var(--color-divider);display:flex;align-items:center;gap:10px}
+.m-dca-item:last-child{border-bottom:none}
+.m-dca-type{font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:var(--radius-sm);letter-spacing:.03em}
+.m-dca-type.buy{background:oklch(from var(--color-success) l c h / .15);color:var(--color-success)}
+.m-dca-type.sell{background:oklch(from var(--color-notification) l c h / .15);color:var(--color-notification)}
+.m-dca-info{flex:1;min-width:0}
+.m-dca-ticker{font-weight:700;font-size:12px}
+.m-dca-date{font-size:10px;color:var(--color-text-muted)}
+.m-dca-right{text-align:right;flex-shrink:0}
+.m-dca-amount{font-weight:700;font-size:12px;font-variant-numeric:tabular-nums}
+.m-dca-detail{font-size:10px;color:var(--color-text-muted)}
+/* ===================== DETAIL OVERLAY ===================== */
+.m-detail-overlay{
+  display:none;position:fixed;top:49px;left:0;right:0;bottom:0;z-index:90;background:var(--color-bg);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.m-detail-overlay.open{display:block;animation:mSlideUp .25s ease}
+@keyframes mSlideUp{from{transform:translateY(30%);opacity:0}to{transform:translateY(0);opacity:1}}
+.m-detail-header{
+  position:sticky;top:0;z-index:10;background:var(--color-surface);
+  border-bottom:1px solid var(--color-divider);padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.m-detail-back{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2)}
+.m-detail-body{padding:16px}
+.m-detail-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.m-detail-stat{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:12px}
+.m-detail-stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);font-weight:500;margin-bottom:2px}
+.m-detail-stat-value{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+/* ===================== SIMULATORS ===================== */
+.m-sim-form{padding:16px;display:flex;flex-direction:column;gap:12px}
+.m-form-group{display:flex;flex-direction:column;gap:4px}
+.m-form-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted)}
+.m-form-input{
+  background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);
+  padding:10px 12px;font-size:14px;color:var(--color-text);width:100%;min-height:44px;
+}
+.m-form-input:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px oklch(from var(--color-primary) l c h / .15)}
+.m-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;
+  border-radius:var(--radius-md);font-size:14px;font-weight:600;min-height:48px;width:100%;
+  transition:background var(--transition-interactive);
+}
+.m-btn-primary{background:var(--color-primary);color:#fff;border:none}
+.m-btn-primary:active{background:var(--color-primary-hover)}
+.m-sim-tabs{display:flex;gap:4px;padding:0 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:4px;padding-top:8px}
+.m-sim-tab{padding:10px 14px;font-size:12px;font-weight:600;border-radius:var(--radius-md);
+  color:var(--color-text-muted);background:var(--color-surface-2);border:1px solid var(--color-border);
+  white-space:nowrap;min-height:44px;flex-shrink:0}
+.m-sim-tab.active{color:#fff;background:var(--color-primary);border-color:var(--color-primary)}
+.m-sim-result{display:none;padding:16px}
+.m-sim-result.visible{display:block}
+/* ===================== PORTFOLIO DETAIL ===================== */
+.m-pd-returns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.m-pd-ret-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:10px;text-align:center}
+.m-pd-ret-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);font-weight:500}
+.m-pd-ret-value{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+/* ===================== LOADING ===================== */
+.m-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;color:var(--color-text-muted)}
+.m-spinner{width:28px;height:28px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.m-empty{text-align:center;padding:32px 16px;color:var(--color-text-faint);font-size:13px}
+/* ===================== TOAST ===================== */
+.m-toast-container{position:fixed;top:60px;left:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.m-toast{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:10px 14px;font-size:13px;box-shadow:var(--shadow-md);pointer-events:auto;animation:mSlideDown .25s ease}
+.m-toast.error{border-color:oklch(from var(--color-notification) l c h / .4);color:var(--color-notification)}
+@keyframes mSlideDown{from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1}}
+/* ===================== ALERTS ===================== */
+.m-alert-btn{position:relative}
+.m-alert-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:var(--radius-full);background:var(--color-notification);color:#fff;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;line-height:1;animation:alertPulse 2s ease-in-out infinite}
+.m-alert-badge.warning{background:var(--color-gold)}
+.m-alert-badge.info{background:var(--color-primary)}
+.m-alert-badge.visible{display:flex}
+@keyframes alertPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.m-alert-overlay{display:none;position:fixed;top:49px;left:0;right:0;bottom:0;z-index:90;background:var(--color-bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.m-alert-overlay.open{display:block;animation:mSlideUp .25s ease}
+.m-alert-item{padding:12px 16px;border-bottom:1px solid var(--color-divider);display:flex;align-items:flex-start;gap:10px;border-left:3px solid transparent}
+.m-alert-item.danger{border-left-color:var(--color-notification)}
+.m-alert-item.warning{border-left-color:var(--color-gold)}
+.m-alert-item.info{border-left-color:var(--color-primary)}
+.m-alert-icon{width:28px;height:28px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.m-alert-icon.danger{background:oklch(from var(--color-notification) l c h / .12);color:var(--color-notification)}
+.m-alert-icon.warning{background:oklch(from var(--color-gold) l c h / .12);color:var(--color-gold)}
+.m-alert-icon.info{background:oklch(from var(--color-primary) l c h / .12);color:var(--color-primary)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="m-header">
+  <div class="m-header-title">
+    <svg viewBox="0 0 32 32" fill="none"><rect x="2" y="18" width="6" height="12" rx="2" fill="currentColor" opacity=".4"/><rect x="10" y="12" width="6" height="18" rx="2" fill="currentColor" opacity=".65"/><rect x="18" y="6" width="6" height="24" rx="2" fill="currentColor" opacity=".85"/><rect x="26" y="2" width="4" height="28" rx="2" fill="currentColor"/></svg>
+    Portfolio
+  </div>
+  <div class="m-header-actions">
+    <button class="m-icon-btn m-alert-btn" onclick="toggleMAlerts()" aria-label="Alertas" title="Alertas">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="m-alert-badge" id="mAlertBadge"></span>
+    </button>
+    <a href="index.html?desktop=true" class="m-icon-btn" title="Ver versión escritorio">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    </a>
+    <button class="m-icon-btn" onclick="toggleFullscreen()" aria-label="Pantalla completa" title="Pantalla completa">
+      <svg id="fsIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </button>
+    <button class="m-icon-btn" onclick="toggleTheme()" aria-label="Cambiar tema">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== PAGE: DASHBOARD ===================== -->
+<div class="m-page active" id="page-dashboard">
+  <div class="m-kpi-grid" style="grid-template-columns:1fr 1fr" id="mKpiGrid">
+    <div class="m-kpi" style="padding:10px 12px">
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-bottom:6px">
+        <div style="flex:1;min-width:0"><div class="m-kpi-label">Invertido</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiInvested">—</div></div>
+        <div style="flex:1;min-width:0;text-align:right"><div class="m-kpi-label">Valor Mercado</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiValue">—</div></div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+        <div><div class="m-kpi-label">DCA Mes</div><div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiDca">—</div></div>
+        <div style="text-align:right"><div class="m-kpi-sub" id="mKpiDcaSub">—</div><div class="m-kpi-sub" id="mKpiPositions">0 pos.</div></div>
+      </div>
+    </div>
+    <div class="m-kpi" style="padding:10px 12px">
+      <div style="display:flex;gap:4px;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+        <div style="flex:1;min-width:0"><div class="m-kpi-label">P&L Total</div><div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiPL">—</div></div>
+        <div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right" id="mKpiPLSub">—</div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+        <div class="m-kpi-label" style="margin:0">Hoy</div>
+        <div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiPLDay">—</div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:6px;margin-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+        <div class="m-kpi-label" style="margin:0">XIRR</div>
+        <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="mKpiXirr">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick portfolio chart -->
+  <div class="m-chart-card">
+    <div class="m-chart-title">Evolución de Cartera</div>
+    <div class="m-range-row" id="mPdRangeRow">
+      <button class="m-range-btn active" data-r="1d" onclick="setMPdRange('1d')">1D</button>
+      <button class="m-range-btn" data-r="1w" onclick="setMPdRange('1w')">1S</button>
+      <button class="m-range-btn" data-r="1m" onclick="setMPdRange('1m')">1M</button>
+      <button class="m-range-btn" data-r="3m" onclick="setMPdRange('3m')">3M</button>
+      <button class="m-range-btn" data-r="6m" onclick="setMPdRange('6m')">6M</button>
+      <button class="m-range-btn" data-r="1y" onclick="setMPdRange('1y')">1A</button>
+      <button class="m-range-btn" data-r="all" onclick="setMPdRange('all')">Todo</button>
+    </div>
+    <div class="m-chart-wrap"><canvas id="mPdChart"></canvas></div>
+  </div>
+
+  <!-- Quick positions summary -->
+  <div class="m-section">
+    <div class="m-section-title">Posiciones <span id="mDashPosCount" style="font-weight:400;color:var(--color-text-faint)"></span></div>
+    <div id="mDashPositions"></div>
+  </div>
+</div>
+
+<!-- ===================== PAGE: POSITIONS ===================== -->
+<div class="m-page" id="page-positions">
+  <div class="m-section">
+    <div class="m-section-title">Posiciones Activas <span id="mPosCount" style="font-weight:400;color:var(--color-text-faint)"></span></div>
+    <div id="mPositionsBody"></div>
+  </div>
+  <div class="m-section" id="mClosedSection" style="display:none">
+    <div class="m-section-title">Posiciones Cerradas</div>
+    <div id="mClosedBody"></div>
+  </div>
+</div>
+
+<!-- ===================== PAGE: PORTFOLIO DETAIL ===================== -->
+<div class="m-page" id="page-portfolio">
+  <div class="m-kpi-grid">
+    <div class="m-kpi"><div class="m-kpi-label">Capital Invertido</div><div class="m-kpi-value" id="mPdInvested">—</div></div>
+    <div class="m-kpi"><div class="m-kpi-label">Valor Actual</div><div class="m-kpi-value" id="mPdValue">—</div></div>
+    <div class="m-kpi"><div class="m-kpi-label">P&L Total</div><div class="m-kpi-value" id="mPdPL">—</div><div class="m-kpi-sub" id="mPdPLPct"></div></div>
+    <div class="m-kpi"><div class="m-kpi-label">XIRR</div><div class="m-kpi-value" id="mPdXirr">—</div></div>
+  </div>
+
+  <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Rentabilidad por Periodos</div>
+  <div class="m-pd-returns" id="mReturnsGrid">
+    <div class="m-pd-ret-card"><div class="m-pd-ret-label">Hoy</div><div class="m-pd-ret-value" id="mRetToday">—</div></div>
+    <div class="m-pd-ret-card"><div class="m-pd-ret-label">Semana</div><div class="m-pd-ret-value" id="mRetWeek">—</div></div>
+    <div class="m-pd-ret-card"><div class="m-pd-ret-label">Mes</div><div class="m-pd-ret-value" id="mRetMonth">—</div></div>
+    <div class="m-pd-ret-card"><div class="m-pd-ret-label">Trimestre</div><div class="m-pd-ret-value" id="mRetQuarter">—</div></div>
+    <div class="m-pd-ret-card"><div class="m-pd-ret-label">YTD</div><div class="m-pd-ret-value" id="mRetYtd">—</div></div>
+    <div class="m-pd-ret-card"><div class="m-pd-ret-label">1 Año</div><div class="m-pd-ret-value" id="mRetYear">—</div></div>
+  </div>
+
+  <!-- Equity Curve -->
+  <div class="m-chart-card">
+    <div class="m-chart-title">📈 Patrimonio</div>
+    <div class="m-range-row">
+      <button class="m-range-btn" data-eq="1m" onclick="setMEqRange('1m')">1M</button>
+      <button class="m-range-btn active" data-eq="3m" onclick="setMEqRange('3m')">3M</button>
+      <button class="m-range-btn" data-eq="6m" onclick="setMEqRange('6m')">6M</button>
+      <button class="m-range-btn" data-eq="1y" onclick="setMEqRange('1y')">1A</button>
+      <button class="m-range-btn" data-eq="all" onclick="setMEqRange('all')">Todo</button>
+    </div>
+    <div class="m-chart-wrap"><canvas id="mEquityChart"></canvas></div>
+  </div>
+
+  <!-- Distribution pie -->
+  <div class="m-chart-card">
+    <div class="m-chart-title">Distribución de Cartera</div>
+    <div class="m-chart-wrap" style="height:280px"><canvas id="mPieChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ===================== PAGE: SIMULATORS ===================== -->
+<div class="m-page" id="page-sim">
+  <div class="m-sim-tabs" id="mSimTabs">
+    <button class="m-sim-tab active" onclick="switchSim('projection')">📊 Proyección</button>
+    <button class="m-sim-tab" onclick="switchSim('compound')">📈 Interés Compuesto</button>
+    <button class="m-sim-tab" onclick="switchSim('mortgage')">🏠 Hipoteca</button>
+    <button class="m-sim-tab" onclick="switchSim('withdrawal')">💸 Retirada</button>
+    <button class="m-sim-tab" onclick="switchSim('montecarlo')">🎲 Monte Carlo</button>
+  </div>
+
+  <!-- Projection -->
+  <div class="m-sim-form" id="sim-projection">
+    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€) — vacío = plan inversión</label><input class="m-form-input" type="number" id="sProjectionMonthly" placeholder="Auto"></div>
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%) — vacío = XIRR real</label><input class="m-form-input" type="number" id="sProjectionRate" placeholder="Auto" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sProjectionYears" value="20"></div>
+    <div class="m-form-group"><label class="m-form-label">Inflación Anual (%)</label><input class="m-form-input" type="number" id="sProjectionInflation" value="2.5" step="0.1"></div>
+    <button class="m-btn m-btn-primary" onclick="runProjection()">Calcular Proyección</button>
+  </div>
+  <div class="m-sim-result" id="simResult-projection">
+    <div class="m-kpi-grid" id="simKpi-projection"></div>
+    <div class="m-chart-card"><div class="m-chart-title">Proyección</div><div class="m-chart-wrap" style="height:280px"><canvas id="simChart-projection"></canvas></div></div>
+  </div>
+
+  <!-- Compound -->
+  <div class="m-sim-form" id="sim-compound" style="display:none">
+    <div class="m-form-group"><label class="m-form-label">Capital Inicial (€)</label><input class="m-form-input" type="number" id="sCompoundInitial" value="0"></div>
+    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€)</label><input class="m-form-input" type="number" id="sCompoundMonthly" value="500"></div>
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%)</label><input class="m-form-input" type="number" id="sCompoundRate" value="7" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sCompoundYears" value="20"></div>
+    <div class="m-form-group"><label class="m-form-label">Comisión Anual TER (%)</label><input class="m-form-input" type="number" id="sCompoundFee" value="0" step="0.01"></div>
+    <button class="m-btn m-btn-primary" onclick="runCompound()">Calcular</button>
+  </div>
+  <div class="m-sim-result" id="simResult-compound">
+    <div class="m-kpi-grid" id="simKpi-compound"></div>
+    <div class="m-chart-card"><div class="m-chart-title">Interés Compuesto</div><div class="m-chart-wrap" style="height:280px"><canvas id="simChart-compound"></canvas></div></div>
+  </div>
+
+  <!-- Mortgage -->
+  <div class="m-sim-form" id="sim-mortgage" style="display:none">
+    <div class="m-form-group"><label class="m-form-label">Capital Pendiente (€)</label><input class="m-form-input" type="number" id="sMortgagePrincipal" value="200000"></div>
+    <div class="m-form-group"><label class="m-form-label">Tipo Interés Anual (%)</label><input class="m-form-input" type="number" id="sMortgageRate" value="3" step="0.01"></div>
+    <div class="m-form-group"><label class="m-form-label">Años Restantes</label><input class="m-form-input" type="number" id="sMortgageYears" value="25"></div>
+    <div class="m-form-group"><label class="m-form-label">Extra Mensual (€)</label><input class="m-form-input" type="number" id="sMortgageExtra" value="200"></div>
+    <button class="m-btn m-btn-primary" onclick="runMortgage()">Simular Hipoteca vs Inversión</button>
+  </div>
+  <div class="m-sim-result" id="simResult-mortgage">
+    <div class="m-kpi-grid" id="simKpi-mortgage"></div>
+    <div class="m-chart-card"><div class="m-chart-title">Hipoteca vs Inversión</div><div class="m-chart-wrap" style="height:280px"><canvas id="simChart-mortgage"></canvas></div></div>
+  </div>
+
+  <!-- Withdrawal -->
+  <div class="m-sim-form" id="sim-withdrawal" style="display:none">
+    <div class="m-form-group"><label class="m-form-label">Tasa de Retirada Anual (%)</label><input class="m-form-input" type="number" id="sWithdrawalRate" value="4" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Retirada Fija Mensual (€) — vacío = usa tasa</label><input class="m-form-input" type="number" id="sWithdrawalFixed" placeholder="Auto"></div>
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Anual (%) — vacío = XIRR</label><input class="m-form-input" type="number" id="sWithdrawalReturn" placeholder="Auto" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Años máximos</label><input class="m-form-input" type="number" id="sWithdrawalYears" value="35"></div>
+    <button class="m-btn m-btn-primary" onclick="runWithdrawal()">Calcular Retirada</button>
+  </div>
+  <div class="m-sim-result" id="simResult-withdrawal">
+    <div class="m-kpi-grid" id="simKpi-withdrawal"></div>
+    <div class="m-chart-card"><div class="m-chart-title">Evolución del Capital</div><div class="m-chart-wrap" style="height:280px"><canvas id="simChart-withdrawal"></canvas></div></div>
+  </div>
+
+  <!-- Monte Carlo -->
+  <div class="m-sim-form" id="sim-montecarlo" style="display:none">
+    <div class="m-form-group"><label class="m-form-label">Rentabilidad Media (%) — vacío = XIRR</label><input class="m-form-input" type="number" id="sMonteMean" placeholder="Auto" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Volatilidad Anual (%)</label><input class="m-form-input" type="number" id="sMonteVol" value="15" step="0.1"></div>
+    <div class="m-form-group"><label class="m-form-label">Aportación Mensual (€) — vacío = plan</label><input class="m-form-input" type="number" id="sMonteMonthly" placeholder="Auto"></div>
+    <div class="m-form-group"><label class="m-form-label">Años</label><input class="m-form-input" type="number" id="sMonteYears" value="20"></div>
+    <div class="m-form-group"><label class="m-form-label">Objetivo (€) — opcional</label><input class="m-form-input" type="number" id="sMonteGoal" placeholder="Opcional"></div>
+    <button class="m-btn m-btn-primary" onclick="runMonteCarlo()">Simular</button>
+  </div>
+  <div class="m-sim-result" id="simResult-montecarlo">
+    <div class="m-kpi-grid" id="simKpi-montecarlo"></div>
+    <div class="m-chart-card"><div class="m-chart-title">Monte Carlo</div><div class="m-chart-wrap" style="height:280px"><canvas id="simChart-montecarlo"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===================== PAGE: DCA HISTORY ===================== -->
+<div class="m-page" id="page-dca">
+  <div class="m-section">
+    <div class="m-section-title">Historial de Operaciones</div>
+    <div id="mDcaBody"></div>
+  </div>
+  <div style="text-align:center;padding:12px">
+    <button class="m-range-btn" id="mDcaMore" onclick="mDcaShowMore()" style="display:none;width:100%;padding:12px;font-size:12px">Ver más operaciones</button>
+  </div>
+</div>
+
+<!-- ===================== POSITION DETAIL OVERLAY ===================== -->
+<div class="m-detail-overlay" id="mDetailOverlay">
+  <div class="m-detail-header">
+    <div>
+      <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px">
+        <span class="m-pos-dot" id="mDetailDot"></span>
+        <span id="mDetailTicker">—</span>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-muted)" id="mDetailName"></div>
+    </div>
+  </div>
+  <div class="m-detail-body" style="padding-bottom:72px">
+    <div class="m-detail-stat-grid" id="mDetailStats"></div>
+    <!-- Position chart -->
+    <div class="m-chart-card">
+      <div class="m-chart-title">Evolución del Precio</div>
+      <div class="m-range-row" id="mDetailRangeRow">
+        <button class="m-range-btn" data-dr="1d" onclick="setMDetailRange('1d')">1D</button>
+        <button class="m-range-btn" data-dr="1w" onclick="setMDetailRange('1w')">1S</button>
+        <button class="m-range-btn" data-dr="1m" onclick="setMDetailRange('1m')">1M</button>
+        <button class="m-range-btn active" data-dr="3m" onclick="setMDetailRange('3m')">3M</button>
+        <button class="m-range-btn" data-dr="6m" onclick="setMDetailRange('6m')">6M</button>
+        <button class="m-range-btn" data-dr="1y" onclick="setMDetailRange('1y')">1A</button>
+        <button class="m-range-btn" data-dr="all" onclick="setMDetailRange('all')">Todo</button>
+      </div>
+      <div class="m-chart-wrap"><canvas id="mDetailChart"></canvas></div>
+    </div>
+    <!-- Limits & notes (read-only) -->
+    <div id="mDetailLimits"></div>
+    <div id="mDetailNotes"></div>
+  </div>
+  <div style="position:fixed;bottom:0;left:0;right:0;z-index:210;padding:10px 16px env(safe-area-inset-bottom,10px);background:var(--color-surface);border-top:1px solid var(--color-divider);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)">
+    <button class="m-btn m-btn-primary" onclick="closeMDetail()" style="gap:6px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+      Volver
+    </button>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<nav class="m-tabbar">
+  <button class="m-tab active" onclick="switchPage('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Inicio
+  </button>
+  <button class="m-tab" onclick="switchPage('positions')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+    Posiciones
+  </button>
+  <button class="m-tab" onclick="switchPage('portfolio')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>
+    Cartera
+  </button>
+  <button class="m-tab" onclick="switchPage('sim')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V9l4 3V20"/><path d="M11 20V5l4 5V20"/><path d="M17 20V3l4 4V20"/></svg>
+    Simular
+  </button>
+  <button class="m-tab" onclick="switchPage('dca')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Historial
+  </button>
+</nav>
+
+<!-- ===================== ALERTS OVERLAY ===================== -->
+<div class="m-alert-overlay" id="mAlertOverlay">
+  <div class="m-detail-header">
+    <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px">
+      🔔 <span>Alertas</span> <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)" id="mAlertCount"></span>
+    </div>
+  </div>
+  <div id="mAlertBody" style="padding-bottom:72px"></div>
+  <div style="position:fixed;bottom:0;left:0;right:0;z-index:210;padding:10px 16px env(safe-area-inset-bottom,10px);background:var(--color-surface);border-top:1px solid var(--color-divider);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)">
+    <button class="m-btn m-btn-primary" onclick="closeMAlerts()" style="gap:6px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+      Volver
+    </button>
+  </div>
+</div>
+
+<div class="m-toast-container" id="mToastContainer"></div>
+
+<script>
+// ===================== CONFIG =====================
+const BASE = location.origin + '/portfoliotracker';
+const COLORS = ['#4f98a3','#e8af34','#6daa45','#5591c7','#fdab43','#a86fdf','#dd6974','#bb653b','#d163a7','#01696f'];
+
+let positions = [], dcaEntries = [], metrics = null, investmentPlan = null;
+let mPdRange = '1d', mEqRange = '3m';
+let mDcaLimit = 20;
+let mPdChart = null, mPieChart = null, mEquityChart = null, mDetailChart = null;
+let simCharts = {};
+let currentDetailTicker = null;
+let currentAlerts = [];
+let seenAlertKeys = new Set(JSON.parse(localStorage.getItem('seenAlertKeys') || '[]'));
+function persistSeenAlerts(){localStorage.setItem('seenAlertKeys',JSON.stringify([...seenAlertKeys]))}
+
+// ===================== THEME =====================
+function toggleTheme() {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', html.dataset.theme);
+}
+(function(){const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t})();
+
+// ===================== FULLSCREEN =====================
+function toggleFullscreen(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    const el=document.documentElement;
+    (el.requestFullscreen||el.webkitRequestFullscreen).call(el);
+  }else{
+    (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+  }
+}
+document.addEventListener('fullscreenchange',updateFsIcon);
+document.addEventListener('webkitfullscreenchange',updateFsIcon);
+function updateFsIcon(){
+  const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  document.getElementById('fsIcon').innerHTML=isFs
+    ?'<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
+    :'<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+}
+
+// ===================== NAV =====================
+function switchPage(id) {
+  document.querySelectorAll('.m-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.m-tab')[['dashboard','positions','portfolio','sim','dca'].indexOf(id)].classList.add('active');
+  if (id==='portfolio') loadPortfolioDetail();
+  if (id==='dca') renderDcaHistory();
+}
+
+// ===================== FORMAT =====================
+function fmtEur(v,d=2){if(v==null)return'—';return v.toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})+' €'}
+function fmtPct(v){if(v==null)return'—';return(v>=0?'+':'')+v.toFixed(2)+'%'}
+function fmtShares(v){return v.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:6})}
+function plClass(v){return v==null?'pl-zero':v>0?'pl-positive':v<0?'pl-negative':'pl-zero'}
+function calcInvested(p){return p.shares*p.avgPrice}
+function calcValue(p){return p.currentPrice?p.shares*p.currentPrice:null}
+function calcPL(p){const v=calcValue(p);return v!==null?v-calcInvested(p):null}
+function calcPLPct(p){const pl=calcPL(p);const inv=calcInvested(p);return pl!==null&&inv>0?(pl/inv)*100:null}
+
+// ===================== TOAST =====================
+function showToast(msg,type='success'){
+  const c=document.getElementById('mToastContainer');
+  const t=document.createElement('div');t.className='m-toast '+(type||'');t.textContent=msg;
+  c.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+
+// ===================== API =====================
+async function loadAll(){
+  try{
+    const [posResp, dcaResp, metricsResp] = await Promise.all([
+      fetch(`${BASE}/api/positions`),
+      fetch(`${BASE}/api/dca`),
+      fetch(`${BASE}/api/metrics`).catch(()=>null)
+    ]);
+    positions = await posResp.json();
+    dcaEntries = await dcaResp.json();
+    if(metricsResp && metricsResp.ok) metrics = await metricsResp.json(); else metrics = null;
+    try{ const r = await fetch(`${BASE}/api/investment-plan`); if(r.ok) investmentPlan = await r.json(); }catch(e){}
+    try{ const r = await fetch(`${BASE}/api/alerts`); if(r.ok) currentAlerts = await r.json(); else currentAlerts=[]; }catch(e){ currentAlerts=[]; }
+    renderAll();
+    renderMAlerts();
+  }catch(e){ showToast('Error conectando con el servidor','error') }
+}
+
+// ===================== RENDER =====================
+function renderAll(){
+  renderKPIs();
+  renderDashPositions();
+  renderPositions();
+  renderDcaHistory();
+  loadMPdChart();
+}
+
+function renderKPIs(){
+  const active = positions.filter(p=>p.shares>0);
+  const ti = active.reduce((s,p)=>s+calcInvested(p),0);
+  const priced = active.filter(p=>p.currentPrice);
+  const tv = priced.length>0?priced.reduce((s,p)=>s+calcValue(p),0):null;
+  const tiPriced = priced.reduce((s,p)=>s+calcInvested(p),0);
+  const pl = tv!==null?tv-tiPriced:null;
+  const plPct = pl!==null&&tiPriced>0?(pl/tiPriced)*100:null;
+
+  document.getElementById('mKpiInvested').textContent = fmtEur(ti);
+  document.getElementById('mKpiPositions').textContent = `${active.length} posiciones`;
+  document.getElementById('mKpiValue').textContent = tv!==null?fmtEur(tv):'—';
+  const plEl = document.getElementById('mKpiPL');
+  plEl.textContent = pl!==null?fmtEur(pl):'—';
+  plEl.className = 'm-kpi-value '+(pl==null?'':pl>=0?'positive':'negative');
+  const plSubEl = document.getElementById('mKpiPLSub');
+  plSubEl.textContent = plPct!==null?fmtPct(plPct):'';
+  plSubEl.style.color = pl==null?'':pl>=0?'var(--color-success)':'var(--color-notification)';
+
+  // Day P&L
+  const posWithClose = active.filter(p=>p.currentPrice&&p.previousClose&&p.previousClose>0);
+  const dayEl=document.getElementById('mKpiPLDay');
+  if(posWithClose.length>0){
+    const vNow=posWithClose.reduce((s,p)=>s+p.shares*p.currentPrice,0);
+    const vClose=posWithClose.reduce((s,p)=>s+p.shares*p.previousClose,0);
+    const dPL=vNow-vClose;const dPct=vClose>0?(dPL/vClose)*100:0;
+    const c=dPL>=0?'var(--color-success)':'var(--color-notification)';
+    dayEl.innerHTML=`<span style="color:${c}">${fmtEur(dPL)}</span> <span style="color:${c};font-size:13px">(${fmtPct(dPct)})</span>`;
+  }else{dayEl.textContent='—'}
+
+  // DCA mensual
+  const now=new Date();const curMonth=now.getFullYear()*100+(now.getMonth()+1);
+  let dcaMonth=0;
+  dcaEntries.forEach(e=>{if(e.type!=='SELL'){const d=new Date(e.date+'T12:00:00');const m=d.getFullYear()*100+(d.getMonth()+1);if(m===curMonth)dcaMonth+=e.shares*e.price}});
+  document.getElementById('mKpiDca').textContent=fmtEur(dcaMonth);
+  const mName=now.toLocaleString('es-ES',{month:'long'});
+  document.getElementById('mKpiDcaSub').textContent=mName.charAt(0).toUpperCase()+mName.slice(1);
+
+  // XIRR
+  const xirr=metrics&&metrics.portfolioXirr;
+  const xirrEl=document.getElementById('mKpiXirr');
+  xirrEl.textContent=xirr!=null?fmtPct(xirr*100)+' anual':'—';
+  xirrEl.className='m-kpi-value '+(xirr==null?'':xirr>=0?'positive':'negative');
+}
+
+// ===================== DASHBOARD POSITIONS (table matching desktop) =====================
+function fmtVol(v){return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}
+function volBadge(volume,avgVolume){
+  if(volume==null||avgVolume==null||avgVolume===0) return '<span class="m-dash-vol vol-none" title="Sin datos">—</span>';
+  const ratio=volume/avgVolume;
+  let cls,icon;
+  if(ratio>=1.5){cls='vol-high';icon='🔥'}
+  else if(ratio<=0.5){cls='vol-low';icon='🧊'}
+  else{cls='vol-flat';icon='📊'}
+  return `<span class="m-dash-vol ${cls}" title="Vol: ${fmtVol(volume)} / Avg: ${fmtVol(avgVolume)}">${icon} ${ratio.toFixed(1)}x</span>`;
+}
+
+function renderDashPositions(){
+  const active=positions.filter(p=>p.shares>0);
+  document.getElementById('mDashPosCount').textContent=`(${active.length})`;
+  const body=document.getElementById('mDashPositions');
+  if(active.length===0){body.innerHTML='<div class="m-empty">No hay posiciones</div>';return}
+
+  let html='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="m-dash-table"><thead><tr>';
+  html+='<th>Ticker</th><th>Día</th><th>Vol</th><th>P&L</th><th>TIR</th>';
+  html+='</tr></thead><tbody>';
+
+  active.forEach(pos=>{
+    const pl=calcPL(pos);const plPct=calcPLPct(pos);
+    const posXirr=metrics&&metrics.positionXirr?metrics.positionXirr[pos.ticker]:null;
+    const dayChange=(pos.currentPrice&&pos.previousClose&&pos.previousClose>0)?((pos.currentPrice-pos.previousClose)/pos.previousClose)*100:null;
+    const color=pos.color||COLORS[0];
+
+    html+=`<tr onclick="switchPage('positions');setTimeout(()=>openMDetail('${pos.ticker}'),100)" style="cursor:pointer">`;
+    html+=`<td><div class="m-dash-ticker"><span class="m-pos-dot" style="background:${color}"></span><div><div>${pos.ticker}</div><div class="m-dash-name">${pos.name||''}</div></div></div></td>`;
+    html+=`<td class="${plClass(dayChange)}">${dayChange!==null?fmtPct(dayChange):'<span style="color:var(--color-text-faint)">—</span>'}</td>`;
+    html+=`<td>${volBadge(pos.volume,pos.avgVolume)}</td>`;
+    html+=`<td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:9px;opacity:.8">${fmtPct(plPct)}</span></td>`;
+    html+=`<td class="${plClass(posXirr)}">${posXirr!=null?fmtPct(posXirr*100):'—'}</td>`;
+    html+=`</tr>`;
+  });
+
+  // Total row
+  if(active.length>0){
+    const tiPriced=active.filter(p=>p.currentPrice).reduce((s,p)=>s+calcInvested(p),0);
+    const tvActive=active.filter(p=>p.currentPrice).length>0?active.filter(p=>p.currentPrice).reduce((s,p)=>s+calcValue(p),0):null;
+    const tPL=tvActive!==null?tvActive-tiPriced:null;
+    const tPLPct=tPL!==null&&tiPriced>0?(tPL/tiPriced)*100:null;
+    const totalXirr=metrics?metrics.portfolioXirr:null;
+    html+=`<tr class="m-dash-total"><td style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted)">TOTAL</td>`;
+    html+=`<td></td><td></td>`;
+    html+=`<td class="${plClass(tPL)}">${fmtEur(tPL)}<br><span style="font-size:9px;opacity:.8">${fmtPct(tPLPct)}</span></td>`;
+    html+=`<td class="${plClass(totalXirr)}">${totalXirr!=null?fmtPct(totalXirr*100):'—'}</td>`;
+    html+=`</tr>`;
+  }
+
+  html+='</tbody></table></div>';
+  body.innerHTML=html;
+}
+
+// ===================== POSITIONS =====================
+function renderPositions(){
+  const active=positions.filter(p=>p.shares>0);
+  const closed=positions.filter(p=>p.shares<=0);
+  document.getElementById('mPosCount').textContent=`(${active.length})`;
+  const totalVal=active.filter(p=>p.currentPrice).reduce((s,p)=>s+calcValue(p),0);
+
+  const body=document.getElementById('mPositionsBody');
+  if(active.length===0){body.innerHTML='<div class="m-empty">No hay posiciones activas</div>';return}
+  body.innerHTML=active.map((p,i)=>{
+    const val=calcValue(p);const pl=calcPL(p);const pct=calcPLPct(p);const inv=calcInvested(p);
+    const color=p.color||COLORS[i%COLORS.length];
+    const posXirr=metrics&&metrics.positionXirr?metrics.positionXirr[p.ticker]:null;
+
+    // Week change badge
+    let weekBadge='';
+    if(p.currentPrice&&p.weekClose&&p.weekClose>0){
+      const wPL=(p.currentPrice-p.weekClose)*p.shares;
+      const wPct=((p.currentPrice-p.weekClose)/p.weekClose)*100;
+      const wc=plClass(wPL);
+      weekBadge=`<span class="m-pos-var-badge"><span class="var-label">Sem.</span><span class="${wc}">${fmtEur(wPL)} (${fmtPct(wPct)})</span></span>`;
+    }
+
+    return `<div class="m-pos-card" onclick="openMDetail('${p.ticker}')">
+      <div class="m-pos-top">
+        <div class="m-pos-dot" style="background:${color}"></div>
+        <div class="m-pos-info"><div class="m-pos-ticker">${p.ticker}</div><div class="m-pos-name">${p.name||''}</div></div>
+        <div class="m-pos-pl-main">
+          ${(()=>{
+            if(p.currentPrice&&p.previousClose&&p.previousClose>0){
+              const dPL=(p.currentPrice-p.previousClose)*p.shares;
+              const dPct=((p.currentPrice-p.previousClose)/p.previousClose)*100;
+              return '<div class="m-pos-pl-value '+plClass(dPL)+'">'+fmtEur(dPL)+'</div><div class="m-pos-pl-pct '+plClass(dPL)+'">Hoy '+fmtPct(dPct)+'</div>';
+            }
+            return '<div class="m-pos-pl-value pl-zero">—</div>';
+          })()}
+        </div>
+      </div>
+      <div class="m-pos-metrics">
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Capital Invertido</div><div class="m-pos-metric-value">${fmtEur(inv,0)}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Valor de Mercado</div><div class="m-pos-metric-value">${val!==null?fmtEur(val,0):'—'}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Precio Actual</div><div class="m-pos-metric-value">${p.currentPrice?fmtEur(p.currentPrice,2):'—'}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Precio Medio Compra</div><div class="m-pos-metric-value">${fmtEur(p.avgPrice,2)}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Nº Participaciones</div><div class="m-pos-metric-value">${fmtShares(p.shares)}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Peso en Cartera</div><div class="m-pos-metric-value">${totalVal>0?((val||0)/totalVal*100).toFixed(1)+'%':'—'}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">TIR (XIRR)</div><div class="m-pos-metric-value ${plClass(posXirr)}">${posXirr!=null?fmtPct(posXirr*100):'—'}</div></div>
+        <div class="m-pos-metric"><div class="m-pos-metric-label">Ganancia / Pérdida</div><div class="m-pos-metric-value ${plClass(pl)}">${pl!==null?fmtEur(pl):'—'} ${pct!==null?'('+fmtPct(pct)+')':''}</div></div>
+      </div>
+      ${weekBadge?`<div class="m-pos-var-row">${weekBadge}</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Closed
+  const closedSection=document.getElementById('mClosedSection');
+  if(closed.length>0){
+    closedSection.style.display='';
+    let totalClosedRealized=0, totalClosedInvested=0, totalClosedRecovered=0;
+
+    const closedHtml=closed.map((p,i)=>{
+      const color=p.color||COLORS[(active.length+i)%COLORS.length];
+      const posXirr=metrics&&metrics.positionXirr?metrics.positionXirr[p.ticker]:null;
+      const realizedPL=metrics&&metrics.positionRealizedPL?(metrics.positionRealizedPL[p.ticker]||0):0;
+      totalClosedRealized+=realizedPL;
+
+      const tickerDca=dcaEntries.filter(e=>e.ticker===p.ticker);
+      const buyEntries=tickerDca.filter(e=>e.type!=='SELL');
+      const sellEntries=tickerDca.filter(e=>e.type==='SELL');
+      const totalBought=buyEntries.reduce((s,e)=>s+e.shares*e.price,0);
+      const totalSold=sellEntries.reduce((s,e)=>s+e.shares*e.price,0);
+      const avgSellPrice=sellEntries.length>0?sellEntries.reduce((s,e)=>s+e.shares*e.price,0)/sellEntries.reduce((s,e)=>s+e.shares,0):0;
+      totalClosedInvested+=totalBought;
+      totalClosedRecovered+=totalSold;
+
+      const sortedDca=[...tickerDca].sort((a,b)=>a.date.localeCompare(b.date));
+      const firstDate=sortedDca.length>0?new Date(sortedDca[0].date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'2-digit'}):'—';
+      const lastDate=sortedDca.length>0?new Date(sortedDca[sortedDca.length-1].date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'2-digit'}):'—';
+      const plPct=totalBought>0?(realizedPL/totalBought)*100:null;
+
+      return `<div class="m-pos-card" style="cursor:default">
+        <div class="m-pos-top">
+          <div class="m-pos-dot" style="background:${color};opacity:.5"></div>
+          <div class="m-pos-info"><div class="m-pos-ticker" style="opacity:.7">${p.ticker}</div><div class="m-pos-name">${p.name||''}</div></div>
+          <div class="m-pos-pl-main">
+            <div class="m-pos-pl-value ${plClass(realizedPL)}">${fmtEur(realizedPL)} ${realizedPL>=0?'✅':'❌'}</div>
+            <div class="m-pos-pl-pct ${plClass(realizedPL)}">${plPct!=null?fmtPct(plPct):''}</div>
+          </div>
+        </div>
+        <div class="m-pos-metrics">
+          <div class="m-pos-metric"><div class="m-pos-metric-label">Precio Medio Compra</div><div class="m-pos-metric-value">${fmtEur(p.avgPrice,4)}</div></div>
+          <div class="m-pos-metric"><div class="m-pos-metric-label">Precio Medio Venta</div><div class="m-pos-metric-value">${avgSellPrice>0?fmtEur(avgSellPrice,4):'—'}</div></div>
+          <div class="m-pos-metric"><div class="m-pos-metric-label">Total Invertido</div><div class="m-pos-metric-value">${fmtEur(totalBought)}</div></div>
+          <div class="m-pos-metric"><div class="m-pos-metric-label">Total Recuperado</div><div class="m-pos-metric-value">${fmtEur(totalSold)}</div></div>
+          <div class="m-pos-metric"><div class="m-pos-metric-label">Operaciones</div><div class="m-pos-metric-value"><span style="color:var(--color-success)">▲ ${buyEntries.length}</span> <span style="color:var(--color-notification)">▼ ${sellEntries.length}</span></div></div>
+          <div class="m-pos-metric"><div class="m-pos-metric-label">TIR (XIRR)</div><div class="m-pos-metric-value ${plClass(posXirr)}">${posXirr!=null?fmtPct(posXirr*100):'—'}</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-faint);padding-top:4px">${firstDate} → ${lastDate}</div>
+      </div>`;
+    }).join('');
+
+    // Total row
+    const totalPct=totalClosedInvested>0?(totalClosedRealized/totalClosedInvested)*100:null;
+    const totalHtml=`<div style="padding:12px 16px;background:var(--color-surface-offset);display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700">
+      <span style="text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);font-size:10px">Total Cerradas</span>
+      <span>Invertido: ${fmtEur(totalClosedInvested)}</span>
+      <span>Recuperado: ${fmtEur(totalClosedRecovered)}</span>
+      <span class="${plClass(totalClosedRealized)}">${fmtEur(totalClosedRealized)} ${totalPct!=null?'('+fmtPct(totalPct)+')':''}</span>
+    </div>`;
+
+    document.getElementById('mClosedBody').innerHTML=closedHtml+totalHtml;
+  }else{closedSection.style.display='none'}
+}
+
+// ===================== DCA HISTORY =====================
+function renderDcaHistory(){
+  const body=document.getElementById('mDcaBody');
+  if(dcaEntries.length===0){body.innerHTML='<div class="m-empty">Sin operaciones registradas</div>';return}
+  const sorted=[...dcaEntries].sort((a,b)=>b.date.localeCompare(a.date));
+  const show=sorted.slice(0,mDcaLimit);
+  body.innerHTML=show.map(e=>{
+    const isSell=e.type==='SELL';const cost=e.shares*e.price;
+    return `<div class="m-dca-item">
+      <span class="m-dca-type ${isSell?'sell':'buy'}">${isSell?'Venta':'Compra'}</span>
+      <div class="m-dca-info"><div class="m-dca-ticker">${e.ticker}</div><div class="m-dca-date">${new Date(e.date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+      <div class="m-dca-right"><div class="m-dca-amount">${fmtEur(cost)}</div><div class="m-dca-detail">${fmtShares(e.shares)} × ${fmtEur(e.price,4)}</div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('mDcaMore').style.display=sorted.length>mDcaLimit?'block':'none';
+}
+function mDcaShowMore(){mDcaLimit+=20;renderDcaHistory()}
+
+// ===================== CHARTS =====================
+function chartColors(){
+  const s=getComputedStyle(document.documentElement);
+  return{text:s.getPropertyValue('--color-text-muted').trim(),grid:s.getPropertyValue('--color-divider').trim(),primary:s.getPropertyValue('--color-primary').trim(),success:s.getPropertyValue('--color-success').trim(),notification:s.getPropertyValue('--color-notification').trim()}
+}
+function chartDefaults(){
+  const c=chartColors();
+  return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},scales:{x:{ticks:{color:c.text,font:{size:11},maxTicksLimit:6},grid:{color:c.grid+'33'}},y:{ticks:{color:c.text,font:{size:11}},grid:{color:c.grid+'33'}}}}
+}
+
+function getTimeConfig(range){
+  switch(range){
+    case '1d': return{unit:'minute',stepSize:30,fmt:'HH:mm',ttFmt:'dd MMM HH:mm',ticks:24};
+    case '1w': return{unit:'day',fmt:'EEE dd',ttFmt:'EEE dd MMM HH:mm',ticks:7};
+    case '1m': return{unit:'day',fmt:'dd MMM',ttFmt:'dd MMM yyyy',ticks:10};
+    case '3m': return{unit:'week',fmt:'dd MMM',ttFmt:'dd MMM yyyy',ticks:12};
+    case '6m': return{unit:'month',fmt:'MMM yy',ttFmt:'dd MMM yyyy',ticks:6};
+    case '1y': return{unit:'month',fmt:'MMM yy',ttFmt:'dd MMM yyyy',ticks:12};
+    case 'ytd':return{unit:'month',fmt:'MMM',ttFmt:'dd MMM yyyy',ticks:12};
+    case 'all':return{unit:false,fmt:'dd MMM yy',ttFmt:'dd MMM yyyy',ticks:15};
+    default:   return{unit:'day',fmt:'dd MMM',ttFmt:'dd MMM yyyy',ticks:10};
+  }
+}
+function getXBounds(range){
+  const now=new Date();let min;
+  switch(range){
+    case '1d': min=new Date(now);min.setHours(0,0,0,0);return{min,max:new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59)};
+    case '1w': min=new Date(now);min.setDate(min.getDate()-7);min.setHours(0,0,0,0);return{min,max:now};
+    case '1m': min=new Date(now);min.setDate(min.getDate()-30);min.setHours(0,0,0,0);return{min,max:now};
+    case '3m': min=new Date(now);min.setMonth(min.getMonth()-3);min.setHours(0,0,0,0);return{min,max:now};
+    case '6m': min=new Date(now);min.setMonth(min.getMonth()-6);min.setHours(0,0,0,0);return{min,max:now};
+    case '1y': min=new Date(now);min.setFullYear(min.getFullYear()-1);min.setHours(0,0,0,0);return{min,max:now};
+    case 'ytd':min=new Date(now.getFullYear(),0,1);return{min,max:now};
+    case 'all':return{min:undefined,max:undefined};
+    default: min=new Date(now);min.setDate(min.getDate()-30);min.setHours(0,0,0,0);return{min,max:now};
+  }
+}
+// Y-axis bounds with 10% margin and minimum ±2% of avg (same as desktop)
+function calcYBounds(datasets){
+  let allY=[];
+  datasets.forEach(ds=>ds.data.forEach(p=>{if(p.y!=null)allY.push(p.y)}));
+  if(allY.length===0)return{};
+  const minY=Math.min(...allY),maxY=Math.max(...allY);
+  const range=maxY-minY||1;
+  const avg=(minY+maxY)/2;
+  const minMargin=avg*0.02;
+  const margin=Math.max(range*0.1,minMargin);
+  return{min:Math.max(0,minY-margin),max:maxY+margin};
+}
+
+async function loadMPdChart(){
+  try{
+    const r=await fetch(`${BASE}/api/prices/history?range=${mPdRange}`);
+    if(!r.ok)return;const data=await r.json();
+    if(!data||data.length===0)return;
+
+    const tsMap=new Map();
+    data.forEach(e=>{
+      if(!tsMap.has(e.timestamp))tsMap.set(e.timestamp,{});
+      tsMap.get(e.timestamp)[e.ticker]=e.priceEur;
+    });
+    const timestamps=[...tsMap.keys()].sort();
+    const tickers=[...new Set(data.map(d=>d.ticker))];
+
+    const lastKnown={};
+    timestamps.forEach(ts=>{
+      const prices=tsMap.get(ts);
+      tickers.forEach(t=>{
+        if(prices[t]!=null){lastKnown[t]=prices[t]}
+        else if(lastKnown[t]!=null){prices[t]=lastKnown[t]}
+      });
+    });
+
+    let totalPoints=timestamps.map(ts=>{
+      const prices=tsMap.get(ts);let sum=0;let hasAny=false;
+      tickers.forEach(t=>{
+        const pos=positions.find(p=>p.ticker===t);
+        const shares=pos?pos.shares:1;
+        if(prices[t]!=null){sum+=prices[t]*shares;hasAny=true}
+      });
+      return{x:new Date(ts),y:hasAny?sum:null};
+    });
+
+    // Pad from range start
+    if(mPdRange!=='all'&&totalPoints.length>0){
+      const bounds=getXBounds(mPdRange);
+      if(totalPoints[0].x>bounds.min){totalPoints.unshift({x:bounds.min,y:totalPoints[0].y})}
+    }
+
+    // Dataset — same styling as desktop: borderColor=text, fill with border+'30'
+    const c=chartColors();
+    const datasets=[{
+      label:'Cartera Total',data:totalPoints,borderColor:c.text,backgroundColor:c.grid+'30',
+      borderWidth:2.5,pointRadius:totalPoints.length>50?0:3,pointHoverRadius:5,tension:0,fill:true,spanGaps:true
+    }];
+
+    const yBounds=calcYBounds(datasets);
+    const xBounds=getXBounds(mPdRange);
+    const tc=getTimeConfig(mPdRange);
+
+    if(mPdChart)mPdChart.destroy();
+    const timeOpts=tc.unit?{unit:tc.unit,stepSize:tc.stepSize||1,displayFormats:{minute:tc.fmt,hour:tc.fmt,day:tc.fmt,week:tc.fmt,month:tc.fmt},tooltipFormat:tc.ttFmt}:{tooltipFormat:tc.ttFmt};
+
+    mPdChart=new Chart(document.getElementById('mPdChart'),{
+      type:'line',
+      data:{datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        scales:{
+          x:{type:'time',min:xBounds.min,max:xBounds.max,time:timeOpts,ticks:{color:c.text,font:{size:11},maxTicksLimit:tc.ticks,maxRotation:0,autoSkip:true,autoSkipPadding:12,source:'auto'},grid:{color:c.grid+'40'}},
+          y:{min:yBounds.min,max:yBounds.max,ticks:{color:c.text,font:{size:11},callback:v=>v.toLocaleString('es-ES',{maximumFractionDigits:0})+' €'},grid:{color:c.grid+'40'}}
+        },
+        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:item=>' '+item.dataset.label+': '+fmtEur(item.raw.y)}}}
+      }
+    });
+  }catch(e){console.error('loadMPdChart',e)}
+}
+
+function setMPdRange(r){
+  mPdRange=r;
+  document.querySelectorAll('#mPdRangeRow .m-range-btn').forEach(b=>b.classList.toggle('active',b.dataset.r===r));
+  loadMPdChart();
+}
+
+function renderPieChart(){
+  const active=positions.filter(p=>p.shares>0&&p.currentPrice);
+  if(active.length===0)return;
+  const labels=active.map(p=>p.ticker);
+  const values=active.map(p=>calcValue(p));
+  const colors=active.map((p,i)=>p.color||COLORS[i%COLORS.length]);
+  if(mPieChart)mPieChart.destroy();
+  mPieChart=new Chart(document.getElementById('mPieChart'),{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:chartColors().text,font:{size:10},boxWidth:10,padding:8}}}}});
+}
+
+// ===================== PORTFOLIO DETAIL =====================
+async function loadPortfolioDetail(){
+  const active=positions.filter(p=>p.shares>0);
+  const ti=active.reduce((s,p)=>s+calcInvested(p),0);
+  const priced=active.filter(p=>p.currentPrice);
+  const tv=priced.length>0?priced.reduce((s,p)=>s+calcValue(p),0):null;
+  const tiP=priced.reduce((s,p)=>s+calcInvested(p),0);
+  const pl=tv!==null?tv-tiP:null;const plPct=pl!==null&&tiP>0?(pl/tiP)*100:null;
+  const xirr=metrics&&metrics.portfolioXirr;
+
+  document.getElementById('mPdInvested').textContent=fmtEur(ti);
+  document.getElementById('mPdValue').textContent=tv!==null?fmtEur(tv):'—';
+  const plEl=document.getElementById('mPdPL');plEl.textContent=pl!==null?fmtEur(pl):'—';plEl.className='m-kpi-value '+(pl==null?'':pl>=0?'positive':'negative');
+  document.getElementById('mPdPLPct').textContent=plPct!==null?fmtPct(plPct):'';
+  document.getElementById('mPdXirr').textContent=xirr!=null?fmtPct(xirr*100):'—';
+
+  // Period returns
+  try{
+    const r=await fetch(`${BASE}/api/metrics/returns`);
+    if(r.ok){
+      const data=await r.json();
+      const p=data.periods||{};
+      const mapping=[['today','mRetToday'],['week','mRetWeek'],['month','mRetMonth'],['quarter','mRetQuarter'],['ytd','mRetYtd'],['year','mRetYear']];
+      mapping.forEach(([key,id])=>{
+        const entry=p[key];const el=document.getElementById(id);
+        if(entry&&entry.returnPct!=null){el.textContent=fmtPct(entry.returnPct);el.className='m-pd-ret-value '+(entry.returnPct>=0?'pl-positive':'pl-negative')}
+        else{el.textContent='—';el.className='m-pd-ret-value'}
+      });
+    }
+  }catch(e){}
+
+  // Equity chart + pie
+  loadMEquityChart();
+  renderPieChart();
+}
+
+async function loadMEquityChart(){
+  try{
+    const r=await fetch(`${BASE}/api/snapshots?range=${mEqRange}`);if(!r.ok)return;const data=await r.json();
+    if(data.length===0)return;
+    const c=chartColors();
+    if(mEquityChart)mEquityChart.destroy();
+    mEquityChart=new Chart(document.getElementById('mEquityChart'),{type:'line',data:{labels:data.map(d=>d.date),datasets:[
+      {label:'Valor',data:data.map(d=>d.totalValue),borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+      {label:'Invertido',data:data.map(d=>d.totalInvested),borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1,fill:false}
+    ]},options:chartDefaults()});
+  }catch(e){}
+}
+
+function setMEqRange(r){
+  mEqRange=r;
+  document.querySelectorAll('[data-eq]').forEach(b=>b.classList.toggle('active',b.dataset.eq===r));
+  loadMEquityChart();
+}
+
+// ===================== POSITION DETAIL =====================
+async function openMDetail(ticker){
+  currentDetailTicker=ticker;
+  const p=positions.find(x=>x.ticker===ticker);if(!p||p.shares<=0)return;
+  const color=p.color||COLORS[0];
+  document.getElementById('mDetailDot').style.background=color;
+  document.getElementById('mDetailTicker').textContent=p.ticker;
+  document.getElementById('mDetailName').textContent=p.name||'';
+
+  // Stats
+  const val=calcValue(p);const pl=calcPL(p);const pct=calcPLPct(p);const inv=calcInvested(p);
+  let statsHtml=`
+    <div class="m-detail-stat"><div class="m-detail-stat-label">Acciones</div><div class="m-detail-stat-value">${fmtShares(p.shares)}</div></div>
+    <div class="m-detail-stat"><div class="m-detail-stat-label">P. Medio</div><div class="m-detail-stat-value">${fmtEur(p.avgPrice,4)}</div></div>
+    <div class="m-detail-stat"><div class="m-detail-stat-label">P. Actual</div><div class="m-detail-stat-value">${p.currentPrice?fmtEur(p.currentPrice,4):'—'}</div></div>
+    <div class="m-detail-stat"><div class="m-detail-stat-label">Invertido</div><div class="m-detail-stat-value">${fmtEur(inv)}</div></div>
+    <div class="m-detail-stat"><div class="m-detail-stat-label">Valor</div><div class="m-detail-stat-value">${val!==null?fmtEur(val):'—'}</div></div>
+    <div class="m-detail-stat"><div class="m-detail-stat-label">P&L</div><div class="m-detail-stat-value ${plClass(pl)}">${pl!==null?fmtEur(pl):'—'} ${pct!==null?'('+fmtPct(pct)+')':''}</div></div>`;
+
+  // Day change
+  if(p.currentPrice&&p.previousClose){
+    const dayPL=(p.currentPrice-p.previousClose)*p.shares;const dayPct=p.previousClose>0?((p.currentPrice-p.previousClose)/p.previousClose)*100:0;
+    statsHtml+=`<div class="m-detail-stat" style="grid-column:1/-1"><div class="m-detail-stat-label">Variación Hoy</div><div class="m-detail-stat-value ${plClass(dayPL)}">${fmtEur(dayPL)} (${fmtPct(dayPct)})</div></div>`;
+  }
+  document.getElementById('mDetailStats').innerHTML=statsHtml;
+
+  // Load detail info (limits, notes)
+  try{
+    const r=await fetch(`${BASE}/api/positions/${encodeURIComponent(ticker)}/detail`);
+    if(r.ok){
+      const d=await r.json();
+      let limitsHtml='';
+      if(d.stopLoss||d.takeProfit||d.trailingStopPct||d.dcaTargetPrice){
+        limitsHtml='<div class="m-section" style="margin-top:16px"><div class="m-section-title">Límites</div><div style="padding:12px 16px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+        if(d.stopLoss) limitsHtml+=`<div><span style="color:var(--color-text-muted)">Stop-Loss:</span> ${fmtEur(d.stopLoss,4)}</div>`;
+        if(d.takeProfit) limitsHtml+=`<div><span style="color:var(--color-text-muted)">Take-Profit:</span> ${fmtEur(d.takeProfit,4)}</div>`;
+        if(d.trailingStopPct) limitsHtml+=`<div><span style="color:var(--color-text-muted)">Trailing Stop:</span> ${d.trailingStopPct}%</div>`;
+        if(d.dcaTargetPrice) limitsHtml+=`<div><span style="color:var(--color-text-muted)">DCA Target:</span> ${fmtEur(d.dcaTargetPrice,4)}</div>`;
+        limitsHtml+='</div></div>';
+      }
+      document.getElementById('mDetailLimits').innerHTML=limitsHtml;
+
+      let notesHtml='';
+      if(d.notes||d.strategy){
+        notesHtml='<div class="m-section" style="margin-top:16px">';
+        if(d.strategy) notesHtml+=`<div class="m-section-title">Estrategia</div><div style="padding:12px 16px;font-size:12px;color:var(--color-text-muted);line-height:1.6">${escHtml(d.strategy)}</div>`;
+        if(d.notes) notesHtml+=`<div class="m-section-title">Notas</div><div style="padding:12px 16px;font-size:12px;color:var(--color-text-muted);line-height:1.6;white-space:pre-line">${escHtml(d.notes)}</div>`;
+        notesHtml+='</div>';
+      }
+      document.getElementById('mDetailNotes').innerHTML=notesHtml;
+    }
+  }catch(e){}
+
+  document.getElementById('mDetailOverlay').classList.add('open');
+  history.pushState({detail:ticker},'','#detail-'+encodeURIComponent(ticker));
+  loadMDetailChart('3m');
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function closeMDetail(){
+  document.getElementById('mDetailOverlay').classList.remove('open');
+  currentDetailTicker=null;
+  // If we pushed a state for the detail, go back to clean the hash
+  if(location.hash.startsWith('#detail-')) history.back();
+}
+
+// Handle browser back button to close detail overlay instead of leaving the page
+window.addEventListener('popstate',function(e){
+  if(document.getElementById('mDetailOverlay').classList.contains('open')){
+    document.getElementById('mDetailOverlay').classList.remove('open');
+    currentDetailTicker=null;
+  }
+  if(document.getElementById('mAlertOverlay').classList.contains('open')){
+    document.getElementById('mAlertOverlay').classList.remove('open');
+  }
+});
+
+async function loadMDetailChart(range){
+  if(!currentDetailTicker)return;
+  const p=positions.find(x=>x.ticker===currentDetailTicker);
+  const color=p?p.color||COLORS[0]:'#4f98a3';
+  try{
+    const r=await fetch(`${BASE}/api/prices/history/${encodeURIComponent(currentDetailTicker)}?range=${range}`);
+    if(!r.ok)return;const data=await r.json();if(!data||data.length===0)return;
+
+    const sorted=[...data].sort((a,b)=>a.timestamp.localeCompare(b.timestamp));
+    const points=sorted.map(d=>({x:new Date(d.timestamp),y:d.priceEur}));
+
+    const datasets=[{
+      label:currentDetailTicker+' (€)',data:points,borderColor:color,backgroundColor:color+'18',
+      borderWidth:2.5,pointRadius:points.length>50?0:3,pointHoverRadius:5,
+      tension:0,fill:true,spanGaps:true
+    }];
+
+    const yBounds=calcYBounds(datasets);
+    const xBounds=getXBounds(range);
+    const tc=getTimeConfig(range);
+    const c=chartColors();
+
+    if(mDetailChart)mDetailChart.destroy();
+    const timeOpts=tc.unit?{unit:tc.unit,stepSize:tc.stepSize||1,displayFormats:{minute:tc.fmt,hour:tc.fmt,day:tc.fmt,week:tc.fmt,month:tc.fmt},tooltipFormat:tc.ttFmt}:{tooltipFormat:tc.ttFmt};
+
+    mDetailChart=new Chart(document.getElementById('mDetailChart'),{
+      type:'line',
+      data:{datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        scales:{
+          x:{type:'time',min:xBounds.min,max:xBounds.max,time:timeOpts,ticks:{color:c.text,font:{size:11},maxTicksLimit:tc.ticks,maxRotation:0,autoSkip:true,autoSkipPadding:12,source:'auto'},grid:{color:c.grid+'40'}},
+          y:{min:yBounds.min,max:yBounds.max,ticks:{color:c.text,font:{size:11},callback:v=>v.toLocaleString('es-ES',{maximumFractionDigits:2})+' €'},grid:{color:c.grid+'40'}}
+        },
+        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:item=>' '+item.dataset.label+': '+fmtEur(item.raw.y)}}}
+      }
+    });
+  }catch(e){console.error('loadMDetailChart',e)}
+}
+
+function setMDetailRange(r){
+  document.querySelectorAll('#mDetailRangeRow .m-range-btn').forEach(b=>b.classList.toggle('active',b.dataset.dr===r));
+  loadMDetailChart(r);
+}
+
+// ===================== SIMULATORS =====================
+function switchSim(id){
+  ['projection','compound','mortgage','withdrawal','montecarlo'].forEach(s=>{
+    document.getElementById('sim-'+s).style.display=s===id?'':'none';
+    const res=document.getElementById('simResult-'+s);if(res)res.classList.remove('visible');
+  });
+  document.querySelectorAll('.m-sim-tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function simKpiHtml(items){return items.map(([label,value,cls])=>`<div class="m-kpi"><div class="m-kpi-label">${label}</div><div class="m-kpi-value ${cls||''}">${value}</div></div>`).join('')}
+function fmtK(v){if(v==null)return'—';return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v.toFixed(0)}
+
+// --- PROJECTION ---
+async function runProjection(){
+  const body={years:+document.getElementById('sProjectionYears').value||20,inflationPct:+document.getElementById('sProjectionInflation').value||2.5,showScenarios:true};
+  const monthly=document.getElementById('sProjectionMonthly').value;
+  const ret=document.getElementById('sProjectionRate').value;
+  if(monthly)body.monthlyContribution=parseFloat(monthly);
+  if(ret)body.expectedReturnPct=parseFloat(ret);
+  try{
+    const r=await fetch(`${BASE}/api/simulator/projection`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error();const d=await r.json();
+    const s=d.summary;
+    document.getElementById('simKpi-projection').innerHTML=simKpiHtml([
+      ['Valor Final ('+d.years+'a)',fmtK(s.finalValueBase)+' €','positive'],
+      ['Total Aportado',fmtK(s.totalContributed)+' €'],
+      ['Ganancias',fmtK(s.totalGainsBase)+' €','positive'],
+      ['Renta Pasiva 4%',fmtEur(s.monthlyPassiveIncome4Pct)+'/mes']
+    ]);
+    const c=chartColors();
+    if(simCharts.projection)simCharts.projection.destroy();
+    if(d.baseProjection){
+      const datasets=[
+        {label:'Capital',data:d.baseProjection.map(y=>y.portfolioValue),borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Aportado',data:d.baseProjection.map(y=>y.totalContributed),borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1}
+      ];
+      if(d.pessimisticProjection)datasets.push({label:'Pesimista',data:d.pessimisticProjection.map(y=>y.portfolioValue),borderColor:c.notification+'88',borderDash:[3,3],pointRadius:0,borderWidth:1});
+      if(d.optimisticProjection)datasets.push({label:'Optimista',data:d.optimisticProjection.map(y=>y.portfolioValue),borderColor:c.success+'88',borderDash:[3,3],pointRadius:0,borderWidth:1});
+      simCharts.projection=new Chart(document.getElementById('simChart-projection'),{type:'line',data:{labels:d.baseProjection.map(y=>'Año '+y.year),datasets},options:chartDefaults()});
+    }
+    document.getElementById('simResult-projection').classList.add('visible');
+  }catch(e){showToast('Error en simulación','error')}
+}
+
+// --- COMPOUND ---
+async function runCompound(){
+  const body={
+    initialCapital:+document.getElementById('sCompoundInitial').value||0,
+    monthlyContribution:+document.getElementById('sCompoundMonthly').value||500,
+    annualReturnPct:+document.getElementById('sCompoundRate').value||7,
+    years:+document.getElementById('sCompoundYears').value||20,
+    annualFeePct:+document.getElementById('sCompoundFee').value||0
+  };
+  try{
+    const r=await fetch(`${BASE}/api/simulator/compound`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error();const d=await r.json();
+    document.getElementById('simKpi-compound').innerHTML=simKpiHtml([
+      ['Valor Final',fmtK(d.finalValue)+' €','positive'],
+      ['Total Aportado',fmtK(d.totalContributed)+' €'],
+      ['Ganancias Netas',fmtK(d.totalGainsAfterFees)+' €','positive'],
+      ['Multiplicador','×'+d.multiplier.toFixed(2)]
+    ]);
+    const c=chartColors();
+    if(simCharts.compound)simCharts.compound.destroy();
+    if(d.yearlyEvolution){
+      simCharts.compound=new Chart(document.getElementById('simChart-compound'),{type:'bar',data:{labels:d.yearlyEvolution.map(y=>'Año '+y.year),datasets:[
+        {label:'Aportaciones',data:d.yearlyEvolution.map(y=>y.totalContributed),backgroundColor:'rgba(127,127,127,.3)',borderRadius:3,order:2},
+        {label:'Ganancias',data:d.yearlyEvolution.map(y=>Math.max(y.totalGains,0)),backgroundColor:'rgba(109,170,69,.4)',borderRadius:3,order:2},
+        {type:'line',label:'Valor total',data:d.yearlyEvolution.map(y=>y.portfolioValue),borderColor:c.primary,borderWidth:2,pointRadius:0,tension:.3,order:1}
+      ]},options:{...chartDefaults(),scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,stacked:true},y:{...chartDefaults().scales.y,stacked:true}}}});
+    }
+    document.getElementById('simResult-compound').classList.add('visible');
+  }catch(e){showToast('Error en simulación','error')}
+}
+
+// --- MORTGAGE ---
+async function runMortgage(){
+  const body={
+    outstandingPrincipal:+document.getElementById('sMortgagePrincipal').value,
+    annualInterestRate:+document.getElementById('sMortgageRate').value,
+    remainingYears:+document.getElementById('sMortgageYears').value,
+    extraMonthly:+document.getElementById('sMortgageExtra').value||0
+  };
+  try{
+    const r=await fetch(`${BASE}/api/simulator/mortgage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error();const d=await r.json();
+    const winColor=d.winnerStrategy==='INVERTIR'?'var(--color-success)':'var(--color-gold)';
+    const winIcon=d.winnerStrategy==='INVERTIR'?'📈':'🏠';
+    document.getElementById('simKpi-mortgage').innerHTML=simKpiHtml([
+      [winIcon+' Mejor Estrategia',d.winnerStrategy],
+      ['Ventaja','+'+fmtK(d.advantageEur)+' €'],
+      ['Cuota Mensual',fmtEur(d.monthlyPayment)],
+      ['🏠 Amortizar — Neto',fmtK(d.strategyAmortize.netWealthEnd)+' €'],
+      ['📈 Invertir — Neto',fmtK(d.strategyInvest.netWealthEnd)+' €'],
+      ['Intereses Ahorrados',fmtK(d.strategyInvest.totalInterestPaid-d.strategyAmortize.totalInterestPaid)+' €']
+    ]);
+    const c=chartColors();
+    if(simCharts.mortgage)simCharts.mortgage.destroy();
+    if(d.yearlyEvolution){
+      simCharts.mortgage=new Chart(document.getElementById('simChart-mortgage'),{type:'line',data:{labels:d.yearlyEvolution.map(y=>'Año '+y.year),datasets:[
+        {label:'Cartera',data:d.yearlyEvolution.map(y=>y.portfolioValue),borderColor:c.success,backgroundColor:c.success+'11',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Deuda',data:d.yearlyEvolution.map(y=>y.debtRemaining),borderColor:c.notification,backgroundColor:c.notification+'11',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Patrimonio Neto',data:d.yearlyEvolution.map(y=>y.netWealth),borderColor:c.primary,borderDash:[6,3],pointRadius:0,borderWidth:2,tension:.3}
+      ]},options:chartDefaults()});
+    }
+    document.getElementById('simResult-mortgage').classList.add('visible');
+  }catch(e){showToast('Error en simulación','error')}
+}
+
+// --- WITHDRAWAL ---
+async function runWithdrawal(){
+  const body={
+    withdrawalRatePct:+document.getElementById('sWithdrawalRate').value||4,
+    maxYears:+document.getElementById('sWithdrawalYears').value||35,
+    showComparison:true
+  };
+  const fixed=document.getElementById('sWithdrawalFixed').value;
+  const ret=document.getElementById('sWithdrawalReturn').value;
+  if(fixed)body.fixedMonthlyWithdrawal=parseFloat(fixed);
+  if(ret)body.expectedReturnPct=parseFloat(ret);
+  try{
+    const r=await fetch(`${BASE}/api/simulator/withdrawal`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error();const d=await r.json();
+    const survIcon=d.portfolioSurvives?'✅':'⚠️';
+    document.getElementById('simKpi-withdrawal').innerHTML=simKpiHtml([
+      [survIcon+(d.portfolioSurvives?' Sostenible':' Se agota'),d.portfolioSurvives?'Sobrevive '+d.maxYears+'a':'Agotada año '+d.depletionYear],
+      ['Retirada Mensual',fmtEur(d.initialMonthlyWithdrawal)],
+      ['Total Retirado',fmtK(d.totalWithdrawn)+' €'],
+      [d.portfolioSurvives?'Valor Residual':'Duración',d.portfolioSurvives?fmtK(d.finalPortfolioValue)+' €':d.depletionYear+' años']
+    ]);
+    const c=chartColors();
+    if(simCharts.withdrawal)simCharts.withdrawal.destroy();
+    if(d.yearlyEvolution){
+      simCharts.withdrawal=new Chart(document.getElementById('simChart-withdrawal'),{type:'line',data:{labels:d.yearlyEvolution.map(y=>'Año '+y.year),datasets:[
+        {label:'Cartera',data:d.yearlyEvolution.map(y=>y.portfolioValueEnd),borderColor:c.primary,backgroundColor:c.primary+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'Acumulado retirado',data:d.yearlyEvolution.map(y=>y.cumulativeWithdrawn),borderColor:c.gold||'#e8af34',borderDash:[4,4],pointRadius:0,borderWidth:1,tension:.3}
+      ]},options:chartDefaults()});
+    }
+    document.getElementById('simResult-withdrawal').classList.add('visible');
+  }catch(e){showToast('Error en simulación','error')}
+}
+
+// --- MONTE CARLO ---
+async function runMonteCarlo(){
+  const body={
+    years:+document.getElementById('sMonteYears').value||20,
+    volatilityPct:+document.getElementById('sMonteVol').value||15
+  };
+  const ret=document.getElementById('sMonteMean').value;
+  const monthly=document.getElementById('sMonteMonthly').value;
+  const goal=document.getElementById('sMonteGoal').value;
+  if(ret)body.expectedReturnPct=parseFloat(ret);
+  if(monthly)body.monthlyContribution=parseFloat(monthly);
+  if(goal)body.goalAmount=parseFloat(goal);
+  try{
+    const r=await fetch(`${BASE}/api/simulator/montecarlo`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error();const d=await r.json();
+    const kpis=[
+      ['Mediana (P50)',fmtK(d.p50Median)+' €','positive'],
+      ['Media',fmtK(d.mean)+' €'],
+      ['Prob. Pérdida',d.probabilityOfLossPct.toFixed(1)+'%',d.probabilityOfLossPct>20?'negative':d.probabilityOfLossPct>5?'':'positive']
+    ];
+    if(d.goalAmount)kpis.push(['Prob. Objetivo',d.goalProbabilityPct.toFixed(1)+'%']);
+    document.getElementById('simKpi-montecarlo').innerHTML=simKpiHtml(kpis);
+    const c=chartColors();
+    if(simCharts.montecarlo)simCharts.montecarlo.destroy();
+    if(d.yearlyPercentiles){
+      const yp=d.yearlyPercentiles;
+      simCharts.montecarlo=new Chart(document.getElementById('simChart-montecarlo'),{type:'line',data:{labels:yp.map(y=>'Año '+y.year),datasets:[
+        {label:'P90',data:yp.map(y=>y.p90),borderColor:c.success+'88',backgroundColor:c.success+'11',fill:'+1',tension:.3,pointRadius:0,borderWidth:1},
+        {label:'P50 (Mediana)',data:yp.map(y=>y.p50),borderColor:c.primary,tension:.3,pointRadius:0,borderWidth:2},
+        {label:'P10',data:yp.map(y=>y.p10),borderColor:c.notification+'88',backgroundColor:c.notification+'11',fill:'-1',tension:.3,pointRadius:0,borderWidth:1},
+        {label:'Aportado',data:yp.map(y=>y.totalContributed),borderColor:c.text+'55',borderDash:[4,4],pointRadius:0,borderWidth:1,tension:0}
+      ]},options:chartDefaults()});
+    }
+    document.getElementById('simResult-montecarlo').classList.add('visible');
+  }catch(e){showToast('Error en simulación','error')}
+}
+
+// ===================== ALERTS =====================
+function alertTypeLabel(type){
+  switch(type){case 'STOP_LOSS':return'Stop-Loss';case 'TAKE_PROFIT':return'Take-Profit';case 'TRAILING_STOP':return'Trailing Stop';case 'DCA_TARGET':return'DCA Target';case 'ALERT_ABOVE':return'Alerta ↑';case 'ALERT_BELOW':return'Alerta ↓';case 'WEIGHT_DEVIATION':return'Peso';default:return type}
+}
+function alertIcon(type){
+  switch(type){case 'STOP_LOSS':return'🛑';case 'TAKE_PROFIT':return'🎯';case 'TRAILING_STOP':return'📉';case 'DCA_TARGET':return'💰';case 'ALERT_ABOVE':return'📈';case 'ALERT_BELOW':return'📉';case 'WEIGHT_DEVIATION':return'⚖️';default:return'⚠️'}
+}
+function renderMAlerts(){
+  const badge=document.getElementById('mAlertBadge');
+  const body=document.getElementById('mAlertBody');
+  const count=document.getElementById('mAlertCount');
+
+  // Clean seen keys that no longer exist
+  const currentKeys=new Set(currentAlerts.map(a=>`${a.ticker}|${a.type}`));
+  let changed=false;
+  for(const key of seenAlertKeys){if(!currentKeys.has(key)){seenAlertKeys.delete(key);changed=true}}
+  if(changed)persistSeenAlerts();
+
+  const unseen=currentAlerts.filter(a=>!seenAlertKeys.has(`${a.ticker}|${a.type}`));
+
+  if(unseen.length===0){
+    badge.classList.remove('visible');
+  }else{
+    badge.classList.add('visible');
+    badge.textContent=unseen.length;
+    const hasDanger=unseen.some(a=>a.severity==='DANGER');
+    const hasWarning=unseen.some(a=>a.severity==='WARNING');
+    badge.className='m-alert-badge visible'+(hasDanger?'':hasWarning?' warning':' info');
+  }
+
+  count.textContent=currentAlerts.length>0?'('+currentAlerts.length+')':'';
+
+  if(currentAlerts.length===0){
+    body.innerHTML='<div class="m-empty" style="padding:48px 16px"><div style="font-size:28px;margin-bottom:8px">🔔</div><div style="font-weight:600;color:var(--color-success);margin-bottom:4px">✓ Sin alertas activas</div><div style="font-size:11px;color:var(--color-text-muted)">Todas las posiciones están dentro de los límites</div></div>';
+    return;
+  }
+
+  body.innerHTML=currentAlerts.map(a=>{
+    const sev=a.severity.toLowerCase();
+    return `<div class="m-alert-item ${sev}">
+      <div class="m-alert-icon ${sev}">${alertIcon(a.type)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span style="font-weight:700;font-size:13px;color:${a.color||'var(--color-text)'}">${a.ticker}</span>
+          <span style="font-size:10px;color:var(--color-text-faint)">${a.name||''}</span>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-muted);line-height:1.4">${a.message}</div>
+        <div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:3px;background:var(--color-surface-dynamic);color:var(--color-text-muted)">${alertTypeLabel(a.type)}</span>
+          ${a.currentPrice?'<span style="font-size:10px;color:var(--color-text-faint)">Precio: '+fmtEur(a.currentPrice,2)+'</span>':''}
+          ${a.distancePct!=null?'<span style="font-size:10px;font-weight:600;color:'+(a.distancePct<=0?'var(--color-notification)':'var(--color-text-muted)')+'">'+fmtPct(a.distancePct)+'</span>':''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMAlerts(){
+  const overlay=document.getElementById('mAlertOverlay');
+  if(overlay.classList.contains('open')){closeMAlerts();return}
+  // Mark all as seen
+  currentAlerts.forEach(a=>seenAlertKeys.add(`${a.ticker}|${a.type}`));
+  persistSeenAlerts();
+  document.getElementById('mAlertBadge').classList.remove('visible');
+  overlay.classList.add('open');
+  history.pushState({alerts:true},'','#alerts');
+}
+function closeMAlerts(){
+  document.getElementById('mAlertOverlay').classList.remove('open');
+  if(location.hash==='#alerts')history.back();
+}
+
+// ===================== INIT =====================
+loadAll();
+setInterval(()=>loadAll(),90000);
+</script>
+</body>
+</html>
+
