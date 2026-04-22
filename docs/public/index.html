@@ -141,10 +141,10 @@ footer a{color:var(--accent)}
   <div class="nav-inner">
     <div class="nav-logo">📊 <span>Portfolio Tracker</span></div>
     <div class="nav-links">
+      <a href="#quickstart">Instalar</a>
       <a href="#features">Features</a>
       <a href="#screenshots">Capturas</a>
       <a href="#stack">Stack</a>
-      <a href="#quickstart">Instalar</a>
     </div>
     <a href="#quickstart" class="nav-cta">Descargar gratis</a>
   </div>
@@ -154,9 +154,9 @@ footer a{color:var(--accent)}
 <section class="hero">
   <div class="hero-content fade-in">
     <div class="hero-badge">🟢 <span>Open Source</span> · 100% gratuito · Sin registro</div>
-    <h1>Tu cartera de inversiones,<br><em>en tu ordenador.</em></h1>
+    <h1>Tus inversiones. Tu ordenador.<br><em>Tu control total.</em></h1>
     <p>
-      Gestiona tus inversiones con DCA, alertas en tiempo real, simuladores financieros
+      Gestiona tu cartera con DCA, alertas en tiempo real, simuladores financieros
       y exportación para IA. Tus datos nunca salen de tu PC.
     </p>
     <div class="hero-buttons">
@@ -167,6 +167,45 @@ footer a{color:var(--accent)}
       <span><strong>Java 21</strong> · Único requisito</span>
       <span><strong>SQLite</strong> · Zero config</span>
       <span><strong>EUR</strong> · Conversión automática</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ QUICKSTART ═══════ -->
+<section id="quickstart">
+  <div class="section-inner">
+    <div class="section-label">Instalación</div>
+    <h2 class="section-title">Funcionando en 2 minutos</h2>
+    <p class="section-subtitle">No necesitas Docker, ni base de datos, ni configurar nada. Solo Java 21.</p>
+
+    <div class="steps">
+      <div class="step fade-in">
+        <div class="step-number">1</div>
+        <h3>Descarga</h3>
+        <p>Descarga <code>PortfolioTracker-dist.zip</code> desde el repositorio.</p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-number">2</div>
+        <h3>Descomprime</h3>
+        <p>Extrae el ZIP en cualquier carpeta. No necesita instalación.</p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-number">3</div>
+        <h3>Ejecuta</h3>
+        <p><strong>Windows:</strong> doble clic en <code>start.bat</code><br><strong>Linux/Mac:</strong> <code>./start.sh</code></p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-number">4</div>
+        <h3>Listo</h3>
+        <p>Se abre automáticamente en <code>localhost:19480/portfoliotracker/</code></p>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem;padding:1.2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;font-size:.88rem;color:var(--text-muted)">
+      <strong style="color:var(--text)">💡 Extra:</strong>
+      Viene con datos de ejemplo para que puedas probar sin meter nada tuyo.
+      Se puede instalar como <strong>servicio de Windows</strong> para que arranque solo con el PC.
+      Escucha en <code>0.0.0.0</code> — accesible desde cualquier dispositivo de tu red local, incluido el móvil.
     </div>
   </div>
 </section>
@@ -361,48 +400,9 @@ footer a{color:var(--accent)}
   </div>
 </section>
 
-<!-- ═══════ QUICKSTART ═══════ -->
-<section id="quickstart">
-  <div class="section-inner">
-    <div class="section-label">Instalación</div>
-    <h2 class="section-title">Funcionando en 2 minutos</h2>
-    <p class="section-subtitle">No necesitas Docker, ni base de datos, ni configurar nada. Solo Java 21.</p>
-
-    <div class="steps">
-      <div class="step fade-in">
-        <div class="step-number">1</div>
-        <h3>Descarga</h3>
-        <p>Descarga <code>PortfolioTracker-dist.zip</code> desde el repositorio.</p>
-      </div>
-      <div class="step fade-in">
-        <div class="step-number">2</div>
-        <h3>Descomprime</h3>
-        <p>Extrae el ZIP en cualquier carpeta. No necesita instalación.</p>
-      </div>
-      <div class="step fade-in">
-        <div class="step-number">3</div>
-        <h3>Ejecuta</h3>
-        <p><strong>Windows:</strong> doble clic en <code>start.bat</code><br><strong>Linux/Mac:</strong> <code>./start.sh</code></p>
-      </div>
-      <div class="step fade-in">
-        <div class="step-number">4</div>
-        <h3>Listo</h3>
-        <p>Se abre automáticamente en <code>localhost:19480/portfoliotracker/</code></p>
-      </div>
-    </div>
-
-    <div style="margin-top:2rem;padding:1.2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;font-size:.88rem;color:var(--text-muted)">
-      <strong style="color:var(--text)">💡 Extra:</strong>
-      Viene con datos de ejemplo para que puedas probar sin meter nada tuyo.
-      Se puede instalar como <strong>servicio de Windows</strong> para que arranque solo con el PC.
-      Escucha en <code>0.0.0.0</code> — accesible desde cualquier dispositivo de tu red local, incluido el móvil.
-    </div>
-  </div>
-</section>
-
 <!-- ═══════ CTA FINAL ═══════ -->
 <section class="cta-section">
-  <h2 class="fade-in">Tus inversiones. Tu ordenador.<br>Tu control total.</h2>
+  <h2 class="fade-in">¿A qué esperas?<br>Descarga y pruébalo.</h2>
   <p class="fade-in">Gratis, open source y sin letra pequeña.</p>
   <div class="hero-buttons fade-in">
     <a href="https://gitlab.com/sroyola/portfolio-tracker" target="_blank" class="btn btn-primary">⬇ Descargar ahora</a>
