@@ -140,7 +140,10 @@ section:nth-child(4){animation-delay:.15s}
     <a href="#watchlist"><span class="nav-icon">👁️</span> Watchlist</a>
     <a href="#noticias"><span class="nav-icon">📰</span> Noticias</a>
     <a href="#exportar"><span class="nav-icon">📄</span> Exportar informes</a>
+    <a href="#simuladores"><span class="nav-icon">🧮</span> Simuladores</a>
     <a href="#ia"><span class="nav-icon">🤖</span> Asistente IA</a>
+    <a href="#plan"><span class="nav-icon">🎯</span> Plan de inversión</a>
+    <a href="#horarios"><span class="nav-icon">🕐</span> Horarios de mercado</a>
     <a href="#telegram"><span class="nav-icon">✈️</span> Telegram</a>
     <a href="#tema"><span class="nav-icon">🌙</span> Tema claro / oscuro</a>
     <a href="#actividad"><span class="nav-icon">📋</span> Registro actividad</a>
@@ -637,9 +640,11 @@ section:nth-child(4){animation-delay:.15s}
 
   <h3>⏰ ¿Con qué frecuencia se actualizan?</h3>
   <ul>
-    <li><strong>Cada 30 minutos</strong> de forma automática, 24/7.</li>
+    <li><strong>Cada 10 minutos</strong> de forma automática (ciclo ligero: solo precio).</li>
+    <li><strong>Cada 30 minutos</strong> se hace un ciclo extendido (precio + volumen + volumen medio).</li>
     <li>También puedes forzar una actualización manual con el botón <strong>"Actualizar precios"</strong> (icono de refresco).</li>
     <li>A <strong>medianoche</strong>, la app guarda el precio de cierre del día para poder calcular la variación del día siguiente.</li>
+    <li>Si tienes <strong>horarios de mercado configurados</strong>, solo se consultan precios cuando el mercado está abierto (ver sección <a href="#horarios" style="color:#5fb8c4">Horarios de mercado</a>).</li>
   </ul>
 
   <h3>💱 Conversión de divisas</h3>
@@ -862,9 +867,51 @@ section:nth-child(4){animation-delay:.15s}
   <ul>
     <li><strong>Añadir activos</strong> con su ticker, ticker de Yahoo, nombre y notas.</li>
     <li>Ver la <strong>variación diaria, semanal y mensual</strong> de cada activo.</li>
+    <li>Ver el <strong>volumen actual vs volumen medio</strong> de cada activo.</li>
     <li><strong>Actualizar precios</strong> manualmente con el botón de refresco.</li>
     <li>Añadir <strong>notas</strong> sobre por qué te interesa ese activo.</li>
     <li><strong>Editar o eliminar</strong> items de la watchlist.</li>
+    <li>Configurar <strong>alertas por activo</strong> (ver más abajo).</li>
+  </ul>
+
+  <h3>🔔 Alertas de watchlist</h3>
+  <p>
+    Cada activo de tu watchlist puede tener <strong>alertas personalizadas</strong> que se evalúan automáticamente
+    cuando se actualizan los precios. Los tipos de alerta disponibles son:
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Tipo</th><th>¿Cuándo salta?</th><th>Ejemplo</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>📈 PRICE_ABOVE</strong></td>
+          <td>El precio actual supera el umbral configurado.</td>
+          <td>Avisar si AAPL supera los 200 €.</td>
+        </tr>
+        <tr>
+          <td><strong>📉 PRICE_BELOW</strong></td>
+          <td>El precio actual cae por debajo del umbral.</td>
+          <td>Avisar si un ETF baja de 70 € (oportunidad de compra).</td>
+        </tr>
+        <tr>
+          <td><strong>🔥 VOLUME_ABOVE</strong></td>
+          <td>El volumen actual es X veces mayor que la media.</td>
+          <td>Avisar si el volumen es 2x la media (posible movimiento fuerte).</td>
+        </tr>
+        <tr>
+          <td><strong>🧊 VOLUME_BELOW</strong></td>
+          <td>El volumen actual es X veces menor que la media.</td>
+          <td>Avisar si la liquidez cae mucho.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <ul>
+    <li>Las alertas tienen un <strong>cooldown de 24 horas</strong>: una vez disparada, no se repite en las siguientes 24h.</li>
+    <li>Si tienes <strong>Telegram configurado</strong>, las alertas de watchlist también se envían al móvil.</li>
+    <li>Puedes <strong>activar/desactivar</strong> cada alerta individualmente sin borrarla.</li>
   </ul>
 
   <div class="tip-box">
@@ -941,6 +988,51 @@ section:nth-child(4){animation-delay:.15s}
   </div>
 </section>
 
+<!-- ────────── SIMULADORES ────────── -->
+<section id="simuladores">
+  <h2>🧮 Simuladores financieros</h2>
+  <p>
+    La aplicación incluye <strong>5 simuladores financieros</strong> para ayudarte a planificar tu futuro financiero.
+    Se accede desde la página de simuladores (<code>/simuladores.html</code>) o desde el menú de la app.
+  </p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon">📈</div>
+      <h4>Proyección de cartera</h4>
+      <p>Proyecta el valor futuro de tu cartera basado en aportaciones mensuales y un rendimiento anual esperado. Te muestra cómo crecerá tu inversión a lo largo del tiempo.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏠</div>
+      <h4>Simulador hipotecario</h4>
+      <p>Calcula la cuota mensual de una hipoteca, el cuadro de amortización y los intereses totales. Ideal para comparar hipoteca vs inversión.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏖️</div>
+      <h4>Simulador de retiradas (FIRE)</h4>
+      <p>¿Cuánto puedes retirar al mes de tu cartera y cuánto durará? Este simulador te ayuda a planificar la independencia financiera.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💹</div>
+      <h4>Interés compuesto</h4>
+      <p>Simula el crecimiento de una inversión con aportaciones periódicas y reinversión de beneficios. Visualiza la magia del interés compuesto.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎲</div>
+      <h4>Simulación Monte Carlo</h4>
+      <p>Ejecuta miles de escenarios aleatorios para estimar la probabilidad de alcanzar tus objetivos. Muestra percentiles (peor caso, esperado, mejor caso).</p>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <span class="box-icon">💡</span>
+    <div>
+      <strong>Consejo:</strong> Usa el simulador de proyección con datos reales de tu cartera (tu XIRR actual como rendimiento esperado)
+      para ver una estimación realista de cómo evolucionará tu patrimonio.
+    </div>
+  </div>
+</section>
+
 <!-- ────────── ASISTENTE IA ────────── -->
 <section id="ia">
   <h2>🤖 Asistente IA (Análisis por posición)</h2>
@@ -988,6 +1080,86 @@ section:nth-child(4){animation-delay:.15s}
       <strong>Consejo:</strong> El prompt generado incluye todos los datos de la posición (precio medio, actual, historial de compras,
       sector, etc.), por lo que la IA tiene el contexto necesario para darte recomendaciones informadas.
       Puedes editar los valores importados antes de guardar si quieres ajustarlos.
+    </div>
+  </div>
+</section>
+
+<!-- ────────── PLAN DE INVERSIÓN ────────── -->
+<section id="plan">
+  <h2>🎯 Plan de inversión y flujos de caja</h2>
+  <p>
+    La aplicación te permite definir un <strong>plan de inversión mensual</strong> y gestionar
+    <strong>flujos de caja planificados</strong> para tener una visión completa de tu estrategia de ahorro e inversión.
+  </p>
+
+  <h3>💰 Presupuesto mensual</h3>
+  <ul>
+    <li>Define cuánto quieres invertir al mes (ej: 2.000 €/mes).</li>
+    <li>Selecciona si el presupuesto es <strong>FIJO</strong> (siempre la misma cantidad) o <strong>VARIABLE</strong> (varía según el mes).</li>
+    <li>Añade notas sobre tu estrategia de aportación.</li>
+    <li>En el dashboard, la tarjeta "Invertido este Mes" muestra una <strong>barra de progreso</strong> con el % completado respecto al objetivo.</li>
+  </ul>
+
+  <h3>📅 Flujos de caja planificados</h3>
+  <p>
+    Registra aportaciones futuras previstas, tanto <strong>extraordinarias</strong> (bonus anual, herencia, etc.)
+    como <strong>recurrentes</strong> (ahorro mensual extra). Cada flujo incluye:
+  </p>
+  <ul>
+    <li><strong>Descripción:</strong> Qué es el flujo (ej: "Bonus anual", "Ahorro extra verano").</li>
+    <li><strong>Importe:</strong> Cuántos euros prevés.</li>
+    <li><strong>Fecha esperada:</strong> Cuándo esperas recibir o aportar ese dinero.</li>
+    <li><strong>Tipo:</strong> EXTRAORDINARIA o RECURRENTE.</li>
+    <li><strong>Estado:</strong> Pendiente o Ejecutado. Puedes marcar como ejecutado cuando se materialice.</li>
+  </ul>
+
+  <div class="info-box">
+    <span class="box-icon">ℹ️</span>
+    <div>
+      Los flujos de caja planificados se incluyen automáticamente en el <strong>informe de exportación</strong>
+      para que el asistente de IA pueda tenerlos en cuenta al analizar tu cartera.
+    </div>
+  </div>
+</section>
+
+<!-- ────────── HORARIOS DE MERCADO ────────── -->
+<section id="horarios">
+  <h2>🕐 Horarios de mercado</h2>
+  <p>
+    La aplicación puede respetar los <strong>horarios de apertura y cierre</strong> de cada mercado,
+    evitando consultas innecesarias a Yahoo Finance fuera de horario.
+  </p>
+
+  <h3>⚙️ ¿Cómo funciona?</h3>
+  <ul>
+    <li>Se configuran horarios por <strong>sufijo de ticker</strong> (ej: <code>.DE</code> para Xetra, <code>.L</code> para Londres, <code>.MC</code> para Madrid).</li>
+    <li>Cuando el mercado está cerrado, la app <strong>mantiene el último precio conocido</strong> sin hacer consultas.</li>
+    <li>Hay una <strong>ventana de gracia de 10 minutos</strong> tras el cierre para capturar el precio de cierre real.</li>
+    <li>Si un precio falla en la ventana post-cierre, se <strong>reintenta automáticamente</strong> hasta 3 veces (1 por minuto).</li>
+    <li>Los tickers <strong>sin sufijo</strong> (mercado US) o sin horario configurado se consultan siempre (24/7).</li>
+    <li>Los <strong>fines de semana</strong> se consideran cerrados automáticamente.</li>
+  </ul>
+
+  <h3>📋 Ejemplo de configuración</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Sufijo</th><th>Mercado</th><th>Zona horaria</th><th>Apertura</th><th>Cierre</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>.DE</code></td><td>Xetra (Alemania)</td><td>Europe/Berlin</td><td>09:00</td><td>17:30</td></tr>
+        <tr><td><code>.L</code></td><td>London Stock Exchange</td><td>Europe/London</td><td>08:00</td><td>16:30</td></tr>
+        <tr><td><code>.MC</code></td><td>Bolsa de Madrid</td><td>Europe/Madrid</td><td>09:00</td><td>17:30</td></tr>
+        <tr><td><code>null</code></td><td>US (NYSE/NASDAQ)</td><td>America/New_York</td><td>09:30</td><td>16:00</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tip-box">
+    <span class="box-icon">💡</span>
+    <div>
+      <strong>Consejo:</strong> Al hacer un <strong>refresh manual</strong> de precios (botón de refresco), se ignoran los horarios
+      y se fuerza la consulta de todos los tickers. Los horarios solo afectan a las actualizaciones automáticas.
     </div>
   </div>
 </section>
