@@ -210,6 +210,9 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
     <a href="index.html?desktop=true" class="m-icon-btn" title="Ver versión escritorio">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
     </a>
+    <button class="m-icon-btn" onclick="toggleFullscreen()" aria-label="Pantalla completa" title="Pantalla completa">
+      <svg id="fsIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </button>
     <button class="m-icon-btn" onclick="toggleTheme()" aria-label="Cambiar tema">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
@@ -467,6 +470,24 @@ function toggleTheme() {
   localStorage.setItem('theme', html.dataset.theme);
 }
 (function(){const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t})();
+
+// ===================== FULLSCREEN =====================
+function toggleFullscreen(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    const el=document.documentElement;
+    (el.requestFullscreen||el.webkitRequestFullscreen).call(el);
+  }else{
+    (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+  }
+}
+document.addEventListener('fullscreenchange',updateFsIcon);
+document.addEventListener('webkitfullscreenchange',updateFsIcon);
+function updateFsIcon(){
+  const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  document.getElementById('fsIcon').innerHTML=isFs
+    ?'<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
+    :'<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+}
 
 // ===================== NAV =====================
 function switchPage(id) {
