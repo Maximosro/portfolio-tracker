@@ -162,3 +162,98 @@ Porque las que existen o te piden registro, o meten tus datos en la nube, o son 
 | **r/eupersonalfinance** | Público europeo, divisas EU soportadas |
 | **r/programming** | Proyecto técnico interesante |
 
+---
+
+# Post para Reddit (versión anti-spam)
+
+> **Nota interna:** Los filtros de spam de Reddit penalizan: posts muy largos, exceso de formato markdown
+> (tablas, muchos headers), demasiados emojis, enlaces múltiples, cuentas nuevas o con poco karma,
+> y tono promocional. Este post está escrito en tono conversacional y corto para evitarlos.
+> Adapta ligeramente el título y texto según el subreddit.
+
+---
+
+## Título sugerido
+
+```
+Hice un portfolio tracker gratuito y 100% local para gestionar inversiones DCA — sin registro, sin cloud, open source
+```
+
+Alternativas:
+- `Llevo meses desarrollando un tracker de inversiones local y gratuito — lo comparto por si le sirve a alguien`
+- `[Proyecto personal] Portfolio tracker self-hosted con DCA, alertas, simuladores y exportación para IA`
+
+---
+
+## Cuerpo del post
+
+```
+Llevo unos meses desarrollando un tracker de inversiones para uso personal y ha crecido bastante,
+así que lo comparto por si a alguien más le resulta útil.
+
+**¿Qué es?** Una app web que corre en local (localhost) para seguir tu cartera de inversiones.
+Tus datos se quedan en un archivo SQLite en tu disco, no se envía nada a ningún servidor.
+Solo necesitas Java 21 para ejecutarlo.
+
+**Lo que hace, en resumen:**
+
+- Gestión de posiciones con compras y ventas (DCA). Recalcula precio medio y participaciones automáticamente
+- Precios en tiempo real desde Yahoo Finance, convertidos a EUR automáticamente
+- Alertas configurables: stop-loss, take-profit, trailing stop, precio objetivo DCA, peso en cartera...
+- XIRR (TIR anualizada) real, calculado con los flujos de caja reales de cada compra
+- Rentabilidad por periodos (hoy, semana, mes, trimestre, YTD, año) ajustada por aportaciones
+- Gráficos de evolución de precios, distribución de cartera y equity curve
+- Watchlist con alertas de precio y volumen para activos que aún no has comprado
+- 5 simuladores: proyección, hipoteca, retiradas FIRE, interés compuesto y Monte Carlo
+- Notificaciones opcionales por Telegram (alertas + resumen diario de cierre)
+- Exportación de un informe Markdown pensado para pegar en ChatGPT/Claude y que analice tu cartera
+- Asistente IA por posición: genera un prompt, lo pegas en tu LLM favorito, te devuelve un JSON con recomendaciones y lo importas con un clic
+- Importación masiva de operaciones desde JSON
+- Tema claro/oscuro, versión móvil, registro de actividad, horarios de mercado configurables...
+
+**Stack:** Spring Boot 4 + Java 21, SQLite, HTML/JS vanilla con Chart.js. Sin frameworks frontend pesados.
+
+**Cómo probarlo:** descargas el ZIP, descomprimes, ejecutas start.bat (Windows) o start.sh (Linux/Mac)
+y se abre en http://localhost:19480/portfoliotracker/. Viene con datos de ejemplo para que puedas
+trastear sin meter nada tuyo. También se puede instalar como servicio de Windows.
+
+El repo está en: [ENLACE]
+
+Es gratis y sin trampa. Lo hice para mí, pero creo que puede servir a más gente.
+Si alguien lo prueba, agradezco cualquier feedback.
+```
+
+---
+
+## Versión ultra-corta (para subreddits estrictos como r/selfhosted)
+
+```
+Llevo meses haciendo un portfolio tracker para uso personal y lo comparto por si sirve.
+
+Es una app web local (localhost) para seguir inversiones con enfoque DCA.
+Los datos se quedan en un SQLite en tu disco, no hay cloud ni registro.
+
+Algunas cosas que hace: precios en tiempo real (Yahoo Finance, convertidos a EUR),
+alertas (stop-loss, take-profit, DCA target...), XIRR real por posición,
+rentabilidad por periodos, watchlist con alertas, 5 simuladores financieros,
+notificaciones Telegram opcionales, exportación para analizar con ChatGPT/Claude,
+y un asistente IA que genera prompts por posición.
+
+Stack: Spring Boot 4 + Java 21, SQLite, HTML/JS vanilla + Chart.js.
+Solo necesitas Java 21. Descomprime y ejecuta.
+
+Repo: [ENLACE]
+
+Feedback bienvenido.
+```
+
+---
+
+## Consejos para publicar
+
+1. **Espera a tener algo de karma** en el subreddit antes de postear (comenta en otros posts unos días antes)
+2. **No publiques en varios subreddits el mismo día** — Reddit lo detecta como spam
+3. **Sube las capturas a imgur** y ponlas como imagen del post (los posts con imagen tienen más engagement y menos filtro)
+4. **Responde a todos los comentarios** — la actividad en el post le da credibilidad al algoritmo
+5. **Mejor horario:** martes-jueves entre 14:00-18:00 UTC (mañana en USA)
+6. **Si te lo borran**, contacta a los mods del subreddit con un mensaje educado pidiendo aprobación manual

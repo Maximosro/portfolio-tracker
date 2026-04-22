@@ -1,0 +1,13 @@
+# GitLab Pages deployment
+# Sirve los archivos estáticos de docs/public/ como GitLab Pages
+pages:
+  stage: deploy
+  script:
+    - mkdir -p public
+    - cp -r docs/public/* public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
+
