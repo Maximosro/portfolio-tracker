@@ -30,15 +30,15 @@ public class MobileRedirectFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
+        String path = request.getServletPath();
 
-        // Only intercept root and index.html requests
-        if ("/".equals(path) || "/index.html".equals(path)) {
+        // Only intercept root and index.html requests (servlet path excludes context-path)
+        if ("/".equals(path) || "".equals(path) || "/index.html".equals(path)) {
             // Allow bypass with ?desktop=true
             if ("true".equals(request.getParameter("desktop"))) {
                 // Set cookie so subsequent navigations stay on desktop
                 jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("prefer_desktop", "true");
-                cookie.setPath("/");
+                cookie.setPath(request.getContextPath() + "/");
                 cookie.setMaxAge(86400); // 24h
                 response.addCookie(cookie);
                 filterChain.doFilter(request, response);
@@ -58,7 +58,7 @@ public class MobileRedirectFilter extends OncePerRequestFilter {
             // Check User-Agent
             String ua = request.getHeader("User-Agent");
             if (ua != null && MOBILE_UA.matcher(ua).find()) {
-                response.sendRedirect("/mobile.html");
+                response.sendRedirect(request.getContextPath() + "/mobile.html");
                 return;
             }
         }
