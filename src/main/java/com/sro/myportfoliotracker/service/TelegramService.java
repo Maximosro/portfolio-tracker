@@ -3,9 +3,11 @@ package com.sro.myportfoliotracker.service;
 import com.sro.myportfoliotracker.dto.AlertDto;
 import com.sro.myportfoliotracker.model.AppSetting;
 import com.sro.myportfoliotracker.model.Position;
+import com.sro.myportfoliotracker.model.PositionAlert;
 import com.sro.myportfoliotracker.model.WatchlistAlert;
 import com.sro.myportfoliotracker.model.WatchlistItem;
 import com.sro.myportfoliotracker.repository.AppSettingRepository;
+import com.sro.myportfoliotracker.repository.PositionAlertRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +19,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Servicio de notificaciones via Telegram Bot.
@@ -45,6 +46,7 @@ public class TelegramService {
     private final ActivityLogService activityLog;
     private final PositionService positionService;
     private final PortfolioMetricsService metricsService;
+    private final PositionAlertRepository positionAlertRepository;
 
     @Value("${telegram.bot-token:}")
     private String botToken;
@@ -55,25 +57,16 @@ public class TelegramService {
     @Value("${telegram.enabled:false}")
     private boolean enabled;
 
-    /**
-     * Almacena las alertas ya notificadas para no repetir.
-     * Key: "ticker|type|severity" → Value: timestamp de última notificación.
-     * Se mantiene un cooldown de 24h antes de re-notificar para evitar
-     * duplicados por oscilación de precio alrededor de un umbral (flapping).
-     */
-    private final Map<String, Instant> notifiedAlerts = new ConcurrentHashMap<>();
-
-    /** Cooldown: no re-notificar la misma alerta en menos de 24 horas */
-    private static final long COOLDOWN_HOURS = 24;
-
     public TelegramService(RestClient restClient, AlertService alertService, AppSettingRepository settingRepository,
-                           ActivityLogService activityLog, PositionService positionService, PortfolioMetricsService metricsService) {
+                           ActivityLogService activityLog, PositionService positionService,
+                           PortfolioMetricsService metricsService, PositionAlertRepository positionAlertRepository) {
         this.restClient = restClient;
         this.alertService = alertService;
         this.settingRepository = settingRepository;
         this.activityLog = activityLog;
         this.positionService = positionService;
         this.metricsService = metricsService;
+        this.positionAlertRepository = positionAlertRepository;
     }
 
     /**
@@ -212,55 +205,35 @@ public class TelegramService {
     }
 
     /**
-     * Revisa las alertas y envía notificaciones solo para alertas NUEVAS
-     * o que hayan cambiado de severidad.
+     * Revisa las alertas y envía notificaciones solo para alertas NUEVAS.
+     * Usa PositionAlert.notifiedTelegram para evitar reenvíos (persistente).
      * Se invoca automáticamente tras cada actualización de precios.
      * Si Telegram no está configurado, no hace nada (sin errores).
      */
-    public synchronized void checkAndNotifyAlerts() {
+    public void checkAndNotifyAlerts() {
         if (!isEnabled()) return;
 
         try {
-            List<AlertDto> currentAlerts = alertService.checkAlerts();
+            List<AlertDto> currentAlerts = alertService.getTodayAlerts();
             if (currentAlerts == null || currentAlerts.isEmpty()) {
-                // No borrar notifiedAlerts: mantener cooldown para evitar re-envíos por flapping
                 return;
             }
 
-            Set<String> currentKeys = new HashSet<>();
-
             for (AlertDto alert : currentAlerts) {
-                String key = alert.getTicker() + "|" + alert.getType() + "|" + alert.getSeverity();
-                currentKeys.add(key);
-
-                // Solo notificar si es nueva o si ya pasó el cooldown.
-                if (notifiedAlerts.containsKey(key)) {
-                    Instant lastNotified = notifiedAlerts.get(key);
-                    if (lastNotified != null && lastNotified.plusSeconds(COOLDOWN_HOURS * 3600).isAfter(Instant.now())) {
-                        continue; // Dentro del cooldown, no repetir
-                    }
-                }
-
-                // Solo notificar alertas DANGER y WARNING (no INFO, para no spammear)
                 if ("INFO".equals(alert.getSeverity())) continue;
+                if (alert.getAlertId() == null) continue;
+
+                PositionAlert pa = positionAlertRepository.findById(alert.getAlertId()).orElse(null);
+                if (pa == null || Boolean.TRUE.equals(pa.getNotifiedTelegram())) continue;
 
                 String message = formatAlertMessage(alert);
                 if (sendMessage(message)) {
-                    notifiedAlerts.put(key, Instant.now());
+                    pa.setNotifiedTelegram(true);
+                    positionAlertRepository.save(pa);
                     activityLog.info("TELEGRAM", "Alerta notificada: " + alert.getTicker() + " — " + alert.getType(), alert.getTicker(), "🔔");
                 }
-
-                // Pequeño delay entre mensajes para no saturar la API de Telegram
-                Thread.sleep(200);
             }
 
-            // Limpiar alertas que ya no están activas Y cuyo cooldown ha expirado
-            Instant cooldownLimit = Instant.now().minusSeconds(COOLDOWN_HOURS * 3600);
-            notifiedAlerts.entrySet().removeIf(entry ->
-                    !currentKeys.contains(entry.getKey()) && entry.getValue().isBefore(cooldownLimit));
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         } catch (Exception e) {
             log.debug("Telegram: error revisando alertas (se reintentará): {}", e.getMessage());
         }
