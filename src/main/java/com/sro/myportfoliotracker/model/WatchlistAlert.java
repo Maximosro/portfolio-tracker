@@ -1,13 +1,20 @@
 package com.sro.myportfoliotracker.model;
 
 import com.sro.myportfoliotracker.config.InstantStringConverter;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 
 @Entity
 @Table(name = "watchlist_alert")
@@ -17,42 +24,44 @@ import java.time.Instant;
 @Builder
 public class WatchlistAlert {
 
-    public enum AlertType {
-        PRICE_ABOVE,
-        PRICE_BELOW,
-        VOLUME_ABOVE,
-        VOLUME_BELOW
-    }
+  public enum AlertType {
+    PRICE_ABOVE,
+    PRICE_BELOW,
+    VOLUME_ABOVE,
+    VOLUME_BELOW
+  }
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(name = "watchlist_item_id", nullable = false)
-    private Long watchlistItemId;
+  @Column(name = "watchlist_item_id", nullable = false)
+  private Long watchlistItemId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "alert_type", nullable = false, length = 20)
-    private AlertType alertType;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "alert_type", nullable = false, length = 20)
+  private AlertType alertType;
 
-    /** Para PRICE_ABOVE/BELOW: precio en EUR. Para VOLUME_ABOVE/BELOW: ratio (ej. 2.0 = 2x avg) */
-    @Column(nullable = false)
-    private Double threshold;
+  /**
+   * Para PRICE_ABOVE/BELOW: precio en EUR. Para VOLUME_ABOVE/BELOW: ratio (ej. 2.0 = 2x avg)
+   */
+  @Column(nullable = false)
+  private Double threshold;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean enabled = true;
+  @Column(nullable = false)
+  @Builder.Default
+  private Boolean enabled = true;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean triggered = false;
+  @Column(nullable = false)
+  @Builder.Default
+  private Boolean triggered = false;
 
-    @Column(name = "last_triggered_at")
-    @Convert(converter = InstantStringConverter.class)
-    private Instant lastTriggeredAt;
+  @Column(name = "last_triggered_at")
+  @Convert(converter = InstantStringConverter.class)
+  private Instant lastTriggeredAt;
 
-    @Column(name = "created_at")
-    @Convert(converter = InstantStringConverter.class)
-    private Instant createdAt;
+  @Column(name = "created_at")
+  @Convert(converter = InstantStringConverter.class)
+  private Instant createdAt;
 }
 

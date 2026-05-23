@@ -2,11 +2,13 @@ package com.sro.myportfoliotracker.controller;
 
 import com.sro.myportfoliotracker.dto.AlertDto;
 import com.sro.myportfoliotracker.service.AlertService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/alerts")
@@ -14,11 +16,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AlertController {
 
-    private final AlertService alertService;
+  private final AlertService alertService;
 
-    @GetMapping
-    public ResponseEntity<List<AlertDto>> getAlerts() {
-        return ResponseEntity.ok(alertService.getTodayAlerts());
-    }
+  @GetMapping
+  public ResponseEntity<List<AlertDto>> getAlerts() {
+    return ResponseEntity.ok(alertService.getTodayAlerts());
+  }
 }
 

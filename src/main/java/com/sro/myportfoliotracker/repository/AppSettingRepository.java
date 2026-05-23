@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AppSettingRepository extends JpaRepository<AppSetting, String> {
+
 }
 
