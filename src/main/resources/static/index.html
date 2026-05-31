@@ -584,7 +584,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: NUEVA / EDITAR POSICIÓN -->
-<div id="positionModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
+<div id="positionModal" onclick="if(event.target===this)closeModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:500px;box-shadow:var(--shadow-md)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
       <h2 style="font-size:var(--text-lg);font-weight:700" id="modalTitle">Añadir Posición</h2>
@@ -639,7 +639,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: AÑADIR DCA -->
-<div id="dcaModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
+<div id="dcaModal" onclick="if(event.target===this)closeDcaModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:460px;box-shadow:var(--shadow-md)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
       <h2 id="dcaModalTitle" style="font-size:var(--text-lg);font-weight:700">Registrar Operación</h2>
@@ -712,7 +712,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: AÑADIR A WATCHLIST (formulario) -->
-<div id="watchlistModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1000;align-items:center;justify-content:center;padding:var(--space-4)">
+<div id="watchlistModal" onclick="if(event.target===this)closeWatchlistModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1000;align-items:center;justify-content:center;padding:var(--space-4)">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:420px;box-shadow:var(--shadow-md)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
       <h2 style="font-size:var(--text-base);font-weight:700" id="wlModalTitle">Añadir a Watchlist</h2>
@@ -746,7 +746,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: ALERTAS DE WATCHLIST -->
-<div id="wlAlertModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1001;align-items:center;justify-content:center;padding:var(--space-4)">
+<div id="wlAlertModal" onclick="if(event.target===this)closeWlAlertModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1001;align-items:center;justify-content:center;padding:var(--space-4)">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:480px;box-shadow:var(--shadow-md);max-height:80vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
       <h2 style="font-size:var(--text-base);font-weight:700">🔔 Alertas — <span id="wlAlertTicker"></span></h2>
@@ -1219,7 +1219,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: IMPORTAR OPERACIONES JSON -->
-<div id="importModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4);overflow-y:auto">
+<div id="importModal" onclick="if(event.target===this)closeImportModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4);overflow-y:auto">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:720px;box-shadow:var(--shadow-md);margin:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
       <h2 style="font-size:var(--text-lg);font-weight:700;display:flex;align-items:center;gap:var(--space-2)">

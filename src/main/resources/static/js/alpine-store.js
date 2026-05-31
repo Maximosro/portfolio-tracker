@@ -74,7 +74,17 @@ document.addEventListener('alpine:init', () => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'n' && e.shiftKey) { e.preventDefault(); openDcaModal('BUY'); }
         if (e.key === 'Escape') {
           if (this.drawerOpen) { this.drawerOpen = false; return; }
-          this.closeModal();
+          // Close all modals
+          if (typeof closeModal === 'function') closeModal();
+          if (typeof closeDcaModal === 'function') closeDcaModal();
+          if (typeof closeDetailModal === 'function') closeDetailModal();
+          if (typeof closePeriodHistory === 'function') closePeriodHistory();
+          if (typeof closeImportModal === 'function') closeImportModal();
+          if (typeof closeTgDetail === 'function') closeTgDetail();
+          if (typeof closePortfolioDetail === 'function') closePortfolioDetail();
+          if (typeof closeTelegramConfigModal === 'function') closeTelegramConfigModal();
+          if (typeof closeWatchlistModal === 'function') closeWatchlistModal();
+          if (typeof closeWlAlertModal === 'function') closeWlAlertModal();
         }
       });
     }
