@@ -1,0 +1,149 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: Portfolio
+    - generic [ref=e4]:
+      - button "Alertas" [ref=e5] [cursor=pointer]:
+        - img [ref=e6]
+      - button "Pantalla completa" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+      - button "Cambiar tema" [ref=e15] [cursor=pointer]:
+        - img [ref=e16]
+      - link "Versión escritorio" [ref=e18] [cursor=pointer]:
+        - /url: index.html
+        - img [ref=e19]
+  - generic [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]: Invertido
+            - generic [ref=e27]: 17.388,14 €
+          - generic [ref=e28]:
+            - generic [ref=e29]: Valor Mercado
+            - generic [ref=e30]: 19.427,46 €
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - generic [ref=e33]: DCA Mes
+            - generic [ref=e34]: 1202,51 €
+          - generic [ref=e35]:
+            - generic [ref=e36]: Mayo
+            - generic [ref=e37]: 5 posiciones
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]: P&L Total
+            - generic [ref=e42]: 2039,32 €
+          - generic [ref=e43]: +11.73%
+        - generic [ref=e44]:
+          - generic [ref=e45]: Hoy
+          - generic [ref=e46]: 0,00 € (+0.00%)
+        - generic [ref=e47]:
+          - generic [ref=e48]: XIRR
+          - generic [ref=e49]: +20.28% anual
+    - generic [ref=e50]:
+      - generic [ref=e51]: Evolución de Cartera
+      - generic [ref=e52]:
+        - button "1D" [ref=e53] [cursor=pointer]
+        - button "1S" [ref=e54] [cursor=pointer]
+        - button "1M" [ref=e55] [cursor=pointer]
+        - button "3M" [ref=e56] [cursor=pointer]
+        - button "6M" [ref=e57] [cursor=pointer]
+        - button "1A" [ref=e58] [cursor=pointer]
+        - button "Todo" [ref=e59] [cursor=pointer]
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - text: Posiciones
+        - generic [ref=e87]: (5)
+      - table [ref=e90]:
+        - rowgroup [ref=e91]:
+          - row "Ticker Día Vol P&L TIR" [ref=e92]:
+            - columnheader "Ticker" [ref=e93]
+            - columnheader "Día" [ref=e94]
+            - columnheader "Vol" [ref=e95]
+            - columnheader "P&L" [ref=e96]
+            - columnheader "TIR" [ref=e97]
+        - rowgroup [ref=e98]:
+          - row "ASWC HANetf Future of Defence UCITS ETF +0.00% 📊 0.7x 1220,90 € +21.22% +27.20%" [ref=e99] [cursor=pointer]:
+            - cell "ASWC HANetf Future of Defence UCITS ETF" [ref=e100]:
+              - generic [ref=e103]:
+                - generic [ref=e104]: ASWC
+                - generic [ref=e105]: HANetf Future of Defence UCITS ETF
+            - cell "+0.00%" [ref=e106]
+            - cell "📊 0.7x" [ref=e107]:
+              - 'generic "Vol: 79K / Avg: 120K" [ref=e108]': 📊 0.7x
+            - cell "1220,90 € +21.22%" [ref=e109]:
+              - text: 1220,90 €
+              - text: +21.22%
+            - cell "+27.20%" [ref=e110]
+          - row "CSPX iShares Core S&P 500 UCITS ETF USD (Acc) +0.00% 📊 0.8x 886,58 € +19.26% +32.01%" [ref=e111] [cursor=pointer]:
+            - cell "CSPX iShares Core S&P 500 UCITS ETF USD (Acc)" [ref=e112]:
+              - generic [ref=e115]:
+                - generic [ref=e116]: CSPX
+                - generic [ref=e117]: iShares Core S&P 500 UCITS ETF USD (Acc)
+            - cell "+0.00%" [ref=e118]
+            - cell "📊 0.8x" [ref=e119]:
+              - 'generic "Vol: 23K / Avg: 30K" [ref=e120]': 📊 0.8x
+            - cell "886,58 € +19.26%" [ref=e121]:
+              - text: 886,58 €
+              - text: +19.26%
+            - cell "+32.01%" [ref=e122]
+          - row "NUKL VanEck Uranium and Nuclear Technologies UCITS ETF +0.00% 📊 0.6x -156,76 € -2.89% -8.81%" [ref=e123] [cursor=pointer]:
+            - cell "NUKL VanEck Uranium and Nuclear Technologies UCITS ETF" [ref=e124]:
+              - generic [ref=e127]:
+                - generic [ref=e128]: NUKL
+                - generic [ref=e129]: VanEck Uranium and Nuclear Technologies UCITS ETF
+            - cell "+0.00%" [ref=e130]
+            - cell "📊 0.6x" [ref=e131]:
+              - 'generic "Vol: 75K / Avg: 127K" [ref=e132]': 📊 0.6x
+            - cell "-156,76 € -2.89%" [ref=e133]:
+              - text: "-156,76 €"
+              - text: "-2.89%"
+            - cell "-8.81%" [ref=e134]
+          - row "EUDF WisdomTree Europe Defence UCITS ETF +0.00% 🔥 2.3x -45,78 € -3.52% -15.87%" [ref=e135] [cursor=pointer]:
+            - cell "EUDF WisdomTree Europe Defence UCITS ETF" [ref=e136]:
+              - generic [ref=e139]:
+                - generic [ref=e140]: EUDF
+                - generic [ref=e141]: WisdomTree Europe Defence UCITS ETF
+            - cell "+0.00%" [ref=e142]
+            - cell "🔥 2.3x" [ref=e143]:
+              - 'generic "Vol: 841K / Avg: 358K" [ref=e144]': 🔥 2.3x
+            - cell "-45,78 € -3.52%" [ref=e145]:
+              - text: "-45,78 €"
+              - text: "-3.52%"
+            - cell "-15.87%" [ref=e146]
+          - row "JEDI.L VanEck Space Innovators UCITS ETF +0.00% 🔥 2.5x 134,38 € +43.59% +916.42%" [ref=e147] [cursor=pointer]:
+            - cell "JEDI.L VanEck Space Innovators UCITS ETF" [ref=e148]:
+              - generic [ref=e151]:
+                - generic [ref=e152]: JEDI.L
+                - generic [ref=e153]: VanEck Space Innovators UCITS ETF
+            - cell "+0.00%" [ref=e154]
+            - cell "🔥 2.5x" [ref=e155]:
+              - 'generic "Vol: 427K / Avg: 170K" [ref=e156]': 🔥 2.5x
+            - cell "134,38 € +43.59%" [ref=e157]:
+              - text: 134,38 €
+              - text: +43.59%
+            - cell "+916.42%" [ref=e158]
+          - row "TOTAL 2039,32 € +11.73% +20.28%" [ref=e159]:
+            - cell "TOTAL" [ref=e160]
+            - cell [ref=e161]
+            - cell [ref=e162]
+            - cell "2039,32 € +11.73%" [ref=e163]:
+              - text: 2039,32 €
+              - text: +11.73%
+            - cell "+20.28%" [ref=e164]
+  - navigation [ref=e64]:
+    - button "Inicio" [ref=e65] [cursor=pointer]:
+      - img [ref=e66]
+      - text: Inicio
+    - button "Posiciones" [ref=e71] [cursor=pointer]:
+      - img [ref=e72]
+      - text: Posiciones
+    - button "Cartera" [ref=e73] [cursor=pointer]:
+      - img [ref=e74]
+      - text: Cartera
+    - button "Simular" [ref=e78] [cursor=pointer]:
+      - img [ref=e79]
+      - text: Simular
+    - button "Historial" [ref=e83] [cursor=pointer]:
+      - img [ref=e84]
+      - text: Historial
