@@ -26,7 +26,7 @@
 | `simuladores.html` | MODIFICAR | Link a tokens.css, tokens duplicados eliminados, fuentes actualizadas |
 
 ## PR
-Pendiente
+https://github.com/Maximosro/portfolio-tracker/pull/2
 
 ## Bugs corregidos
 - `matchMedia` typo → `window.matchMedia` (rompía toda la inicialización de Alpine)
