@@ -66,8 +66,9 @@ public class ExportService {
         appendSalesOperationsDetail(sb, dcaEntries, positions, metrics);
         appendOperationalDetail(sb, activePositions, detailMap);
         appendAllocationAnalysis(sb, activePositions, detailMap);
-        appendDcaHistory(sb, dcaEntries, positions);
-        appendDcaAnalytics(sb, dcaEntries, positions);
+        appendDcaHistory(sb, dcaEntries, positions, metrics);
+        appendDcaAnalytics(sb, dcaEntries, positions, metrics);
+        appendCashFlowSummary(sb, dcaEntries, positions, metrics);
         appendPriceEvolution(sb, activePositions);
         appendRiskAnalysis(sb, activePositions, metrics);
         appendContextNotes(sb, positions);
@@ -559,14 +560,13 @@ public class ExportService {
         sb.append("|-------|--------|------------|-------------------|-------------|-------------|---------------------|--------------------|---------|-----------------|\n");
 
         double totalSalesProceeds = 0;
-        double totalSalesRealized = 0;
 
         for (DcaEntry sell : sellOps) {
             double proceeds = sell.getShares() * sell.getPrice();
             Position pos = posMap.get(sell.getTicker());
             double avgBuyPrice = pos != null && pos.getAvgPrice() != null ? pos.getAvgPrice() : 0;
+            double realizedPL = calcRealizedPL(sell, avgBuyPrice);
             double costBasis = sell.getShares() * avgBuyPrice;
-            double realizedPL = proceeds - costBasis;
             double plPct = costBasis > 0 ? (realizedPL / costBasis) * 100 : 0;
 
             Double sharesRemaining = sell.getId() != null ? sharesAfterOp.get(sell.getId()) : null;
@@ -575,7 +575,6 @@ public class ExportService {
             String result = realizedPL >= 0 ? "✅" : "❌";
 
             totalSalesProceeds += proceeds;
-            totalSalesRealized += realizedPL;
 
             sb.append(String.format("| %s | **%s** | %s | %s | %s | %s | %s | %s %s | %s | %s |\n",
                     sell.getDate().format(DATE_FMT),
@@ -590,10 +589,11 @@ public class ExportService {
                     remaining));
         }
 
-        // Total row
-        String totalResult = totalSalesRealized >= 0 ? "✅" : "❌";
+        // Total row (uses pre-calculated metrics for consistency)
+        double totalSalesRealizedFromMetrics = metrics.totalRealizedPL() != null ? metrics.totalRealizedPL() : 0.0;
+        String totalResult = totalSalesRealizedFromMetrics >= 0 ? "✅" : "❌";
         sb.append(String.format("| | **TOTAL** | | | | **%s** | | **%s** %s | | |\n",
-                fmtEur(totalSalesProceeds), fmtEur(totalSalesRealized), totalResult));
+                fmtEur(totalSalesProceeds), fmtEur(totalSalesRealizedFromMetrics), totalResult));
         sb.append("\n");
 
         // Summary by ticker
@@ -607,12 +607,12 @@ public class ExportService {
         for (Map.Entry<String, List<DcaEntry>> entry : sellsByTicker.entrySet()) {
             String ticker = entry.getKey();
             List<DcaEntry> sells = entry.getValue();
-            Position pos = posMap.get(ticker);
-            double avgBuy = pos != null && pos.getAvgPrice() != null ? pos.getAvgPrice() : 0;
 
             double totalSold = sells.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
-            double totalCostBasis = sells.stream().mapToDouble(e -> e.getShares() * avgBuy).sum();
-            double totalPL = totalSold - totalCostBasis;
+            // Use pre-calculated realized P&L from metrics for consistency
+            double totalPL = metrics.positionRealizedPL() != null
+                    ? metrics.positionRealizedPL().getOrDefault(ticker, 0.0)
+                    : 0.0;
             String result = totalPL >= 0 ? "✅ Ganancia" : "❌ Pérdida";
 
             sb.append(String.format("| **%s** | %d | %s | %s | %s |\n",
@@ -752,8 +752,8 @@ public class ExportService {
 
     // ───────────────────── HISTORIAL DCA ─────────────────────
 
-    private void appendDcaHistory(StringBuilder sb, List<DcaEntry> dcaEntries, List<Position> positions) {
-        sb.append("## 7. Historial Completo de Operaciones (DCA)\n\n");
+    private void appendDcaHistory(StringBuilder sb, List<DcaEntry> dcaEntries, List<Position> positions, PortfolioMetricsDto metrics) {
+        sb.append("## 7. Historial de Operaciones (Compras y Ventas)\n\n");
 
         if (dcaEntries.isEmpty()) {
             sb.append("*Sin operaciones registradas.*\n\n");
@@ -776,7 +776,6 @@ public class ExportService {
         Map<String, Double> runningShares = new HashMap<>();
 
         double totalDcaCost = 0;
-        double totalRealizedInHistory = 0;
 
         for (DcaEntry e : sorted) {
             double cost = e.getShares() * e.getPrice();
@@ -799,11 +798,9 @@ public class ExportService {
                 typeIcon = "🔴 VENTA";
                 totalDcaCost -= cost;
 
-                // Calculate realized P&L for this sale using the avg buy price
                 Position pos = posMap.get(e.getTicker());
                 if (pos != null && pos.getAvgPrice() != null && pos.getAvgPrice() > 0) {
-                    double realizedPL = e.getShares() * (e.getPrice() - pos.getAvgPrice());
-                    totalRealizedInHistory += realizedPL;
+                    double realizedPL = calcRealizedPL(e, pos.getAvgPrice());
                     plStr = fmtEur(realizedPL) + (realizedPL >= 0 ? " ✅" : " ❌");
                 }
 
@@ -833,51 +830,88 @@ public class ExportService {
                     plStr,
                     observation));
         }
-        sb.append(String.format("| | | | | **NETO** | **%s** | **%s** | |\n", fmtEur(totalDcaCost),
-                totalRealizedInHistory != 0 ? fmtEur(totalRealizedInHistory) : "—"));
+        sb.append(String.format("| | | | | **Flujo neto de caja** | **%s** | | |\n", fmtEur(totalDcaCost)));
+        double totalRealizedFromMetrics = metrics.totalRealizedPL() != null ? metrics.totalRealizedPL() : 0.0;
+        sb.append(String.format("| | | | | **P&L realizado total** | | **%s** | |\n",
+                totalRealizedFromMetrics != 0 ? fmtEur(totalRealizedFromMetrics) : "—"));
         sb.append("\n");
     }
 
     // ───────────────────── ANALYTICS DCA ─────────────────────
 
-    private void appendDcaAnalytics(StringBuilder sb, List<DcaEntry> dcaEntries, List<Position> positions) {
+    private void appendDcaAnalytics(StringBuilder sb, List<DcaEntry> dcaEntries, List<Position> positions, PortfolioMetricsDto metrics) {
         if (dcaEntries.isEmpty()) return;
 
-        sb.append("## 8. Análisis de la Estrategia DCA\n\n");
+        sb.append("## 8. Estadísticas DCA por Ticker\n\n");
 
-        // Agrupar por ticker
+        // ── 8a. Estadísticas de compra ──
         Map<String, List<DcaEntry>> byTicker = dcaEntries.stream()
                 .collect(Collectors.groupingBy(DcaEntry::getTicker));
 
-        sb.append("| Ticker | Nº Compras | Primera Compra | Última Compra | Inversión Total DCA (€) | Precio Medio DCA (€) | Frecuencia Media |\n");
-        sb.append("|--------|------------|----------------|---------------|-------------------------|---------------------|------------------|\n");
+        sb.append("### 8a. Estadísticas de Compra\n\n");
+        sb.append("| Ticker | Nº Compras | Primera Compra | Última Compra | Total Invertido (€) | Precio Medio Compra (€) | Frecuencia Media |\n");
+        sb.append("|--------|------------|----------------|---------------|---------------------|--------------------------|------------------|\n");
 
         for (Map.Entry<String, List<DcaEntry>> entry : byTicker.entrySet()) {
             String ticker = entry.getKey();
-            List<DcaEntry> entries = entry.getValue().stream()
+            List<DcaEntry> buys = entry.getValue().stream()
+                    .filter(e -> !"SELL".equals(e.getType()))
                     .sorted(Comparator.comparing(DcaEntry::getDate))
                     .toList();
 
-            double totalCost = entries.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
-            double totalShares = entries.stream().mapToDouble(DcaEntry::getShares).sum();
+            if (buys.isEmpty()) continue;
+
+            double totalCost = buys.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
+            double totalShares = buys.stream().mapToDouble(DcaEntry::getShares).sum();
             double avgPrice = totalShares > 0 ? totalCost / totalShares : 0;
 
-            LocalDate first = entries.getFirst().getDate();
-            LocalDate last = entries.getLast().getDate();
+            LocalDate first = buys.getFirst().getDate();
+            LocalDate last = buys.getLast().getDate();
             long daysBetween = ChronoUnit.DAYS.between(first, last);
-            String frequency = entries.size() > 1
-                    ? String.format("~%d días", daysBetween / (entries.size() - 1))
+            String frequency = buys.size() > 1
+                    ? String.format("~%d días", daysBetween / (buys.size() - 1))
                     : "Única compra";
 
             sb.append(String.format("| %s | %d | %s | %s | %s | %s | %s |\n",
-                    ticker, entries.size(),
+                    ticker, buys.size(),
                     first.format(DATE_FMT), last.format(DATE_FMT),
                     fmtEur(totalCost), fmtNum(avgPrice, 4), frequency));
         }
         sb.append("\n");
 
-        // Inversión mensual (solo compras, excluyendo ventas)
-        sb.append("### Inversión mensual (solo compras)\n\n");
+        // ── 8b. Estadísticas de venta ──
+        boolean hasSells = dcaEntries.stream().anyMatch(e -> "SELL".equals(e.getType()));
+        if (hasSells) {
+            sb.append("### 8b. Estadísticas de Venta\n\n");
+            sb.append("| Ticker | Nº Ventas | Primera Venta | Última Venta | Total Desinvertido (€) | P&L Realizado (€) |\n");
+            sb.append("|--------|-----------|---------------|--------------|------------------------|--------------------|\n");
+
+            Map<String, List<DcaEntry>> sellsByTicker = dcaEntries.stream()
+                    .filter(e -> "SELL".equals(e.getType()))
+                    .collect(Collectors.groupingBy(DcaEntry::getTicker));
+
+            for (Map.Entry<String, List<DcaEntry>> entry : sellsByTicker.entrySet()) {
+                String ticker = entry.getKey();
+                List<DcaEntry> sells = entry.getValue().stream()
+                        .sorted(Comparator.comparing(DcaEntry::getDate))
+                        .toList();
+
+                double totalSold = sells.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
+                double realizedPL = metrics.positionRealizedPL() != null
+                        ? metrics.positionRealizedPL().getOrDefault(ticker, 0.0)
+                        : 0.0;
+
+                sb.append(String.format("| %s | %d | %s | %s | %s | %s |\n",
+                        ticker, sells.size(),
+                        sells.getFirst().getDate().format(DATE_FMT),
+                        sells.getLast().getDate().format(DATE_FMT),
+                        fmtEur(totalSold), fmtEur(realizedPL)));
+            }
+            sb.append("\n");
+        }
+
+        // ── 8c. Flujo mensual (compras y ventas) ──
+        sb.append("### 8c. Flujo Mensual de Caja\n\n");
         Map<String, Double> monthlyBuys = new TreeMap<>();
         Map<String, Double> monthlySells = new TreeMap<>();
         for (DcaEntry e : dcaEntries) {
@@ -888,12 +922,11 @@ public class ExportService {
                 monthlyBuys.merge(key, e.getShares() * e.getPrice(), Double::sum);
             }
         }
-        // Todos los meses con actividad
         Set<String> allMonths = new TreeSet<>();
         allMonths.addAll(monthlyBuys.keySet());
         allMonths.addAll(monthlySells.keySet());
-        sb.append("| Mes | Compras (€) | Ventas (€) | Neto (€) |\n");
-        sb.append("|-----|-------------|------------|----------|\n");
+        sb.append("| Mes | Capital Invertido (€) | Capital Recuperado (€) | Flujo Neto (€) |\n");
+        sb.append("|-----|----------------------|------------------------|----------------|\n");
         for (String m : allMonths) {
             double buys = monthlyBuys.getOrDefault(m, 0.0);
             double sells = monthlySells.getOrDefault(m, 0.0);
@@ -906,7 +939,7 @@ public class ExportService {
     // ───────────────────── EVOLUCIÓN DE PRECIOS ─────────────────────
 
     private void appendPriceEvolution(StringBuilder sb, List<Position> positions) {
-        sb.append("## 9. Evolución de Precios (Resumen)\n\n");
+        sb.append("## 10. Evolución de Precios (Resumen)\n\n");
 
         Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
         Instant oneMonthAgo = Instant.now().minus(30, ChronoUnit.DAYS);
@@ -985,7 +1018,7 @@ public class ExportService {
     // ───────────────────── ANÁLISIS DE RIESGO ─────────────────────
 
     private void appendRiskAnalysis(StringBuilder sb, List<Position> positions, PortfolioMetricsDto metrics) {
-        sb.append("## 10. Indicadores de Riesgo y Concentración\n\n");
+        sb.append("## 11. Indicadores de Riesgo y Concentración\n\n");
 
         double totalValue = positions.stream()
                 .mapToDouble(p -> p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice() : p.getShares() * p.getAvgPrice())
@@ -1043,10 +1076,48 @@ public class ExportService {
         sb.append("\n");
     }
 
+    // ───────────────────── FLUJO DE CAJA ─────────────────────
+
+    private void appendCashFlowSummary(StringBuilder sb, List<DcaEntry> dcaEntries, List<Position> positions, PortfolioMetricsDto metrics) {
+        sb.append("## 9. Resumen de Flujos de Caja\n\n");
+
+        double totalInvested = dcaEntries.stream()
+                .filter(e -> !"SELL".equals(e.getType()))
+                .mapToDouble(e -> e.getShares() * e.getPrice())
+                .sum();
+        double totalRecovered = dcaEntries.stream()
+                .filter(e -> "SELL".equals(e.getType()))
+                .mapToDouble(e -> e.getShares() * e.getPrice())
+                .sum();
+        double realizedPL = metrics.totalRealizedPL() != null ? metrics.totalRealizedPL() : 0.0;
+
+        double totalValue = positions.stream()
+                .filter(p -> p.getCurrentPrice() != null)
+                .mapToDouble(p -> p.getShares() * p.getCurrentPrice())
+                .sum();
+        double investedPriced = positions.stream()
+                .filter(p -> p.getCurrentPrice() != null)
+                .mapToDouble(p -> p.getShares() * p.getAvgPrice())
+                .sum();
+        double unrealizedPL = totalValue - investedPriced;
+        double totalPL = realizedPL + unrealizedPL;
+
+        sb.append("| Concepto | Valor |\n");
+        sb.append("|----------|-------|\n");
+        sb.append(String.format("| **Total invertido (compras)** | %s |\n", fmtEur(totalInvested)));
+        sb.append(String.format("| **Total recuperado (ventas)** | %s |\n", totalRecovered > 0 ? fmtEur(totalRecovered) : "—"));
+        sb.append(String.format("| **P&L realizado** | %s %s |\n", fmtEur(realizedPL), realizedPL >= 0 ? "✅" : "❌"));
+        sb.append(String.format("| **P&L no realizado** | %s %s |\n", fmtEur(unrealizedPL), unrealizedPL >= 0 ? "✅" : "❌"));
+        sb.append(String.format("| **P&L total (realizado + no realizado)** | %s |\n", fmtEur(totalPL)));
+        sb.append(String.format("| **XIRR cartera** | %s |\n",
+                metrics.portfolioXirr() != null ? fmtPct(metrics.portfolioXirr() * 100) : "N/D"));
+        sb.append("\n");
+    }
+
     // ───────────────────── NOTAS DE CONTEXTO ─────────────────────
 
     private void appendContextNotes(StringBuilder sb, List<Position> positions) {
-        sb.append("## 11. Contexto y Notas para el Análisis\n\n");
+        sb.append("## 12. Contexto y Notas para el Análisis\n\n");
         sb.append("""
                 - Todos los precios están expresados en **EUR**. Las posiciones cotizadas en otras divisas (USD, GBP, GBp)
                   se convierten automáticamente usando tipos de cambio actualizados.
@@ -1066,6 +1137,9 @@ public class ExportService {
                   - < 1500: Cartera diversificada
                   - 1500-2500: Concentración moderada
                   - > 2500: Alta concentración
+                - El **P&L realizado** se calcula con el método de **precio medio ponderado (average cost basis)**:
+                  `shares_vendidas × (precio_venta − precio_medio_compra)`. El precio medio de compra es la media
+                  ponderada de todas las compras del ticker, sin verse afectado por las ventas.
                 """);
 
         // Yahoo tickers para referencia
@@ -1081,6 +1155,11 @@ public class ExportService {
     }
 
     // ───────────────────── HELPERS ─────────────────────
+
+    private double calcRealizedPL(DcaEntry sale, double avgBuyPrice) {
+        if (avgBuyPrice <= 0) return 0;
+        return sale.getShares() * (sale.getPrice() - avgBuyPrice);
+    }
 
     private Double calcVariation(double currentPrice, List<PriceHistory> history, Instant since) {
         Optional<PriceHistory> oldest = history.stream()
