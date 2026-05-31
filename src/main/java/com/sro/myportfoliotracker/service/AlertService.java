@@ -2,13 +2,16 @@ package com.sro.myportfoliotracker.service;
 
 import com.sro.myportfoliotracker.dto.AlertDto;
 import com.sro.myportfoliotracker.model.Position;
+import com.sro.myportfoliotracker.model.PositionAlert;
 import com.sro.myportfoliotracker.model.PositionDetail;
+import com.sro.myportfoliotracker.repository.PositionAlertRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -16,20 +19,76 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AlertService {
 
+    private static final ZoneId ZONE = ZoneId.of("Europe/Madrid");
+
     private final PositionService positionService;
     private final PositionDetailService positionDetailService;
+    private final PositionAlertRepository positionAlertRepository;
 
     /**
-     * Revisa todas las posiciones con detalle operativo y genera alertas
-     * comparando el precio actual con los límites configurados.
+     * Devuelve las alertas de hoy combinando los registros persistidos
+     * con las condiciones actuales. Cada par (ticker, alertType) solo
+     * genera una alerta por día natural.
      */
-    public List<AlertDto> checkAlerts() {
+    public List<AlertDto> getTodayAlerts() {
+        Instant startOfToday = LocalDate.now(ZONE).atStartOfDay(ZONE).toInstant();
+
+        Map<String, PositionAlert> todayAlerts = positionAlertRepository
+                .findByTriggeredAtAfterOrderByTriggeredAtAsc(startOfToday)
+                .stream()
+                .collect(Collectors.toMap(
+                        pa -> pa.getTicker() + "|" + pa.getAlertType(),
+                        Function.identity(),
+                        (a, b) -> a));
+
         List<Position> positions = positionService.findAll();
         List<PositionDetail> details = positionDetailService.findAll();
 
         Map<String, Position> posMap = positions.stream()
                 .collect(Collectors.toMap(Position::getTicker, Function.identity()));
 
+        List<AlertDto> currentAlerts = evaluateConditions(posMap, details);
+
+        for (AlertDto alert : currentAlerts) {
+            String key = alert.getTicker() + "|" + alert.getType();
+            if (!todayAlerts.containsKey(key)) {
+                PositionAlert pa = PositionAlert.builder()
+                        .ticker(alert.getTicker())
+                        .alertType(alert.getType())
+                        .severity(alert.getSeverity())
+                        .limitPrice(alert.getLimitPrice())
+                        .currentPrice(alert.getCurrentPrice())
+                        .message(alert.getMessage())
+                        .name(alert.getName())
+                        .color(alert.getColor())
+                        .distancePct(alert.getDistancePct())
+                        .triggeredAt(Instant.now())
+                        .notifiedTelegram(false)
+                        .build();
+                pa = positionAlertRepository.save(pa);
+                todayAlerts.put(key, pa);
+            }
+        }
+
+        return todayAlerts.values().stream()
+                .map(this::toAlertDto)
+                .sorted(Comparator.comparingInt(a -> severityOrder(a.getSeverity())))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * @deprecated Usar {@link #getTodayAlerts()} que añade cooldown diario.
+     * Mantenido por compatibilidad con ExportService.
+     */
+    @Deprecated
+    public List<AlertDto> checkAlerts() {
+        return getTodayAlerts();
+    }
+
+    /**
+     * Evalúa todas las condiciones actuales y devuelve AlertDtos sin persistencia.
+     */
+    private List<AlertDto> evaluateConditions(Map<String, Position> posMap, List<PositionDetail> details) {
         List<AlertDto> alerts = new ArrayList<>();
 
         for (PositionDetail detail : details) {
@@ -37,7 +96,6 @@ public class AlertService {
             if (pos == null || pos.getCurrentPrice() == null || pos.getCurrentPrice() <= 0) {
                 continue;
             }
-            // No generar alertas para posiciones cerradas (vendidas totalmente)
             if (pos.getShares() == null || pos.getShares() <= 0) {
                 continue;
             }
@@ -47,7 +105,7 @@ public class AlertService {
             String name = pos.getName();
             String color = pos.getColor();
 
-            // STOP-LOSS: alertar si el precio está en o por debajo del stop-loss
+            // STOP-LOSS
             if (detail.getStopLoss() != null && detail.getStopLoss() > 0) {
                 double dist = ((price - detail.getStopLoss()) / detail.getStopLoss()) * 100;
                 if (price <= detail.getStopLoss()) {
@@ -69,7 +127,7 @@ public class AlertService {
                 }
             }
 
-            // TAKE-PROFIT: alertar si el precio está en o por encima del take-profit
+            // TAKE-PROFIT
             if (detail.getTakeProfit() != null && detail.getTakeProfit() > 0) {
                 double dist = ((detail.getTakeProfit() - price) / price) * 100;
                 if (price >= detail.getTakeProfit()) {
@@ -91,13 +149,10 @@ public class AlertService {
                 }
             }
 
-            // TRAILING STOP: alertar si se ha calculado y el precio ha caído ese % desde el máximo
-            // Como no tenemos precio máximo histórico, usamos el precio medio como referencia
-            // y alertamos si el trailing % implica que ya estamos cerca del umbral
+            // TRAILING STOP
             if (detail.getTrailingStopPct() != null && detail.getTrailingStopPct() > 0 && pos.getAvgPrice() != null) {
                 double trailingPrice = price * (1 - detail.getTrailingStopPct() / 100);
                 double distFromAvg = ((price - pos.getAvgPrice()) / pos.getAvgPrice()) * 100;
-                // Si la posición está en pérdidas y el trailing es estrecho, avisar
                 if (distFromAvg < 0 && Math.abs(distFromAvg) >= detail.getTrailingStopPct()) {
                     alerts.add(AlertDto.builder()
                             .ticker(ticker).name(name).color(color)
@@ -109,7 +164,7 @@ public class AlertService {
                 }
             }
 
-            // DCA TARGET: alertar si el precio baja al precio objetivo de compra
+            // DCA TARGET
             if (detail.getDcaTargetPrice() != null && detail.getDcaTargetPrice() > 0) {
                 double dist = ((price - detail.getDcaTargetPrice()) / detail.getDcaTargetPrice()) * 100;
                 if (price <= detail.getDcaTargetPrice()) {
@@ -158,14 +213,26 @@ public class AlertService {
                             .build());
                 }
             }
-
-            // TARGET WEIGHT: no genera alertas, solo informativo en el detalle de posición
         }
 
-        // Ordenar: DANGER primero, luego WARNING, luego INFO
         alerts.sort((a, b) -> severityOrder(a.getSeverity()) - severityOrder(b.getSeverity()));
-
         return alerts;
+    }
+
+    private AlertDto toAlertDto(PositionAlert pa) {
+        return AlertDto.builder()
+                .ticker(pa.getTicker())
+                .name(pa.getName())
+                .color(pa.getColor())
+                .type(pa.getAlertType())
+                .severity(pa.getSeverity())
+                .message(pa.getMessage())
+                .currentPrice(pa.getCurrentPrice())
+                .limitPrice(pa.getLimitPrice())
+                .distancePct(pa.getDistancePct())
+                .alertId(pa.getId())
+                .triggeredAt(pa.getTriggeredAt())
+                .build();
     }
 
     private static int severityOrder(String severity) {
@@ -185,4 +252,3 @@ public class AlertService {
         return Math.round(v * 100.0) / 100.0;
     }
 }
-
