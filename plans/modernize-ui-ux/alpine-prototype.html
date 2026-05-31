@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es" x-data="app()" x-bind:data-theme="theme" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Tracker — Alpine.js Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<style>
+/* ═══════════ DESIGN TOKENS ═══════════ */
+:root {
+  --font-sans: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --fs-xs: 0.6875rem; --fs-sm: 0.8125rem; --fs-base: 0.9375rem;
+  --fs-lg: 1.125rem; --fs-xl: 1.5rem; --fs-2xl: 2rem;
+  --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem; --sp-4: 1rem;
+  --sp-5: 1.25rem; --sp-6: 1.5rem; --sp-8: 2rem; --sp-10: 2.5rem;
+}
+[data-theme="dark"] {
+  --bg-root: #0a0b0f; --bg-surface: #111318; --bg-elevated: #161921;
+  --bg-hover: #1c1f2a; --border: #1f2230; --border-active: #2d3142;
+  --text: #c8cad6; --text-muted: #6b6e7d; --text-dim: #3d4050;
+  --accent: #3cc9b4; --accent-glow: rgba(60,201,180,0.15);
+  --green: #4ade80; --green-bg: rgba(74,222,128,0.08);
+  --red: #f87171; --red-bg: rgba(248,113,113,0.08);
+  --amber: #fbbf24; --amber-bg: rgba(251,191,36,0.08);
+}
+[data-theme="light"] {
+  --bg-root: #f5f4f0; --bg-surface: #fafaf7; --bg-elevated: #ffffff;
+  --bg-hover: #f0efe9; --border: #e0ded8; --border-active: #c8c5bd;
+  --text: #1a1a18; --text-muted: #6b6a63; --text-dim: #b0aea5;
+  --accent: #0d9488; --accent-glow: rgba(13,148,136,0.1);
+  --green: #16a34a; --green-bg: rgba(22,163,74,0.06);
+  --red: #dc2626; --red-bg: rgba(220,38,38,0.06);
+  --amber: #d97706; --amber-bg: rgba(217,119,6,0.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{
+  font-family:var(--font-sans);font-size:var(--fs-base);color:var(--text);
+  background:var(--bg-root);line-height:1.5;min-height:100vh;
+  background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{background:var(--bg-root);border:1px solid var(--border);border-radius:2px;padding:var(--sp-2) var(--sp-3);font-size:var(--fs-sm);font-family:var(--font-mono);outline:none;width:100%;transition:border-color 150ms ease}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+table{border-collapse:collapse;width:100%}
+
+/* ═══════════ LAYOUT ═══════════ */
+.app{max-width:1400px;margin:0 auto;padding:var(--sp-6)}
+
+/* ── HEADER ── */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6);padding-bottom:var(--sp-4);border-bottom:1px solid var(--border)}
+.header-left{display:flex;align-items:center;gap:var(--sp-3)}
+.menu-btn{
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:2px;color:var(--text-muted);
+  background:transparent;cursor:pointer;transition:all 150ms ease
+}
+.menu-btn:hover{border-color:var(--border-active);color:var(--text);background:var(--bg-hover)}
+.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:1px}
+.logo-text{font-family:var(--font-mono);font-weight:600;font-size:var(--fs-sm);letter-spacing:0.03em}
+.header-right{display:flex;align-items:center;gap:var(--sp-1)}
+.icon-btn{
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border:1px solid transparent;border-radius:2px;color:var(--text-muted);
+  background:transparent;cursor:pointer;transition:all 150ms ease;position:relative
+}
+.icon-btn:hover{color:var(--text);background:var(--bg-hover);border-color:var(--border)}
+.icon-btn svg{width:16px;height:16px}
+.alert-dot{
+  position:absolute;top:6px;right:6px;width:7px;height:7px;
+  background:var(--red);border-radius:50%;border:1.5px solid var(--bg-root);
+  animation:pulse 2s ease-in-out infinite
+}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+
+/* ═══════════ NAV DRAWER ═══════════ */
+.drawer-overlay{
+  position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.5);
+  transition:opacity 200ms ease
+}
+.nav-drawer{
+  position:fixed;top:0;left:0;bottom:0;z-index:200;
+  width:260px;background:var(--bg-elevated);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;transition:transform 220ms cubic-bezier(0.16,1,0.3,1)
+}
+.nav-brand{padding:var(--sp-5) var(--sp-5) var(--sp-4);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:var(--sp-3)}
+.nav-brand-icon{font-size:1.5rem}
+.nav-brand-text{font-family:var(--font-mono);font-weight:700;font-size:var(--fs-sm);letter-spacing:0.02em}
+.nav-section{padding:var(--sp-5) var(--sp-3);flex:1;overflow-y:auto}
+.nav-label{font-family:var(--font-mono);font-size:0.625rem;font-weight:500;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding:0 var(--sp-2);margin:var(--sp-4) 0 var(--sp-2)}
+.nav-label:first-child{margin-top:0}
+.nav-item{
+  display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);
+  border-radius:2px;font-size:var(--fs-sm);font-weight:500;color:var(--text-muted);
+  transition:all 150ms ease;cursor:pointer;border:none;background:transparent;width:100%;text-align:left
+}
+.nav-item:hover{background:var(--bg-hover);color:var(--text)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-item .kbd{font-family:var(--font-mono);font-size:0.5rem;margin-left:auto;color:var(--text-dim)}
+.nav-footer{padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--text-dim)}
+
+/* ═══════════ KPI ROW ═══════════ */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.kpi{background:var(--bg-surface);border:1px solid var(--border);padding:var(--sp-4) var(--sp-5)}
+.kpi-label{font-family:var(--font-mono);font-size:0.625rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:var(--sp-2)}
+.kpi-value{font-family:var(--font-mono);font-size:var(--fs-2xl);font-weight:600;letter-spacing:-0.02em;line-height:1}
+.kpi-sub{font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--text-muted);margin-top:var(--sp-1)}
+
+/* ═══════════ SECTION ═══════════ */
+.section{background:var(--bg-surface);border:1px solid var(--border);margin-bottom:var(--sp-5)}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) var(--sp-5);border-bottom:1px solid var(--border)}
+.section-title{font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)}
+.section-body{overflow-x:auto}
+
+/* ═══════════ TABLE ═══════════ */
+.data-table{font-family:var(--font-mono);font-size:var(--fs-xs)}
+.data-table th{
+  text-align:right;padding:var(--sp-2) var(--sp-4);color:var(--text-dim);
+  font-weight:500;font-size:0.625rem;text-transform:uppercase;letter-spacing:0.06em;
+  border-bottom:1px solid var(--border);white-space:nowrap
+}
+.data-table th:first-child{text-align:left;padding-left:var(--sp-5)}
+.data-table td{padding:var(--sp-2) var(--sp-4);text-align:right;border-bottom:1px solid rgba(255,255,255,0.03)}
+.data-table td:first-child{text-align:left;padding-left:var(--sp-5)}
+.data-table tbody tr:hover{background:var(--bg-hover)}
+.ticker-cell{display:flex;align-items:center;gap:var(--sp-2)}
+.ticker-dot{width:6px;height:6px;border-radius:1px;flex-shrink:0}
+
+/* ═══════════ BUTTONS ═══════════ */
+.btn{
+  display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1) var(--sp-3);
+  font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:500;letter-spacing:0.02em;
+  border:1px solid var(--border);border-radius:2px;color:var(--text-muted);
+  cursor:pointer;background:transparent;transition:all 150ms ease
+}
+.btn:hover{background:var(--bg-hover);color:var(--text);border-color:var(--border-active)}
+.btn-accent{background:var(--accent);color:#0a0b0f;border-color:var(--accent);font-weight:600}
+.btn-accent:hover{background:var(--accent);opacity:0.9}
+
+/* ═══════════ MODAL ═══════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.65);
+  display:flex;align-items:center;justify-content:center;padding:var(--sp-4)
+}
+.modal{
+  background:var(--bg-elevated);border:1px solid var(--border);border-radius:4px;
+  width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.4)
+}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border)}
+.modal-header h2{font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:600;letter-spacing:0.02em}
+.modal-close{
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:2px;color:var(--text-muted);
+  background:transparent;cursor:pointer;font-size:14px
+}
+.modal-close:hover{background:var(--bg-hover);color:var(--text)}
+.modal-body{padding:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-4)}
+.modal-footer{display:flex;justify-content:flex-end;gap:var(--sp-3);padding:var(--sp-4) var(--sp-5);border-top:1px solid var(--border)}
+
+/* ═══════════ FORM ═══════════ */
+.form-group{display:flex;flex-direction:column;gap:var(--sp-1)}
+.form-label{font-family:var(--font-mono);font-size:0.625rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);font-weight:500}
+.form-error{font-size:var(--fs-xs);color:var(--red);margin-top:2px}
+
+/* ═══════════ TABS ═══════════ */
+.tabs{display:flex;gap:2px;background:var(--bg-root);border-radius:2px;padding:2px;border:1px solid var(--border);margin-bottom:var(--sp-4)}
+.tab-btn{
+  flex:1;padding:var(--sp-1) var(--sp-3);text-align:center;font-family:var(--font-mono);
+  font-size:var(--fs-xs);font-weight:500;cursor:pointer;transition:all 150ms ease;
+  color:var(--text-muted);background:transparent;border:none;border-radius:1px
+}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{background:var(--accent);color:#0a0b0f}
+
+/* ═══════════ PREVIEW BOX ═══════════ */
+.preview-box{
+  background:var(--bg-root);border:1px solid var(--border);border-radius:2px;
+  padding:var(--sp-4);font-family:var(--font-mono);font-size:var(--fs-xs)
+}
+.preview-row{display:flex;justify-content:space-between;padding:var(--sp-1) 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.preview-row:last-child{border-bottom:none}
+.preview-label{color:var(--text-dim)}
+.preview-value{font-weight:600}
+
+/* ═══════════ TOAST ═══════════ */
+.toast-container{position:fixed;bottom:var(--sp-6);right:var(--sp-6);z-index:600;display:flex;flex-direction:column;gap:var(--sp-2)}
+.toast{
+  background:var(--bg-elevated);border:1px solid var(--border);
+  padding:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:var(--fs-xs);
+  animation:slide-up 250ms cubic-bezier(0.16,1,0.3,1);max-width:360px
+}
+@keyframes slide-up{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.kpi-row{grid-template-columns:1fr}.app{padding:var(--sp-4)}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAV DRAWER ═══════════ -->
+<div x-show="drawerOpen" class="drawer-overlay" @click="drawerOpen = false"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+
+<nav class="nav-drawer"
+     x-show="drawerOpen"
+     x-transition:enter="transition ease-out duration-220"
+     x-transition:enter-start="-translate-x-full"
+     x-transition:enter-end="translate-x-0"
+     x-transition:leave="transition ease-in duration-180"
+     x-transition:leave-start="translate-x-0"
+     x-transition:leave-end="-translate-x-full"
+     @keydown.escape.window="drawerOpen = false">
+  <div class="nav-brand">
+    <span class="nav-brand-icon">▣</span>
+    <div>
+      <div class="nav-brand-text">PORTFOLIO TRACKER</div>
+      <div style="font-size:var(--fs-xs);color:var(--text-muted)">v2 · local</div>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Cartera</div>
+    <button class="nav-item" @click="drawerOpen = false; toast('Dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" @click="drawerOpen = false; activeTab = 'positions'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      Posiciones
+    </button>
+    <button class="nav-item" @click="drawerOpen = false; toast('Watchlist')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Watchlist
+    </button>
+
+    <div class="nav-label">Herramientas</div>
+    <button class="nav-item" @click="drawerOpen = false; toast('Detalle de Cartera')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>
+      Detalle de Cartera
+    </button>
+    <button class="nav-item" @click="drawerOpen = false; toast('Exportar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+      Exportar Informe
+    </button>
+
+    <div class="nav-label">Acciones</div>
+    <button class="nav-item" @click="drawerOpen = false; openModal('position')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+      Nueva Posición
+      <span class="kbd">⌘N</span>
+    </button>
+    <button class="nav-item" @click="drawerOpen = false; openModal('dca')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Nueva Operación
+      <span class="kbd">⌘⇧N</span>
+    </button>
+  </div>
+  <div class="nav-footer">v0.0.1 · localhost:19480</div>
+</nav>
+
+<!-- ═══════════ MODAL: NUEVA POSICIÓN ═══════════ -->
+<div x-show="modal === 'position'" class="modal-overlay" @click.self="modal = null" @keydown.escape.window="modal = null"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+  <div class="modal" @click.stop>
+    <div class="modal-header">
+      <h2 x-text="editingTicker ? 'Editar ' + editingTicker : 'Nueva Posición'"></h2>
+      <button class="modal-close" @click="modal = null">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Ticker</label>
+        <input type="text" x-model="posForm.ticker" placeholder="Ej: CSPX" @input="posForm.ticker = posForm.ticker.toUpperCase()" maxlength="10">
+        <div class="form-error" x-show="posForm.ticker && posForm.ticker.length < 2">Mínimo 2 caracteres</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" x-model="posForm.name" placeholder="Ej: iShares Core S&P 500">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+        <div class="form-group">
+          <label class="form-label">Acciones</label>
+          <input type="number" x-model="posForm.shares" placeholder="0" min="0" step="0.0001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio Medio (€)</label>
+          <input type="number" x-model="posForm.avgPrice" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <!-- Vista previa reactiva -->
+      <div class="preview-box" x-show="posForm.shares > 0 && posForm.avgPrice > 0">
+        <div class="preview-row"><span class="preview-label">Capital invertido</span><span class="preview-value" x-text="fmtEur(posForm.shares * posForm.avgPrice)"></span></div>
+        <div class="preview-row"><span class="preview-label">Acciones</span><span class="preview-value" x-text="posForm.shares"></span></div>
+        <div class="preview-row"><span class="preview-label">Precio medio</span><span class="preview-value" x-text="fmtEur(posForm.avgPrice)"></span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" @click="modal = null">Cancelar</button>
+      <button class="btn btn-accent" @click="savePosition()"
+              x-bind:disabled="!posForm.ticker || posForm.ticker.length < 2 || !posForm.shares">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NUEVA OPERACIÓN (DCA) ═══════════ -->
+<div x-show="modal === 'dca'" class="modal-overlay" @click.self="modal = null" @keydown.escape.window="modal = null"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+  <div class="modal" @click.stop>
+    <div class="modal-header">
+      <h2>Nueva Operación</h2>
+      <button class="modal-close" @click="modal = null">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="tab-btn" x-bind:class="dcaForm.type === 'BUY' ? 'active' : ''" @click="dcaForm.type = 'BUY'">COMPRA</button>
+        <button class="tab-btn" x-bind:class="dcaForm.type === 'SELL' ? 'active' : ''" @click="dcaForm.type = 'SELL'">VENTA</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ticker</label>
+        <select x-model="dcaForm.ticker">
+          <option value="">Seleccionar...</option>
+          <option value="CSPX">CSPX — iShares S&P 500</option>
+          <option value="BTC">BTC — Bitcoin</option>
+          <option value="NUKL">NUKL — VanEck Uranium</option>
+          <option value="XGDU">XGDU — Xtrackers Gold</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+        <div class="form-group">
+          <label class="form-label">Acciones</label>
+          <input type="number" x-model="dcaForm.shares" placeholder="0" min="0" step="0.0001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio (€)</label>
+          <input type="number" x-model="dcaForm.price" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <!-- Vista previa DCA con cálculo de nuevo precio medio -->
+      <div class="preview-box" x-show="dcaForm.ticker && dcaForm.shares > 0 && dcaForm.price > 0">
+        <div class="preview-row">
+          <span class="preview-label">Tipo</span>
+          <span class="preview-value" x-text="dcaForm.type === 'BUY' ? 'Compra' : 'Venta'"
+                x-bind:style="dcaForm.type === 'BUY' ? 'color:var(--green)' : 'color:var(--red)'"></span>
+        </div>
+        <div class="preview-row"><span class="preview-label">Total operación</span><span class="preview-value" x-text="fmtEur(dcaForm.shares * dcaForm.price)"></span></div>
+        <!-- Nuevo precio medio (simulado con datos dummy) -->
+        <template x-if="dcaForm.type === 'BUY' && dcaForm.ticker === 'CSPX'">
+          <div>
+            <div class="preview-row"><span class="preview-label">Precio medio anterior</span><span class="preview-value">€482.30</span></div>
+            <div class="preview-row"><span class="preview-label">Precio medio nuevo</span><span class="preview-value" style="color:var(--accent)" x-text="fmtEur((482.30 * 15.42 + dcaForm.price * dcaForm.shares) / (15.42 + dcaForm.shares))"></span></div>
+            <div class="preview-row"><span class="preview-label">Nuevas acciones totales</span><span class="preview-value" x-text="(15.42 + dcaForm.shares).toFixed(4)"></span></div>
+          </div>
+        </template>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" @click="modal = null">Cancelar</button>
+      <button class="btn btn-accent" @click="saveDca()"
+              x-bind:disabled="!dcaForm.ticker || !dcaForm.shares || !dcaForm.price">
+        Registrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APP SHELL ═══════════ -->
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <button class="menu-btn" @click="drawerOpen = !drawerOpen" aria-label="Menú">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="logo-dot"></div>
+      <span class="logo-text">PORTFOLIO</span>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" @click="toast('Activity Log')" title="Log">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      </button>
+      <button class="icon-btn" @click="toast('Panel de Alertas')" title="Alertas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="alert-dot"></span>
+      </button>
+      <button class="icon-btn" @click="toggleTheme()" title="Tema">◐</button>
+    </div>
+  </header>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Capital Invertido</div><div class="kpi-value">€24,850</div><div class="kpi-sub">12 posiciones</div></div>
+    <div class="kpi"><div class="kpi-label">Valor Actual</div><div class="kpi-value" style="color:var(--green)">€31,420</div><div class="kpi-sub">+26.4% total</div></div>
+    <div class="kpi"><div class="kpi-label">P&amp;L No Realizado</div><div class="kpi-value" style="color:var(--green)">€6,570</div><div class="kpi-sub">+€320 hoy</div></div>
+    <div class="kpi"><div class="kpi-label">Invertido Este Mes</div><div class="kpi-value" style="color:var(--amber)">€1,200</div><div class="kpi-sub">60% del objetivo</div></div>
+  </div>
+
+  <!-- SECTION: POSICIONES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Posiciones · 12 activas</div>
+      <div>
+        <button class="btn btn-accent" @click="openModal('position')">+ Nueva</button>
+      </div>
+    </div>
+    <div class="section-body">
+      <table class="data-table">
+        <thead><tr>
+          <th>Ticker</th><th>Acciones</th><th>P.Medio</th><th>P.Actual</th><th>Día</th><th>Invertido</th><th>Valor</th><th>P&amp;L</th><th>TIR</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="ticker-cell"><span class="ticker-dot" style="background:#3cc9b4"></span>CSPX <span style="font-family:var(--font-sans);font-size:var(--fs-xs);color:var(--text-muted)">iShares S&P 500</span></div></td>
+            <td>15.42</td><td>€482.30</td><td>€598.20</td><td style="color:var(--green)">+1.24%</td><td>€7,437</td><td>€9,224</td><td style="color:var(--green)">+€1,787</td><td style="color:var(--green)">+18.3%</td>
+          </tr>
+          <tr>
+            <td><div class="ticker-cell"><span class="ticker-dot" style="background:#fbbf24"></span>BTC <span style="font-family:var(--font-sans);font-size:var(--fs-xs);color:var(--text-muted)">Bitcoin</span></div></td>
+            <td>0.18</td><td>€42,300</td><td>€67,150</td><td style="color:var(--red)">-1.80%</td><td>€7,614</td><td>€12,087</td><td style="color:var(--green)">+€4,473</td><td style="color:var(--green)">+42.1%</td>
+          </tr>
+          <tr>
+            <td><div class="ticker-cell"><span class="ticker-dot" style="background:#4ade80"></span>NUKL <span style="font-family:var(--font-sans);font-size:var(--fs-xs);color:var(--text-muted)">VanEck Uranium</span></div></td>
+            <td>120.00</td><td>€28.15</td><td>€32.40</td><td style="color:var(--green)">+2.10%</td><td>€3,378</td><td>€3,888</td><td style="color:var(--green)">+€510</td><td style="color:var(--green)">+22.7%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION: QUÉ APORTA ALPINE.JS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Demostración Alpine.js — Reactividad declarativa</div>
+    </div>
+    <div class="section-body" style="padding:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-4)">
+      <p style="font-size:var(--fs-sm);color:var(--text-muted)">Este prototipo muestra cómo Alpine.js elimina la necesidad de manipular manualmente el DOM. Prueba las interacciones:</p>
+      <ul style="font-size:var(--fs-sm);color:var(--text-muted);margin-left:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-2)">
+        <li><strong style="color:var(--text)">⌘K</strong> — Abre/cierra el menú lateral (drawer)</li>
+        <li><strong style="color:var(--text)">⌘N</strong> — Abre el modal de Nueva Posición</li>
+        <li><strong style="color:var(--text)">Modal de Posición</strong> — Vista previa del capital invertido <span style="color:var(--accent)">en tiempo real</span> al escribir acciones y precio</li>
+        <li><strong style="color:var(--text)">Modal DCA</strong> — Cambio entre Compra/Venta con tabs, <span style="color:var(--accent)">cálculo del nuevo precio medio en vivo</span>, select de tickers existentes</li>
+        <li><strong style="color:var(--text)">ESC</strong> — Cierra cualquier modal o drawer</li>
+        <li><strong style="color:var(--text)">Click fuera</strong> — Cierra modales y drawer</li>
+        <li><strong style="color:var(--text)">Validación inline</strong> — El ticker se auto-uppercasea y muestra error si es muy corto</li>
+        <li><strong style="color:var(--text)">Botón Guardar</strong> — Se deshabilita automáticamente si el formulario está incompleto</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ TOAST CONTAINER ═══════════ -->
+<div class="toast-container">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="toast" x-text="t.msg"
+         x-show="t.show"
+         x-transition:enter="transition ease-out duration-250"
+         x-transition:enter-start="translate-y-3 opacity-0"
+         x-transition:enter-end="translate-y-0 opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"></div>
+  </template>
+</div>
+
+<!-- ═══════════ ALPINE.JS APP ═══════════ -->
+<script>
+function app() {
+  return {
+    // ── Theme ──
+    theme: localStorage.getItem('theme') || 'dark',
+    toggleTheme() {
+      this.theme = this.theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('theme', this.theme);
+    },
+
+    // ── Drawer ──
+    drawerOpen: false,
+
+    // ── Modal state ──
+    modal: null,        // 'position' | 'dca' | null
+    editingTicker: null,
+    openModal(type) { this.modal = type; },
+
+    // ── Position form (reactivo) ──
+    posForm: { ticker: '', name: '', shares: '', avgPrice: '' },
+    savePosition() {
+      this.toast(`Posición ${this.posForm.ticker} guardada`);
+      this.modal = null;
+      this.posForm = { ticker: '', name: '', shares: '', avgPrice: '' };
+    },
+
+    // ── DCA form (reactivo) ──
+    dcaForm: { type: 'BUY', ticker: '', shares: '', price: '' },
+    saveDca() {
+      this.toast(`${this.dcaForm.type === 'BUY' ? 'Compra' : 'Venta'} de ${this.dcaForm.ticker} registrada`);
+      this.modal = null;
+      this.dcaForm = { type: 'BUY', ticker: '', shares: '', price: '' };
+    },
+
+    // ── Tabs ──
+    activeTab: 'dashboard',
+
+    // ── Toasts ──
+    toasts: [],
+    _toastId: 0,
+    toast(msg) {
+      const id = ++this._toastId;
+      this.toasts.push({ id, msg, show: true });
+      setTimeout(() => {
+        const t = this.toasts.find(t => t.id === id);
+        if (t) t.show = false;
+        setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 250);
+      }, 2200);
+    },
+
+    // ── Helpers ──
+    fmtEur(v) { return v ? '€' + Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'; },
+
+    // ── Keyboard shortcuts ──
+    init() {
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); this.drawerOpen = !this.drawerOpen; }
+        if ((e.metaKey || e.ctrlKey) && e.key === 'n' && !e.shiftKey) { e.preventDefault(); this.openModal('position'); }
+        if ((e.metaKey || e.ctrlKey) && e.key === 'n' && e.shiftKey) { e.preventDefault(); this.openModal('dca'); }
+      });
+    }
+  };
+}
+</script>
+</body>
+</html>

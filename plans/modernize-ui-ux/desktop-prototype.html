@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Tracker — Desktop Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════ DESIGN TOKENS ═══════════════════════════ */
+:root {
+  --font-sans: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --fs-xs: 0.6875rem; --fs-sm: 0.8125rem; --fs-base: 0.9375rem;
+  --fs-lg: 1.125rem; --fs-xl: 1.5rem; --fs-2xl: 2rem; --fs-3xl: 2.75rem;
+  --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem; --sp-4: 1rem;
+  --sp-5: 1.25rem; --sp-6: 1.5rem; --sp-8: 2rem; --sp-10: 2.5rem; --sp-12: 3rem;
+}
+[data-theme="dark"] {
+  --bg-root: #0a0b0f;
+  --bg-surface: #111318;
+  --bg-elevated: #161921;
+  --bg-hover: #1c1f2a;
+  --border: #1f2230;
+  --border-active: #2d3142;
+  --text: #c8cad6;
+  --text-muted: #6b6e7d;
+  --text-dim: #3d4050;
+  --accent: #3cc9b4;
+  --accent-glow: rgba(60, 201, 180, 0.15);
+  --green: #4ade80;
+  --green-bg: rgba(74, 222, 128, 0.08);
+  --red: #f87171;
+  --red-bg: rgba(248, 113, 113, 0.08);
+  --amber: #fbbf24;
+  --amber-bg: rgba(251, 191, 36, 0.08);
+  --radius: 2px;
+  --radius-sm: 1px;
+}
+[data-theme="light"] {
+  --bg-root: #f5f4f0;
+  --bg-surface: #fafaf7;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f0efe9;
+  --border: #e0ded8;
+  --border-active: #c8c5bd;
+  --text: #1a1a18;
+  --text-muted: #6b6a63;
+  --text-dim: #b0aea5;
+  --accent: #0d9488;
+  --accent-glow: rgba(13, 148, 136, 0.1);
+  --green: #16a34a;
+  --green-bg: rgba(22, 163, 74, 0.06);
+  --red: #dc2626;
+  --red-bg: rgba(220, 38, 38, 0.06);
+  --amber: #d97706;
+  --amber-bg: rgba(217, 119, 6, 0.06);
+}
+/* ═══════════════════════════ RESET ═══════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{
+  font-family:var(--font-sans);font-size:var(--fs-base);color:var(--text);
+  background:var(--bg-root);line-height:1.5;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+button,input,select{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+a{color:inherit;text-decoration:none}
+table{border-collapse:collapse;width:100%}
+
+/* ═══════════════════════════ SHELL LAYOUT ═══════════════════════════ */
+.app-shell{display:flex;min-height:100vh}
+
+/* ── NAV DRAWER ── */
+.nav-drawer{
+  position:fixed;top:0;left:0;bottom:0;z-index:200;
+  width:260px;background:var(--bg-elevated);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;transform:translateX(-100%);
+  transition:transform 220ms cubic-bezier(0.16,1,0.3,1);
+}
+.nav-drawer.open{transform:translateX(0)}
+.nav-brand{
+  display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-5) var(--sp-5) var(--sp-4);
+  border-bottom:1px solid var(--border);
+}
+.nav-brand-icon{font-size:1.5rem}
+.nav-brand-text{font-family:var(--font-mono);font-weight:700;font-size:var(--fs-sm);letter-spacing:0.02em}
+.nav-brand-sub{font-size:var(--fs-xs);color:var(--text-muted);font-weight:400}
+.nav-section{padding:var(--sp-5) var(--sp-3);flex:1;overflow-y:auto}
+.nav-section-label{
+  font-family:var(--font-mono);font-size:0.625rem;font-weight:500;color:var(--text-dim);
+  text-transform:uppercase;letter-spacing:0.08em;padding:0 var(--sp-2);margin-bottom:var(--sp-2)
+}
+.nav-item{
+  display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);
+  border-radius:var(--radius);font-size:var(--fs-sm);font-weight:500;color:var(--text-muted);
+  transition:all 150ms ease;cursor:pointer;position:relative;
+}
+.nav-item:hover{background:var(--bg-hover);color:var(--text)}
+.nav-item.active{color:var(--accent);background:var(--accent-glow)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-item .badge{
+  margin-left:auto;font-family:var(--font-mono);font-size:0.625rem;font-weight:600;
+  background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:9999px;min-width:20px;text-align:center
+}
+.nav-footer{padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--text-dim)}
+
+/* ── BACKDROP ── */
+.drawer-backdrop{
+  position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.5);
+  opacity:0;pointer-events:none;transition:opacity 200ms ease;
+}
+.drawer-backdrop.active{opacity:1;pointer-events:auto}
+
+/* ── MAIN CONTENT ── */
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* ═══════════════════════════ HEADER ═══════════════════════════ */
+.app-header{
+  position:sticky;top:0;z-index:100;display:flex;align-items:center;
+  justify-content:space-between;padding:var(--sp-3) var(--sp-6);
+  background:var(--bg-surface);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.header-left{display:flex;align-items:center;gap:var(--sp-3)}
+.menu-btn{
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);
+  transition:all 150ms ease;
+}
+.menu-btn:hover{border-color:var(--border-active);color:var(--text);background:var(--bg-hover)}
+.logo-area{display:flex;align-items:center;gap:var(--sp-2)}
+.logo-mark{width:8px;height:8px;background:var(--accent);border-radius:1px}
+.logo-text{font-family:var(--font-mono);font-weight:600;font-size:var(--fs-sm);letter-spacing:0.03em}
+
+.header-right{display:flex;align-items:center;gap:var(--sp-1)}
+.icon-btn{
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border:1px solid transparent;border-radius:var(--radius);color:var(--text-muted);
+  transition:all 150ms ease;position:relative;
+}
+.icon-btn:hover{color:var(--text);background:var(--bg-hover);border-color:var(--border)}
+.icon-btn svg{width:16px;height:16px}
+.icon-btn .dot{
+  position:absolute;top:6px;right:6px;width:7px;height:7px;
+  background:var(--red);border-radius:50%;border:1.5px solid var(--bg-surface);
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+
+.theme-btn{font-size:0.875rem}
+
+/* ═══════════════════════════ PAGE CONTENT ═══════════════════════════ */
+.page{padding:var(--sp-6);max-width:1400px;margin:0 auto;width:100%}
+
+/* ── KPI ROW ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.kpi-card{
+  background:var(--bg-surface);border:1px solid var(--border);
+  padding:var(--sp-4) var(--sp-5);
+}
+.kpi-label{font-family:var(--font-mono);font-size:0.625rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:var(--sp-2)}
+.kpi-value{font-family:var(--font-mono);font-size:var(--fs-2xl);font-weight:600;letter-spacing:-0.02em;line-height:1}
+.kpi-sub{font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--text-muted);margin-top:var(--sp-1)}
+.kpi-card.green .kpi-value{color:var(--green)}
+.kpi-card.red .kpi-value{color:var(--red)}
+.kpi-card.amber .kpi-value{color:var(--amber)}
+
+/* ── SECTION ── */
+.section{background:var(--bg-surface);border:1px solid var(--border);margin-bottom:var(--sp-5)}
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--sp-3) var(--sp-5);border-bottom:1px solid var(--border);
+}
+.section-title{font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)}
+.section-actions{display:flex;gap:var(--sp-2)}
+.section-body{padding:0}
+
+/* ── TABLE ── */
+.data-table{font-family:var(--font-mono);font-size:var(--fs-xs)}
+.data-table th{
+  text-align:right;padding:var(--sp-2) var(--sp-4);color:var(--text-dim);
+  font-weight:500;font-size:0.625rem;text-transform:uppercase;letter-spacing:0.06em;
+  border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg-surface);
+  position:sticky;top:0;
+}
+.data-table th:first-child{text-align:left;padding-left:var(--sp-5)}
+.data-table td{
+  padding:var(--sp-2) var(--sp-4);text-align:right;border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.data-table td:first-child{text-align:left;padding-left:var(--sp-5)}
+.data-table tbody tr{transition:background 120ms ease}
+.data-table tbody tr:hover{background:var(--bg-hover)}
+.data-table .green{color:var(--green)}
+.data-table .red{color:var(--red)}
+.data-table .amber{color:var(--amber)}
+
+.ticker-cell{display:flex;align-items:center;gap:var(--sp-2)}
+.ticker-dot{width:6px;height:6px;border-radius:1px;flex-shrink:0}
+.ticker-name{font-family:var(--font-sans);font-size:var(--fs-xs);color:var(--text-muted);font-weight:400}
+
+/* ── BTN ── */
+.btn{
+  display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1) var(--sp-3);
+  font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:500;letter-spacing:0.02em;
+  border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);
+  transition:all 150ms ease;
+}
+.btn:hover{background:var(--bg-hover);color:var(--text);border-color:var(--border-active)}
+.btn-accent{background:var(--accent);color:#0a0b0f;border-color:var(--accent);font-weight:600}
+.btn-accent:hover{background:var(--accent);opacity:0.9}
+
+/* ── TOAST ── */
+.toast-container{position:fixed;bottom:var(--sp-6);right:var(--sp-6);z-index:500;display:flex;flex-direction:column;gap:var(--sp-2)}
+.toast{
+  background:var(--bg-elevated);border:1px solid var(--border);
+  padding:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:var(--fs-xs);
+  animation:slide-up 250ms cubic-bezier(0.16,1,0.3,1);max-width:360px
+}
+@keyframes slide-up{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1024px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+  .page{padding:var(--sp-4)}
+  .kpi-row{grid-template-columns:1fr;gap:var(--sp-2)}
+  .app-header{padding:var(--sp-2) var(--sp-4)}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ DRAWER BACKDROP ═══════════════════════ -->
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+
+<!-- ═══════════════════════ NAV DRAWER ═══════════════════════ -->
+<nav class="nav-drawer" id="navDrawer">
+  <div class="nav-brand">
+    <span class="nav-brand-icon">▣</span>
+    <div>
+      <div class="nav-brand-text">PORTFOLIO TRACKER</div>
+      <div class="nav-brand-sub">v2 · local</div>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Cartera</div>
+    <div class="nav-item active" onclick="navigate('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="navigate('positions')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      Posiciones
+    </div>
+    <div class="nav-item" onclick="navigate('watchlist')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Watchlist
+    </div>
+    <div class="nav-item" onclick="navigate('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Historial
+    </div>
+
+    <div class="nav-section-label" style="margin-top:var(--sp-5)">Herramientas</div>
+    <div class="nav-item" onclick="navigate('detail')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>
+      Detalle de Cartera
+    </div>
+    <div class="nav-item" onclick="navigate('export')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+      Exportar Informe
+    </div>
+    <div class="nav-item" onclick="window.open('simuladores.html','_blank')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Simuladores
+    </div>
+    <div class="nav-item" onclick="window.open('guia.html','_blank')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Guía
+    </div>
+
+    <div class="nav-section-label" style="margin-top:var(--sp-5)">Acciones</div>
+    <div class="nav-item" onclick="showToast('Modal: Nueva Posición')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+      Nueva Posición
+      <span style="font-family:var(--font-mono);font-size:0.5rem;margin-left:auto;color:var(--text-dim)">⌘N</span>
+    </div>
+    <div class="nav-item" onclick="showToast('Modal: Nueva Operación')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Nueva Operación
+      <span style="font-family:var(--font-mono);font-size:0.5rem;margin-left:auto;color:var(--text-dim)">⌘⇧N</span>
+    </div>
+  </div>
+  <div class="nav-footer">v0.0.1 · localhost:19480</div>
+</nav>
+
+<!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
+<div class="main-content">
+
+  <!-- ── HEADER ── -->
+  <header class="app-header">
+    <div class="header-left">
+      <button class="menu-btn" onclick="toggleDrawer()" aria-label="Menú">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="logo-area">
+        <div class="logo-mark"></div>
+        <span class="logo-text">PORTFOLIO</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" onclick="showToast('Activity Log abierto')" title="Log de actividad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </button>
+      <button class="icon-btn" onclick="showToast('Panel de Alertas')" title="Alertas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="dot"></span>
+      </button>
+      <button class="icon-btn theme-btn" onclick="toggleTheme()" title="Tema">◐</button>
+    </div>
+  </header>
+
+  <!-- ── PAGE CONTENT ── -->
+  <div class="page">
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Capital Invertido</div>
+        <div class="kpi-value">€ 24,850</div>
+        <div class="kpi-sub">12 posiciones activas</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Valor Actual</div>
+        <div class="kpi-value">€ 31,420</div>
+        <div class="kpi-sub">+26.4% total</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">P&L No Realizado</div>
+        <div class="kpi-value">€ 6,570</div>
+        <div class="kpi-sub">+€ 320 hoy · +1.03%</div>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-label">Invertido Este Mes</div>
+        <div class="kpi-value">€ 1,200</div>
+        <div class="kpi-sub">60% del objetivo · Obj: € 2,000</div>
+      </div>
+    </div>
+
+    <!-- Portfolio Chart -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Evolución de la Cartera</div>
+        <div class="section-actions">
+          <button class="btn btn-accent btn-sm">+ Nueva Operación</button>
+        </div>
+      </div>
+      <div class="section-body" style="padding:var(--sp-5)">
+        <div style="display:flex;gap:2px;margin-bottom:var(--sp-4)">
+          <button class="btn active">1S</button>
+          <button class="btn">1M</button>
+          <button class="btn">3M</button>
+          <button class="btn">6M</button>
+          <button class="btn">1A</button>
+          <button class="btn">YTD</button>
+          <button class="btn">TODO</button>
+        </div>
+        <canvas id="portfolioChart" height="280"></canvas>
+      </div>
+    </div>
+
+    <!-- Positions Table -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Posiciones · 12 activas</div>
+        <div class="section-actions">
+          <button class="btn btn-accent" onclick="showToast('Modal: Nueva Posición')">+ Nueva Posición</button>
+        </div>
+      </div>
+      <div class="section-body" style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ticker</th><th>Acciones</th><th>P.Medio</th><th>P.Actual</th><th>Día</th><th>Invertido</th><th>Valor</th><th>P&amp;L</th><th>TIR</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="ticker-cell"><span class="ticker-dot" style="background:#3cc9b4"></span><span>CSPX</span><span class="ticker-name">iShares S&P 500</span></div></td>
+              <td>15.42</td><td>€ 482.30</td><td>€ 598.20</td><td class="green">+1.24%</td><td>€ 7,437</td><td>€ 9,224</td><td class="green">+€ 1,787</td><td class="green">+18.3%</td>
+            </tr>
+            <tr>
+              <td><div class="ticker-cell"><span class="ticker-dot" style="background:#fbbf24"></span><span>NUKL</span><span class="ticker-name">VanEck Uranium</span></div></td>
+              <td>120.00</td><td>€ 28.15</td><td>€ 32.40</td><td class="green">+2.10%</td><td>€ 3,378</td><td>€ 3,888</td><td class="green">+€ 510</td><td class="green">+22.7%</td>
+            </tr>
+            <tr>
+              <td><div class="ticker-cell"><span class="ticker-dot" style="background:#4ade80"></span><span>BTC</span><span class="ticker-name">Bitcoin</span></div></td>
+              <td>0.18</td><td>€ 42,300</td><td>€ 67,150</td><td class="red">-1.80%</td><td>€ 7,614</td><td>€ 12,087</td><td class="green">+€ 4,473</td><td class="green">+42.1%</td>
+            </tr>
+            <tr>
+              <td><div class="ticker-cell"><span class="ticker-dot" style="background:#f87171"></span><span>SEM</span><span class="ticker-name">Semiconductor ETF</span></div></td>
+              <td>45.00</td><td>€ 18.90</td><td>€ 17.40</td><td class="red">-0.85%</td><td>€ 850</td><td>€ 783</td><td class="red">-€ 67</td><td class="red">-8.4%</td>
+            </tr>
+            <tr>
+              <td><div class="ticker-cell"><span class="ticker-dot" style="background:#a78bfa"></span><span>XGDU</span><span class="ticker-name">Xtrackers Gold</span></div></td>
+              <td>85.00</td><td>€ 42.80</td><td>€ 55.20</td><td class="green">+0.42%</td><td>€ 3,638</td><td>€ 4,692</td><td class="green">+€ 1,054</td><td class="green">+12.8%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════ TOAST CONTAINER ═══════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ═══════════════════ DRAWER ═══════════════════
+function toggleDrawer() {
+  document.getElementById('navDrawer').classList.toggle('open');
+  document.getElementById('drawerBackdrop').classList.toggle('active');
+}
+function closeDrawer() {
+  document.getElementById('navDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('active');
+}
+function navigate(page) {
+  closeDrawer();
+  showToast('Navegando a: ' + page);
+}
+
+// ═══════════════════ THEME ═══════════════════
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+}
+
+// ═══════════════════ TOAST ═══════════════════
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 200ms ease'; }, 2000);
+  setTimeout(() => toast.remove(), 2250);
+}
+
+// ═══════════════════ CHART (placeholder) ═══════════════════
+const ctx = document.getElementById('portfolioChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: ['Ene','Feb','Mar','Abr','May','Jun'],
+    datasets: [{
+      label: 'Cartera',
+      data: [24500,25300,26100,27500,29800,31420],
+      borderColor: '#3cc9b4',
+      backgroundColor: 'rgba(60,201,180,0.06)',
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.35,
+      fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { ticks: { color: '#6b6e7d', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: '#6b6e7d', font: { family: 'JetBrains Mono', size: 10 }, callback: v => v.toLocaleString('es-ES') + ' €' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+    },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// ═══════════════════ KEYBOARD ═══════════════════
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); toggleDrawer(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'n' && !e.shiftKey) { e.preventDefault(); showToast('Modal: Nueva Posición'); }
+});
+</script>
+</body>
+</html>

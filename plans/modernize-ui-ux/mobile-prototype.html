@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Portfolio Tracker — Mobile Keycards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════ DESIGN TOKENS ═══════════ */
+:root {
+  --font: 'Inter', system-ui, sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #0a0b0f;
+  --surface: #13151b;
+  --surface2: #1a1d26;
+  --border: #1f2230;
+  --text: #e8e9ef;
+  --text2: #8b8fa0;
+  --text3: #4b4f62;
+  --accent: #3cc9b4;
+  --accent2: #2aa18e;
+  --green: #4ade80;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --up-bg: rgba(74,222,128,0.1);
+  --down-bg: rgba(248,113,113,0.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{
+  font-family:var(--font);font-size:15px;color:var(--text);
+  background:var(--bg);line-height:1.5;min-height:100dvh;
+  padding-bottom:80px;-webkit-tap-highlight-color:transparent;
+}
+
+/* ═══════════ HEADER ═══════════ */
+.header{
+  position:sticky;top:0;z-index:100;background:var(--bg);
+  padding:16px 16px 12px;display:flex;align-items:center;justify-content:space-between;
+}
+.header-title{font-weight:800;font-size:20px;letter-spacing:-0.03em}
+.header-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{
+  width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+  color:var(--text2);font-size:18px;transition:all 150ms ease;position:relative;
+}
+.icon-btn:active{background:var(--surface2);transform:scale(0.95)}
+.alert-dot{
+  position:absolute;top:8px;right:8px;width:8px;height:8px;
+  background:var(--red);border-radius:50%;border:2px solid var(--surface);
+}
+
+/* ═══════════ SUMMARY CARD ═══════════ */
+.summary-card{
+  margin:0 12px 16px;background:linear-gradient(135deg,#1a2a2a 0%,#13151b 100%);
+  border:1px solid var(--border);border-radius:20px;padding:20px;overflow:hidden;
+}
+.summary-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.summary-total-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;font-weight:600}
+.summary-total{font-size:36px;font-weight:800;letter-spacing:-0.03em;line-height:1}
+.summary-change{
+  display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:700;
+  padding:4px 10px;border-radius:9999px;margin-top:6px
+}
+.summary-change.up{background:var(--up-bg);color:var(--green)}
+.summary-change.down{background:var(--down-bg);color:var(--red)}
+.summary-mini-chart{height:80px;margin:0 -4px}
+
+/* ═══════════ KPI ROW (scrollable) ═══════════ */
+.kpi-scroll{
+  display:flex;gap:10px;padding:0 12px 16px;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.kpi-scroll::-webkit-scrollbar{display:none}
+.kpi-chip{
+  flex:0 0 auto;min-width:130px;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:14px;scroll-snap-align:start;
+}
+.kpi-chip-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px}
+.kpi-chip-value{font-size:22px;font-weight:700;letter-spacing:-0.02em}
+.kpi-chip-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.kpi-chip.green .kpi-chip-value{color:var(--green)}
+.kpi-chip.red .kpi-chip-value{color:var(--red)}
+
+/* ═══════════ SECTION ═══════════ */
+.section{margin:0 12px 14px}
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px
+}
+.section-title{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.04em}
+.section-count{font-size:11px;color:var(--text3);font-weight:600}
+
+/* ═══════════ POSITION CARD ═══════════ */
+.pos-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  padding:16px;margin-bottom:10px;transition:all 150ms ease;
+  display:flex;flex-direction:column;gap:12px;
+}
+.pos-card:active{background:var(--surface2);transform:scale(0.985)}
+.pos-card-header{display:flex;align-items:center;gap:10px}
+.pos-icon{
+  width:44px;height:44px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:16px;flex-shrink:0
+}
+.pos-info{flex:1;min-width:0}
+.pos-ticker{font-weight:800;font-size:16px;letter-spacing:0.01em}
+.pos-name{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pos-price-area{text-align:right}
+.pos-price{font-size:18px;font-weight:700;letter-spacing:-0.02em}
+.pos-change{font-size:12px;font-weight:600}
+
+/* ═══════════ SPARKLINE ROW ═══════════ */
+.pos-sparkline{height:48px}
+
+/* ═══════════ CARD STATS ROW ═══════════ */
+.pos-stats{display:flex;gap:8px}
+.pos-stat{
+  flex:1;background:rgba(255,255,255,0.02);border-radius:10px;
+  padding:10px 12px;text-align:center
+}
+.pos-stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:2px}
+.pos-stat-value{font-size:15px;font-weight:700}
+
+/* ═══════════ WATCHLIST CARD ═══════════ */
+.wl-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;
+  justify-content:space-between;transition:all 150ms ease
+}
+.wl-card:active{background:var(--surface2)}
+.wl-left{display:flex;align-items:center;gap:10px}
+.wl-dot{width:10px;height:10px;border-radius:50%}
+.wl-ticker{font-weight:700;font-size:14px}
+.wl-name{font-size:10px;color:var(--text2)}
+.wl-right{text-align:right}
+.wl-price{font-size:15px;font-weight:700}
+.wl-change{font-size:11px;font-weight:600}
+
+/* ═══════════ TAB BAR ═══════════ */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--surface);border-top:1px solid var(--border);
+  display:flex;padding:6px 0 env(safe-area-inset-bottom,8px);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 0;font-size:10px;font-weight:600;color:var(--text3);
+  transition:color 150ms ease
+}
+.tab.active{color:var(--accent)}
+.tab svg{width:22px;height:22px}
+
+/* ═══════════ UTILITY ═══════════ */
+.green{color:var(--green)}
+.red{color:var(--red)}
+.up-bg{background:var(--up-bg)}
+.down-bg{background:var(--down-bg)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="header">
+  <div class="header-title">Portfolio</div>
+  <div class="header-actions">
+    <button class="icon-btn" title="Alertas">
+      🔔<span class="alert-dot"></span>
+    </button>
+    <button class="icon-btn" title="Tema">◐</button>
+  </div>
+</header>
+
+<!-- ═══════════ SUMMARY CARD ═══════════ -->
+<div class="summary-card">
+  <div class="summary-top">
+    <div>
+      <div class="summary-total-label">Valor Total</div>
+      <div class="summary-total">€31,420</div>
+      <div class="summary-change up">▲ +€320 hoy</div>
+    </div>
+  </div>
+  <div class="summary-mini-chart">
+    <canvas id="summarySparkline" height="80"></canvas>
+  </div>
+</div>
+
+<!-- ═══════════ KPI CHIPS ═══════════ -->
+<div class="kpi-scroll">
+  <div class="kpi-chip">
+    <div class="kpi-chip-label">Invertido</div>
+    <div class="kpi-chip-value">€24,850</div>
+    <div class="kpi-chip-sub">12 posiciones</div>
+  </div>
+  <div class="kpi-chip green">
+    <div class="kpi-chip-label">P&L Total</div>
+    <div class="kpi-chip-value">+€6,570</div>
+    <div class="kpi-chip-sub">+26.4%</div>
+  </div>
+  <div class="kpi-chip green">
+    <div class="kpi-chip-label">XIRR</div>
+    <div class="kpi-chip-value">+18.2%</div>
+    <div class="kpi-chip-sub">anualizado</div>
+  </div>
+  <div class="kpi-chip">
+    <div class="kpi-chip-label">Mes</div>
+    <div class="kpi-chip-value">€1,200</div>
+    <div class="kpi-chip-sub">60% del plan</div>
+  </div>
+  <div class="kpi-chip green">
+    <div class="kpi-chip-label">Realizado</div>
+    <div class="kpi-chip-value">+€840</div>
+    <div class="kpi-chip-sub">este año</div>
+  </div>
+</div>
+
+<!-- ═══════════ POSITIONS ═══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Posiciones</div>
+    <div class="section-count">12 activas</div>
+  </div>
+
+  <!-- CSPX -->
+  <div class="pos-card">
+    <div class="pos-card-header">
+      <div class="pos-icon" style="background:rgba(60,201,180,0.15);color:#3cc9b4">C</div>
+      <div class="pos-info">
+        <div class="pos-ticker">CSPX</div>
+        <div class="pos-name">iShares Core S&P 500</div>
+      </div>
+      <div class="pos-price-area">
+        <div class="pos-price">€598.20</div>
+        <div class="pos-change green">▲ +1.24%</div>
+      </div>
+    </div>
+    <div class="pos-sparkline"><canvas id="sparkCSPX" height="48"></canvas></div>
+    <div class="pos-stats">
+      <div class="pos-stat"><div class="pos-stat-label">Acciones</div><div class="pos-stat-value">15.42</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">Invertido</div><div class="pos-stat-value">€7,437</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">Valor</div><div class="pos-stat-value green">€9,224</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">P&L</div><div class="pos-stat-value green">+24%</div></div>
+    </div>
+  </div>
+
+  <!-- BTC -->
+  <div class="pos-card">
+    <div class="pos-card-header">
+      <div class="pos-icon" style="background:rgba(251,191,36,0.15);color:#fbbf24">₿</div>
+      <div class="pos-info">
+        <div class="pos-ticker">BTC</div>
+        <div class="pos-name">Bitcoin</div>
+      </div>
+      <div class="pos-price-area">
+        <div class="pos-price">€67,150</div>
+        <div class="pos-change red">▼ -1.80%</div>
+      </div>
+    </div>
+    <div class="pos-sparkline"><canvas id="sparkBTC" height="48"></canvas></div>
+    <div class="pos-stats">
+      <div class="pos-stat"><div class="pos-stat-label">Acciones</div><div class="pos-stat-value">0.18</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">Invertido</div><div class="pos-stat-value">€7,614</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">Valor</div><div class="pos-stat-value green">€12,087</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">P&L</div><div class="pos-stat-value green">+58%</div></div>
+    </div>
+  </div>
+
+  <!-- NUKL -->
+  <div class="pos-card">
+    <div class="pos-card-header">
+      <div class="pos-icon" style="background:rgba(74,222,128,0.15);color:#4ade80">⚛</div>
+      <div class="pos-info">
+        <div class="pos-ticker">NUKL</div>
+        <div class="pos-name">VanEck Uranium & Nuclear</div>
+      </div>
+      <div class="pos-price-area">
+        <div class="pos-price">€32.40</div>
+        <div class="pos-change green">▲ +2.10%</div>
+      </div>
+    </div>
+    <div class="pos-sparkline"><canvas id="sparkNUKL" height="48"></canvas></div>
+    <div class="pos-stats">
+      <div class="pos-stat"><div class="pos-stat-label">Acciones</div><div class="pos-stat-value">120</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">Invertido</div><div class="pos-stat-value">€3,378</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">Valor</div><div class="pos-stat-value green">€3,888</div></div>
+      <div class="pos-stat"><div class="pos-stat-label">P&L</div><div class="pos-stat-value green">+15%</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ WATCHLIST ═══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Watchlist</div>
+    <div class="section-count">5 seguidos</div>
+  </div>
+  <div class="wl-card"><div class="wl-left"><span class="wl-dot" style="background:#3cc9b4"></span><div><div class="wl-ticker">TSLA</div><div class="wl-name">Tesla Inc</div></div></div><div class="wl-right"><div class="wl-price">€248.30</div><div class="wl-change green">+3.4%</div></div></div>
+  <div class="wl-card"><div class="wl-left"><span class="wl-dot" style="background:#a78bfa"></span><div><div class="wl-ticker">NVDA</div><div class="wl-name">NVIDIA Corp</div></div></div><div class="wl-right"><div class="wl-price">€1,064</div><div class="wl-change green">+2.1%</div></div></div>
+  <div class="wl-card"><div class="wl-left"><span class="wl-dot" style="background:#f87171"></span><div><div class="wl-ticker">PLTR</div><div class="wl-name">Palantir Tech</div></div></div><div class="wl-right"><div class="wl-price">€84.60</div><div class="wl-change red">-1.2%</div></div></div>
+</div>
+
+<!-- ═══════════ TAB BAR ═══════════ -->
+<nav class="tabbar">
+  <div class="tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+    Posiciones
+  </div>
+  <div class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Historial
+  </div>
+  <div class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    Watchlist
+  </div>
+  <div class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Simular
+  </div>
+</nav>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+function sparkConfig(data, color) {
+  return {
+    type: 'line',
+    data: {
+      labels: data.map((_,i) => i),
+      datasets: [{
+        data,
+        borderColor: color,
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.35,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { display: false }, y: { display: false } },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      elements: { line: { borderJoinStyle: 'round' } }
+    }
+  };
+}
+
+// Summary sparkline
+new Chart(document.getElementById('summarySparkline'), sparkConfig(
+  [29800,30200,30800,30400,31200,31500,31000,31800,31420,31100,31600,31420],
+  '#3cc9b4'
+));
+
+// Position sparklines
+new Chart(document.getElementById('sparkCSPX'), sparkConfig(
+  [580,585,590,588,592,595,598], '#4ade80'
+));
+new Chart(document.getElementById('sparkBTC'), sparkConfig(
+  [68000,67200,66500,66800,67500,67150,67400], '#f87171'
+));
+new Chart(document.getElementById('sparkNUKL'), sparkConfig(
+  [31.2,31.8,32.1,32.0,32.4,32.2,32.6], '#4ade80'
+));
+</script>
+</body>
+</html>
