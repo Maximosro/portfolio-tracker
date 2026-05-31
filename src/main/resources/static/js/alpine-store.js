@@ -88,6 +88,12 @@ document.addEventListener('alpine:init', () => {
 
     // ── Lifecycle ──
     init() {
+      // Global toast bridge for non-Alpine code (simulators, etc.)
+      window.__showToast = (msg, type) => this.toast(msg, type);
+      window.addEventListener('global-toast', (e) => {
+        this.toast(e.detail.msg, e.detail.type);
+      });
+
       // Keyboard shortcuts
       document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); this.toggleDrawer(); }
