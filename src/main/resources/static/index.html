@@ -308,9 +308,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 }
 </style>
 </head>
-<body>
+<body x-data="app" x-init="document.documentElement.setAttribute('data-theme', theme)">
 
-<div class="app" x-data="app" x-init="document.documentElement.setAttribute('data-theme', theme)">
+<div class="app">
   <!-- HEADER (minimal) -->
   <header>
     <div class="header-left">
@@ -334,7 +334,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   </header>
 
   <!-- NAV DRAWER -->
-  <div class="drawer-overlay" x-show="drawerOpen" @click="drawerOpen = false" x-transition.opacity.duration.200></div>
+  <div class="drawer-overlay" x-show="drawerOpen" @click="drawerOpen = false"></div>
   <nav class="nav-drawer" :class="{ open: drawerOpen }">
     <div class="nav-brand">
       <div class="logo-dot" style="width:10px;height:10px"></div>
@@ -584,99 +584,104 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: NUEVA / EDITAR POSICIÓN -->
-<div id="positionModal" onclick="if(event.target===this)closeModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
-  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:500px;box-shadow:var(--shadow-md)">
+<div id="positionModal" @click.self="closeModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:500px;box-shadow:var(--shadow-md)" @click.stop>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
       <h2 style="font-size:var(--text-lg);font-weight:700" id="modalTitle">Añadir Posición</h2>
-      <button class="btn-ghost btn" onclick="closeModal()">✕</button>
+      <button class="btn-ghost btn" @click="closeModal()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:var(--space-4)">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="fTicker">Ticker</label>
-          <input class="form-input" type="text" id="fTicker" placeholder="NUKL" maxlength="10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+          <input class="form-input" type="text" id="fTicker" x-model="posForm.ticker" placeholder="NUKL" maxlength="10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
         </div>
         <div class="form-group">
           <label class="form-label" for="fYahoo">Yahoo Ticker</label>
-          <input class="form-input" type="text" id="fYahoo" placeholder="NUKL.L">
+          <input class="form-input" type="text" id="fYahoo" x-model="posForm.yahooTicker" placeholder="NUKL.L">
         </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="fName">Nombre</label>
-        <input class="form-input" type="text" id="fName" placeholder="VanEck Uranium & Nuclear">
+        <input class="form-input" type="text" id="fName" x-model="posForm.name" placeholder="VanEck Uranium & Nuclear">
       </div>
       <div class="form-group">
         <label class="form-label" for="fSector">Sector / Temática (para noticias)</label>
-        <input class="form-input" type="text" id="fSector" placeholder="energía nuclear, uranio">
+        <input class="form-input" type="text" id="fSector" x-model="posForm.sector" placeholder="energía nuclear, uranio">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="fShares">Acciones</label>
-          <input class="form-input" type="number" id="fShares" step="0.000001" min="0.000001" placeholder="0.00">
+          <input class="form-input" type="number" id="fShares" x-model="posForm.shares" step="0.000001" min="0.000001" placeholder="0.00">
         </div>
         <div class="form-group">
           <label class="form-label" for="fAvgPrice">Precio Medio (€)</label>
-          <input class="form-input" type="number" id="fAvgPrice" step="0.0001" min="0.0001" placeholder="0.00">
+          <input class="form-input" type="number" id="fAvgPrice" x-model="posForm.avgPrice" step="0.0001" min="0.0001" placeholder="0.00">
         </div>
+      </div>
+      <!-- Preview reactivo -->
+      <div class="preview-box" x-show="posForm.shares && posForm.avgPrice">
+        <div class="preview-row"><span class="preview-label">Inversión</span><span class="preview-value" x-text="fmtEur(posForm.shares * posForm.avgPrice)"></span></div>
+        <div class="preview-row" x-show="posForm.currentPrice"><span class="preview-label">Valor actual</span><span class="preview-value" x-text="fmtEur(posForm.shares * posForm.currentPrice)"></span></div>
+        <div class="preview-row" x-show="posForm.currentPrice && posForm.avgPrice"><span class="preview-label">P/L</span><span class="preview-value" :class="plClass(posForm.shares * (posForm.currentPrice - posForm.avgPrice))" x-text="fmtPct((posForm.currentPrice / posForm.avgPrice - 1) * 100)"></span></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="fCurrentPrice">Precio Actual (€)</label>
-          <input class="form-input" type="number" id="fCurrentPrice" step="0.0001" min="0" placeholder="Opcional">
+          <input class="form-input" type="number" id="fCurrentPrice" x-model="posForm.currentPrice" step="0.0001" min="0" placeholder="Opcional">
         </div>
         <div class="form-group">
           <label class="form-label">Color</label>
           <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-1)" id="colorPicker"></div>
-          <input type="hidden" id="fColor" value="#4f98a3">
+          <input type="hidden" id="fColor" x-model="posForm.color" value="#4f98a3">
         </div>
       </div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:var(--space-3);margin-top:var(--space-6)">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" id="modalSaveBtn" onclick="savePosition()">Guardar</button>
+      <button class="btn btn-secondary" @click="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modalSaveBtn" @click="savePosition()" :disabled="!posForm.ticker">Guardar</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: AÑADIR DCA -->
-<div id="dcaModal" onclick="if(event.target===this)closeDcaModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
-  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:460px;box-shadow:var(--shadow-md)">
+<div id="dcaModal" @click.self="closeModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:460px;box-shadow:var(--shadow-md)" @click.stop>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
       <h2 id="dcaModalTitle" style="font-size:var(--text-lg);font-weight:700">Registrar Operación</h2>
-      <button class="btn-ghost btn" onclick="closeDcaModal()">✕</button>
+      <button class="btn-ghost btn" @click="closeModal()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-      <!-- BUY/SELL Toggle -->
       <div class="form-group">
         <label class="form-label">Tipo de operación</label>
         <div style="display:flex;gap:var(--space-2)">
-          <button class="btn btn-sm" id="dcaTypeBuy" onclick="setDcaType('BUY')" style="flex:1;border:2px solid var(--color-success);background:oklch(from var(--color-success) l c h / .15);color:var(--color-success);font-weight:700">🟢 Compra</button>
-          <button class="btn btn-sm" id="dcaTypeSell" onclick="setDcaType('SELL')" style="flex:1;border:2px solid var(--color-border);color:var(--color-text-muted);font-weight:700">🔴 Venta</button>
+          <button class="btn btn-sm" id="dcaTypeBuy" @click="setDcaType('BUY')" :style="dcaForm.type === 'BUY' ? 'flex:1;border:2px solid var(--color-success);background:oklch(from var(--color-success) l c h / .15);color:var(--color-success);font-weight:700' : 'flex:1;border:2px solid var(--color-border);color:var(--color-text-muted);font-weight:700'">🟢 Compra</button>
+          <button class="btn btn-sm" id="dcaTypeSell" @click="setDcaType('SELL')" :style="dcaForm.type === 'SELL' ? 'flex:1;border:2px solid var(--color-notification);background:oklch(from var(--color-notification) l c h / .15);color:var(--color-notification);font-weight:700' : 'flex:1;border:2px solid var(--color-border);color:var(--color-text-muted);font-weight:700'">🔴 Venta</button>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="dcaTicker">ETF / Acción</label>
-        <select class="form-input" id="dcaTicker" onchange="updateDcaPreview()"></select>
+        <select class="form-input" id="dcaTicker" x-model="dcaForm.ticker" @change="updateDcaPreview()"></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="dcaShares">Nº Acciones</label>
-          <input class="form-input" type="number" id="dcaShares" step="0.000001" min="0.000001" placeholder="0.00" oninput="updateDcaPreview()">
+          <input class="form-input" type="number" id="dcaShares" x-model="dcaForm.shares" step="0.000001" min="0.000001" placeholder="0.00" @input="updateDcaPreview()">
         </div>
         <div class="form-group">
           <label class="form-label" for="dcaPrice" id="dcaPriceLabel">Precio Pagado (€)</label>
-          <input class="form-input" type="number" id="dcaPrice" step="0.01" min="0.01" placeholder="0.00" oninput="updateDcaPreview()">
+          <input class="form-input" type="number" id="dcaPrice" x-model="dcaForm.price" step="0.01" min="0.01" placeholder="0.00" @input="updateDcaPreview()">
         </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="dcaDate">Fecha</label>
-        <input class="form-input" type="date" id="dcaDate">
+        <input class="form-input" type="date" id="dcaDate" x-model="dcaForm.date">
       </div>
     </div>
     <div style="background:var(--color-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-top:var(--space-5);font-size:var(--text-xs);color:var(--color-text-muted)" id="dcaPreview">Rellena los campos para ver el nuevo precio medio.</div>
     <div style="display:flex;justify-content:flex-end;gap:var(--space-3);margin-top:var(--space-6)">
-      <button class="btn btn-secondary" onclick="closeDcaModal()">Cancelar</button>
-      <button class="btn btn-primary" id="dcaConfirmBtn" onclick="executeDca()">Confirmar Compra</button>
+      <button class="btn btn-secondary" @click="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="dcaConfirmBtn" @click="executeDca()">Confirmar Compra</button>
     </div>
   </div>
 </div>
@@ -1354,7 +1359,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- TOAST CONTAINER -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-container" id="toastContainer">
+  <template x-for="t in toasts" :key="t._id">
+    <div class="toast" :class="t.type" x-show="t.show" x-transition.opacity.duration.300ms x-text="t.msg"></div>
+  </template>
+</div>
 
 <script>
 // ===================== CONFIG =====================
@@ -2066,17 +2075,13 @@ function openAddModal() {
   editingTicker = null;
   document.getElementById('modalTitle').textContent = 'Añadir Posición';
   document.getElementById('modalSaveBtn').textContent = 'Crear posición';
-  document.getElementById('fTicker').value = '';
   document.getElementById('fTicker').disabled = false;
-  document.getElementById('fYahoo').value = '';
-  document.getElementById('fName').value = '';
-  document.getElementById('fSector').value = '';
-  document.getElementById('fShares').value = '';
-  document.getElementById('fAvgPrice').value = '';
-  document.getElementById('fCurrentPrice').value = '';
   selectedColor = COLORS[positions.length % COLORS.length];
-  document.getElementById('fColor').value = selectedColor;
   buildColorPicker();
+  // Sync Alpine posForm
+  const app = document.body._x_dataStack?.[0];
+  if (app) { app.resetPosForm(); app.posForm.color = selectedColor; app.modal = 'position'; }
+  document.getElementById('fColor').value = selectedColor;
   document.getElementById('positionModal').style.display = 'flex';
 }
 
@@ -2086,21 +2091,32 @@ function openEditModal(ticker) {
   editingTicker = ticker;
   document.getElementById('modalTitle').textContent = 'Editar ' + ticker;
   document.getElementById('modalSaveBtn').textContent = 'Guardar cambios';
-  document.getElementById('fTicker').value = pos.ticker;
   document.getElementById('fTicker').disabled = true;
+  selectedColor = pos.color || COLORS[0];
+  buildColorPicker();
+  // Sync Alpine posForm
+  const app = document.body._x_dataStack?.[0];
+  if (app) {
+    app.posForm = { ticker: pos.ticker, name: pos.name || '', yahooTicker: pos.yahooTicker || '', sector: pos.sector || '', shares: pos.shares, avgPrice: pos.avgPrice, currentPrice: pos.currentPrice || '', color: selectedColor };
+    app.modal = 'position';
+  }
+  // Also set DOM values for non-Alpine fallback
+  document.getElementById('fTicker').value = pos.ticker;
   document.getElementById('fYahoo').value = pos.yahooTicker || '';
   document.getElementById('fName').value = pos.name || '';
   document.getElementById('fSector').value = pos.sector || '';
   document.getElementById('fShares').value = pos.shares;
   document.getElementById('fAvgPrice').value = pos.avgPrice;
   document.getElementById('fCurrentPrice').value = pos.currentPrice || '';
-  selectedColor = pos.color || COLORS[0];
   document.getElementById('fColor').value = selectedColor;
-  buildColorPicker();
   document.getElementById('positionModal').style.display = 'flex';
 }
 
-function closeModal() { document.getElementById('positionModal').style.display = 'none'; }
+function closeModal() {
+  document.getElementById('positionModal').style.display = 'none';
+  const app = document.body._x_dataStack?.[0];
+  if (app) app.modal = null;
+}
 
 async function savePosition() {
   const ticker = document.getElementById('fTicker').value.trim().toUpperCase();
@@ -2212,20 +2228,27 @@ function setDcaType(type) {
 function openDcaModal(type) {
   dcaType = type || 'BUY';
   const sel = document.getElementById('dcaTicker');
-  // Solo posiciones activas (con shares > 0)
   const availablePositions = positions.filter(p => p.shares > 0);
   sel.innerHTML = availablePositions.map(p => {
     return `<option value="${p.ticker}">${p.ticker} – ${p.name || p.ticker}</option>`;
   }).join('');
-  document.getElementById('dcaDate').value = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dcaDate').value = today;
   document.getElementById('dcaShares').value = '';
   document.getElementById('dcaPrice').value = '';
   document.getElementById('dcaPreview').innerHTML = 'Rellena los campos para ver la vista previa.';
   document.getElementById('dcaModal').style.display = 'flex';
+  // Sync Alpine
+  const app = document.body._x_dataStack?.[0];
+  if (app) { app.dcaForm = { type: dcaType, ticker: '', shares: '', price: '', date: today }; app.modal = 'dca'; }
   setDcaType(dcaType);
 }
 
-function closeDcaModal() { document.getElementById('dcaModal').style.display = 'none'; }
+function closeDcaModal() {
+  document.getElementById('dcaModal').style.display = 'none';
+  const app = document.body._x_dataStack?.[0];
+  if (app) app.modal = null;
+}
 
 function updateDcaPreview() {
   const ticker = document.getElementById('dcaTicker').value;
@@ -2421,7 +2444,11 @@ async function deleteDca(id) {
 
 // ===================== TOAST =====================
 function showToast(msg, type = 'success') {
+  const app = document.body._x_dataStack?.[0];
+  if (app && typeof app.toast === 'function') { app.toast(msg, type); return; }
+  // Fallback if Alpine not available
   const container = document.getElementById('toastContainer');
+  if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = msg;

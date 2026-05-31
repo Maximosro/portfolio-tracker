@@ -4,24 +4,38 @@
 `feature/modernize-ui-ux`
 
 ## Cambios realizados
+
+### Fase 1-2 — Extracción CSS/JS (sesión anterior)
 | Archivo | Acción | Descripción |
 |---------|--------|-------------|
 | `css/tokens.css` | CREAR | Design tokens compartidos (DM Sans + JetBrains Mono, paleta teal #3cc9b4) |
 | `css/desktop.css` | CREAR | Estilos desktop: reset, layout, header, drawer, KPI, tablas, modales, paneles, responsive |
-| `css/mobile.css` | CREAR | Estilos mobile: keycards, summary card, KPI chips, tab bar |
+| `css/mobile.css` | CREAR | Estilos mobile: keycards, summary card, KPI chips, tab bar, position cards |
 | `js/formatters.js` | CREAR | Funciones de formato y cálculos: fmtEur, fmtPct, fmtShares, plClass, etc. |
 | `js/api.js` | CREAR | Fetch wrappers para todos los endpoints REST |
 | `js/charts.js` | CREAR | Helpers de Chart.js: chartColors, destroyChart, sparkConfig, calcYBounds10 |
-| `js/alpine-store.js` | CREAR | Store Alpine.js: theme, drawer, ESC cierra todos los modales, keyboard shortcuts |
-| `index.html` | MODIFICAR | Header minimalista + drawer Alpine.js, tokens CSS externos, elim IIFE theme vanilla, modales con click-outside y soporte ESC global |
-| `mobile.html` | MODIFICAR | Head actualizado (tokens.css, mobile.css, Alpine.js, shared JS), tokens duplicados eliminados, `const` conflicts resueltos |
-| `simuladores.html` | MODIFICAR | Link a tokens.css, tokens duplicados eliminados, fuentes actualizadas (DM Sans + JetBrains Mono) |
+| `js/alpine-store.js` | CREAR | Store Alpine.js: theme, drawer, modales, toasts, keyboard shortcuts |
+
+### Fase 3 — Alpine.js + refactor desktop (sesión actual)
+| Archivo | Acción | Descripción |
+|---------|--------|-------------|
+| `index.html` | MODIFICAR | Header minimalista + drawer Alpine.js, tema migrado a Alpine, modales con `x-model` + `@click.self` + preview reactivo, toasts con `x-for` + `x-transition`, ESC global para todos los modales |
+| `alpine-store.js` | MODIFICAR | Añadidos `posForm`, `dcaForm`, `toast()` con auto-removal, ESC cierra todos los modales, `closeModal()` sincronizado |
+| `desktop.css` | MODIFICAR | Añadida animación slide al drawer |
+| `mobile.html` | MODIFICAR | Header rediseñado, tab bar con nuevas clases CSS, tokens duplicados eliminados, shared JS integrado |
+| `simuladores.html` | MODIFICAR | Link a tokens.css, tokens duplicados eliminados, fuentes actualizadas |
 
 ## PR
 Pendiente
 
+## Bugs corregidos
+- `matchMedia` typo → `window.matchMedia` (rompía toda la inicialización de Alpine)
+- `const` redeclaración entre api.js/formatters.js y scripts inline
+- `<style>` tag perdido en index.html
+- Modales fuera del scope Alpine (`x-data` movido a `<body>`)
+- `x-transition.opacity.duration.200ms` → `.duration.200` (formato inválido para Alpine)
+
 ## Notas
-- Alpine.js 3.14.1 integrado vía CDN. Funcionando: drawer (abrir/cerrar con click y ESC), theme toggle (claro/oscuro con localStorage), keyboard shortcuts (⌘K, ⌘N, ⌘⇧N), ESC cierra todos los modales.
-- Se añadió click-outside a los 5 modales que no lo tenían (position, DCA, import, watchlist, wlAlert).
-- Mobile y simuladores ahora comparten tokens.css con desktop. Sin errores JS (verificado con Playwright).
-- Pendiente para próxima iteración: convertir modales a x-show/x-model Alpine.js, rediseñar mobile.html a keycards con sparklines.
+- Alpine.js 3.14.1 integrado. Drawer, tema, toasts, modales y keyboard shortcuts funcionando.
+- Enfoque híbrido para modales: JS vanilla controla visibilidad, Alpine gestiona `x-model`, `@click.self`, preview reactivo.
+- 0 errores JS en las 3 páginas (verificado con Playwright).

@@ -23,38 +23,59 @@ document.addEventListener('alpine:init', () => {
 
     // ── Modal state ──
     modal: null, // 'position' | 'dca' | 'detail' | 'import' | null
+    posForm: { ticker: '', name: '', yahooTicker: '', sector: '', shares: '', avgPrice: '', currentPrice: '', color: '#4f98a3' },
+    dcaForm: { type: 'BUY', ticker: '', shares: '', price: '', date: '' },
+    resetPosForm() {
+      this.posForm = { ticker: '', name: '', yahooTicker: '', sector: '', shares: '', avgPrice: '', currentPrice: '', color: '#4f98a3' };
+    },
     openModal(type, ticker) {
-      this.modal = type;
       if (type === 'position' && !ticker) {
-        // New position — handled by existing openAddModal()
+        this.resetPosForm();
+        this.modal = 'position';
         openAddModal();
         return;
       }
       if (type === 'position' && ticker) {
+        this.modal = 'position';
         openEditModal(ticker);
         return;
       }
       if (type === 'dca') {
+        this.modal = 'dca';
         openDcaModal('BUY');
         return;
       }
       if (type === 'detail' && ticker) {
+        this.modal = 'detail';
         openDetailModal(ticker);
         return;
       }
       if (type === 'import') {
+        this.modal = 'import';
         openImportModal();
         return;
       }
     },
-    closeModal() { this.modal = null; closeModal(); closeDcaModal(); },
+    closeModal() {
+      this.modal = null;
+      if (typeof closeModal === 'function') closeModal();
+      if (typeof closeDcaModal === 'function') closeDcaModal();
+    },
 
     // ── Toast system ──
     toasts: [],
     _toastId: 0,
     toast(msg, type) {
-      // Use existing showToast
-      showToast(msg, type || 'success');
+      type = type || 'success';
+      const id = ++this._toastId;
+      const entry = { _id: id, msg, type, show: true };
+      this.toasts.push(entry);
+      setTimeout(() => {
+        entry.show = false;
+        setTimeout(() => {
+          this.toasts = this.toasts.filter(t => t._id !== id);
+        }, 300);
+      }, 3000);
     },
 
     // ── Navigation ──
