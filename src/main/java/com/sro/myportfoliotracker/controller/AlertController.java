@@ -18,7 +18,7 @@ public class AlertController {
 
     @GetMapping
     public ResponseEntity<List<AlertDto>> getAlerts() {
-        return ResponseEntity.ok(alertService.checkAlerts());
+        return ResponseEntity.ok(alertService.getTodayAlerts());
     }
 }
 

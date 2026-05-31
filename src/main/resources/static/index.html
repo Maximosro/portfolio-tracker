@@ -6,41 +6,19 @@
 <title>Portfolio Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/desktop.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<script src="js/formatters.js"></script>
+<script src="js/api.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/alpine-store.js"></script>
+<!-- CSS: tokens.css + desktop.css -->
 <style>
-/* ===================== DESIGN TOKENS ===================== */
-:root,[data-theme="light"]{
-  --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
-  --color-surface-offset:#f3f0ec;--color-surface-dynamic:#e6e4df;
-  --color-divider:#dcd9d5;--color-border:#d4d1ca;
-  --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
-  --color-primary:#01696f;--color-primary-hover:#0c4e54;
-  --color-success:#437a22;--color-notification:#a13544;--color-gold:#d19900;
-  --color-orange:#da7101;
-  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--radius-full:9999px;
-  --shadow-sm:0 1px 2px oklch(0.2 0.01 80/.06);--shadow-md:0 4px 12px oklch(0.2 0.01 80/.08);
-  --transition-interactive:180ms cubic-bezier(.16,1,.3,1);
-  --font-body:'Inter','Helvetica Neue',sans-serif;
-  --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);--text-sm:clamp(.875rem,.8rem + .35vw,1rem);
-  --text-base:clamp(1rem,.95rem + .25vw,1.125rem);--text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);
-  --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
-  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;
-  --space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--space-16:4rem;
-  --content-wide:1600px;
-}
-[data-theme="dark"]{
-  --color-bg:#111318;--color-surface:#191b22;--color-surface-2:#1e2028;
-  --color-surface-offset:#1b1d24;--color-surface-dynamic:#2a2d36;
-  --color-divider:#262830;--color-border:#32353f;
-  --color-text:#d0d1d8;--color-text-muted:#7a7d8a;--color-text-faint:#4a4d58;
-  --color-primary:#4f98a3;--color-primary-hover:#3d8490;
-  --color-success:#6daa45;--color-notification:#dd6974;--color-gold:#e8af34;
-  --color-orange:#fdab43;
-  --shadow-sm:0 1px 2px oklch(0 0 0/.25);--shadow-md:0 4px 12px oklch(0 0 0/.35);
-}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
 body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg);line-height:1.5}
@@ -330,61 +308,81 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 }
 </style>
 </head>
-<body>
+<body x-data="app" x-init="document.documentElement.setAttribute('data-theme', theme)">
 
 <div class="app">
-  <!-- HEADER -->
+  <!-- HEADER (minimal) -->
   <header>
     <div class="header-left">
+      <button class="menu-btn" @click="drawerOpen = !drawerOpen" aria-label="Menú">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div class="logo">
-        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="18" width="6" height="12" rx="2" fill="currentColor" opacity=".4"/>
-          <rect x="10" y="12" width="6" height="18" rx="2" fill="currentColor" opacity=".65"/>
-          <rect x="18" y="6" width="6" height="24" rx="2" fill="currentColor" opacity=".85"/>
-          <rect x="26" y="2" width="4" height="28" rx="2" fill="currentColor"/>
-          <path d="M4 16 L13 10 L20 4 L28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>
-        </svg>
+        <div class="logo-dot"></div>
         <span>Portfolio Tracker</span>
-        <span style="font-size:var(--text-xs);color:var(--color-text-faint);margin-left:var(--space-2);font-weight:400">by Maximosro</span>
       </div>
     </div>
     <div class="header-right">
-      <button class="btn btn-secondary btn-sm" onclick="window.location.href='simuladores.html'" title="Simuladores avanzados de cartera" style="border-color:var(--color-gold);color:var(--color-gold)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/><path d="M2 20h20"/></svg>
-        Avanzado
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="window.open('guia.html','_blank')" title="Guía de usuario — Aprende a usar Portfolio Tracker">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        Guía
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="exportReport()" title="Exportar informe para IA (Claude)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
-        Exportar
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="openPortfolioDetail()" title="Rentabilidad y patrimonio">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>
-        Detalle de Cartera
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="openAddModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
-        Nueva posición
-      </button>
-      <button class="btn btn-primary btn-sm" onclick="openDcaModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Nueva operación
-      </button>
       <button class="alert-btn" id="alertBtn" onclick="toggleAlertPanel()" aria-label="Alertas" title="Alertas y límites">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="alert-badge" id="alertBadge" style="display:none">0</span>
       </button>
-      <button class="alert-btn" id="logBtn" onclick="toggleLogPanel()" aria-label="Log de actividad" title="Log de actividad">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      </button>
-      <button class="theme-btn" data-theme-toggle aria-label="Cambiar tema">
+      <button class="theme-btn" @click="toggleTheme()" aria-label="Cambiar tema">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
     </div>
   </header>
+
+  <!-- NAV DRAWER -->
+  <div class="drawer-overlay" x-show="drawerOpen" @click="drawerOpen = false"></div>
+  <nav class="nav-drawer" :class="{ open: drawerOpen }">
+    <div class="nav-brand">
+      <div class="logo-dot" style="width:10px;height:10px"></div>
+      <div>
+        <div class="nav-brand-text">Portfolio Tracker</div>
+        <div class="nav-brand-sub">by Maximosro</div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Acciones</div>
+      <button class="nav-item" @click="drawerOpen = false; openAddModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+        Nueva posición
+        <span class="kbd">⌘N</span>
+      </button>
+      <button class="nav-item" @click="drawerOpen = false; openDcaModal('BUY')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Nueva operación
+        <span class="kbd">⌘⇧N</span>
+      </button>
+      <button class="nav-item" @click="drawerOpen = false; openPortfolioDetail()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>
+        Detalle de Cartera
+      </button>
+      <button class="nav-item" @click="drawerOpen = false; exportReport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+        Exportar informe
+      </button>
+      <div class="nav-label">Herramientas</div>
+      <button class="nav-item" @click="drawerOpen = false; if(typeof forceRefreshPrices === 'function') forceRefreshPrices()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refrescar precios
+      </button>
+      <button class="nav-item" @click="drawerOpen = false; toggleLogPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Log de actividad
+      </button>
+      <button class="nav-item" @click="window.location.href='simuladores.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/><path d="M2 20h20"/></svg>
+        Simuladores
+      </button>
+      <button class="nav-item" @click="window.open('guia.html','_blank')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Guía de usuario
+      </button>
+    </div>
+    <div class="nav-footer">⌘K — Abrir/cerrar menú</div>
+  </nav>
 
   <main id="main">
     <!-- KPI CARDS -->
@@ -586,99 +584,104 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: NUEVA / EDITAR POSICIÓN -->
-<div id="positionModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
-  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:500px;box-shadow:var(--shadow-md)">
+<div id="positionModal" @click.self="closeModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:500px;box-shadow:var(--shadow-md)" @click.stop>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
       <h2 style="font-size:var(--text-lg);font-weight:700" id="modalTitle">Añadir Posición</h2>
-      <button class="btn-ghost btn" onclick="closeModal()">✕</button>
+      <button class="btn-ghost btn" @click="closeModal()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:var(--space-4)">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="fTicker">Ticker</label>
-          <input class="form-input" type="text" id="fTicker" placeholder="NUKL" maxlength="10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+          <input class="form-input" type="text" id="fTicker" x-model="posForm.ticker" placeholder="NUKL" maxlength="10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
         </div>
         <div class="form-group">
           <label class="form-label" for="fYahoo">Yahoo Ticker</label>
-          <input class="form-input" type="text" id="fYahoo" placeholder="NUKL.L">
+          <input class="form-input" type="text" id="fYahoo" x-model="posForm.yahooTicker" placeholder="NUKL.L">
         </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="fName">Nombre</label>
-        <input class="form-input" type="text" id="fName" placeholder="VanEck Uranium & Nuclear">
+        <input class="form-input" type="text" id="fName" x-model="posForm.name" placeholder="VanEck Uranium & Nuclear">
       </div>
       <div class="form-group">
         <label class="form-label" for="fSector">Sector / Temática (para noticias)</label>
-        <input class="form-input" type="text" id="fSector" placeholder="energía nuclear, uranio">
+        <input class="form-input" type="text" id="fSector" x-model="posForm.sector" placeholder="energía nuclear, uranio">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="fShares">Acciones</label>
-          <input class="form-input" type="number" id="fShares" step="0.000001" min="0.000001" placeholder="0.00">
+          <input class="form-input" type="number" id="fShares" x-model="posForm.shares" step="0.000001" min="0.000001" placeholder="0.00">
         </div>
         <div class="form-group">
           <label class="form-label" for="fAvgPrice">Precio Medio (€)</label>
-          <input class="form-input" type="number" id="fAvgPrice" step="0.0001" min="0.0001" placeholder="0.00">
+          <input class="form-input" type="number" id="fAvgPrice" x-model="posForm.avgPrice" step="0.0001" min="0.0001" placeholder="0.00">
         </div>
+      </div>
+      <!-- Preview reactivo -->
+      <div class="preview-box" x-show="posForm.shares && posForm.avgPrice">
+        <div class="preview-row"><span class="preview-label">Inversión</span><span class="preview-value" x-text="fmtEur(posForm.shares * posForm.avgPrice)"></span></div>
+        <div class="preview-row" x-show="posForm.currentPrice"><span class="preview-label">Valor actual</span><span class="preview-value" x-text="fmtEur(posForm.shares * posForm.currentPrice)"></span></div>
+        <div class="preview-row" x-show="posForm.currentPrice && posForm.avgPrice"><span class="preview-label">P/L</span><span class="preview-value" :class="plClass(posForm.shares * (posForm.currentPrice - posForm.avgPrice))" x-text="fmtPct((posForm.currentPrice / posForm.avgPrice - 1) * 100)"></span></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="fCurrentPrice">Precio Actual (€)</label>
-          <input class="form-input" type="number" id="fCurrentPrice" step="0.0001" min="0" placeholder="Opcional">
+          <input class="form-input" type="number" id="fCurrentPrice" x-model="posForm.currentPrice" step="0.0001" min="0" placeholder="Opcional">
         </div>
         <div class="form-group">
           <label class="form-label">Color</label>
           <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-1)" id="colorPicker"></div>
-          <input type="hidden" id="fColor" value="#4f98a3">
+          <input type="hidden" id="fColor" x-model="posForm.color" value="#4f98a3">
         </div>
       </div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:var(--space-3);margin-top:var(--space-6)">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" id="modalSaveBtn" onclick="savePosition()">Guardar</button>
+      <button class="btn btn-secondary" @click="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modalSaveBtn" @click="savePosition()" :disabled="!posForm.ticker">Guardar</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: AÑADIR DCA -->
-<div id="dcaModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
-  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:460px;box-shadow:var(--shadow-md)">
+<div id="dcaModal" @click.self="closeModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4)">
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-8);width:100%;max-width:460px;box-shadow:var(--shadow-md)" @click.stop>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
       <h2 id="dcaModalTitle" style="font-size:var(--text-lg);font-weight:700">Registrar Operación</h2>
-      <button class="btn-ghost btn" onclick="closeDcaModal()">✕</button>
+      <button class="btn-ghost btn" @click="closeModal()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-      <!-- BUY/SELL Toggle -->
       <div class="form-group">
         <label class="form-label">Tipo de operación</label>
         <div style="display:flex;gap:var(--space-2)">
-          <button class="btn btn-sm" id="dcaTypeBuy" onclick="setDcaType('BUY')" style="flex:1;border:2px solid var(--color-success);background:oklch(from var(--color-success) l c h / .15);color:var(--color-success);font-weight:700">🟢 Compra</button>
-          <button class="btn btn-sm" id="dcaTypeSell" onclick="setDcaType('SELL')" style="flex:1;border:2px solid var(--color-border);color:var(--color-text-muted);font-weight:700">🔴 Venta</button>
+          <button class="btn btn-sm" id="dcaTypeBuy" @click="setDcaType('BUY')" :style="dcaForm.type === 'BUY' ? 'flex:1;border:2px solid var(--color-success);background:oklch(from var(--color-success) l c h / .15);color:var(--color-success);font-weight:700' : 'flex:1;border:2px solid var(--color-border);color:var(--color-text-muted);font-weight:700'">🟢 Compra</button>
+          <button class="btn btn-sm" id="dcaTypeSell" @click="setDcaType('SELL')" :style="dcaForm.type === 'SELL' ? 'flex:1;border:2px solid var(--color-notification);background:oklch(from var(--color-notification) l c h / .15);color:var(--color-notification);font-weight:700' : 'flex:1;border:2px solid var(--color-border);color:var(--color-text-muted);font-weight:700'">🔴 Venta</button>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="dcaTicker">ETF / Acción</label>
-        <select class="form-input" id="dcaTicker" onchange="updateDcaPreview()"></select>
+        <select class="form-input" id="dcaTicker" x-model="dcaForm.ticker" @change="updateDcaPreview()"></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
           <label class="form-label" for="dcaShares">Nº Acciones</label>
-          <input class="form-input" type="number" id="dcaShares" step="0.000001" min="0.000001" placeholder="0.00" oninput="updateDcaPreview()">
+          <input class="form-input" type="number" id="dcaShares" x-model="dcaForm.shares" step="0.000001" min="0.000001" placeholder="0.00" @input="updateDcaPreview()">
         </div>
         <div class="form-group">
           <label class="form-label" for="dcaPrice" id="dcaPriceLabel">Precio Pagado (€)</label>
-          <input class="form-input" type="number" id="dcaPrice" step="0.01" min="0.01" placeholder="0.00" oninput="updateDcaPreview()">
+          <input class="form-input" type="number" id="dcaPrice" x-model="dcaForm.price" step="0.01" min="0.01" placeholder="0.00" @input="updateDcaPreview()">
         </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="dcaDate">Fecha</label>
-        <input class="form-input" type="date" id="dcaDate">
+        <input class="form-input" type="date" id="dcaDate" x-model="dcaForm.date">
       </div>
     </div>
     <div style="background:var(--color-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-top:var(--space-5);font-size:var(--text-xs);color:var(--color-text-muted)" id="dcaPreview">Rellena los campos para ver el nuevo precio medio.</div>
     <div style="display:flex;justify-content:flex-end;gap:var(--space-3);margin-top:var(--space-6)">
-      <button class="btn btn-secondary" onclick="closeDcaModal()">Cancelar</button>
-      <button class="btn btn-primary" id="dcaConfirmBtn" onclick="executeDca()">Confirmar Compra</button>
+      <button class="btn btn-secondary" @click="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="dcaConfirmBtn" @click="executeDca()">Confirmar Compra</button>
     </div>
   </div>
 </div>
@@ -714,7 +717,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: AÑADIR A WATCHLIST (formulario) -->
-<div id="watchlistModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1000;align-items:center;justify-content:center;padding:var(--space-4)">
+<div id="watchlistModal" onclick="if(event.target===this)closeWatchlistModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1000;align-items:center;justify-content:center;padding:var(--space-4)">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:420px;box-shadow:var(--shadow-md)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
       <h2 style="font-size:var(--text-base);font-weight:700" id="wlModalTitle">Añadir a Watchlist</h2>
@@ -748,7 +751,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: ALERTAS DE WATCHLIST -->
-<div id="wlAlertModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1001;align-items:center;justify-content:center;padding:var(--space-4)">
+<div id="wlAlertModal" onclick="if(event.target===this)closeWlAlertModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:1001;align-items:center;justify-content:center;padding:var(--space-4)">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:480px;box-shadow:var(--shadow-md);max-height:80vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
       <h2 style="font-size:var(--text-base);font-weight:700">🔔 Alertas — <span id="wlAlertTicker"></span></h2>
@@ -1221,7 +1224,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- MODAL: IMPORTAR OPERACIONES JSON -->
-<div id="importModal" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4);overflow-y:auto">
+<div id="importModal" onclick="if(event.target===this)closeImportModal()" style="display:none;position:fixed;inset:0;background:oklch(0 0 0/.6);z-index:500;align-items:center;justify-content:center;padding:var(--space-4);overflow-y:auto">
   <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-6);width:100%;max-width:720px;box-shadow:var(--shadow-md);margin:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
       <h2 style="font-size:var(--text-lg);font-weight:700;display:flex;align-items:center;gap:var(--space-2)">
@@ -1356,14 +1359,18 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <!-- TOAST CONTAINER -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-container" id="toastContainer">
+  <template x-for="t in toasts" :key="t._id">
+    <div class="toast" :class="t.type" x-show="t.show" x-transition.opacity.duration.300ms x-text="t.msg"></div>
+  </template>
+</div>
 
 <script>
 // ===================== CONFIG =====================
-const BASE = document.baseURI.replace(/\/+$/, '');
-const API = `${BASE}/api/positions`;
-const API_DCA = `${BASE}/api/dca`;
-const COLORS = ['#4f98a3','#e8af34','#6daa45','#5591c7','#fdab43','#a86fdf','#dd6974','#bb653b','#d163a7','#01696f'];
+var BASE = window.__BASE__ || (window.__BASE__ = document.baseURI.replace(/\/+$/, ''));
+var API = `${BASE}/api/positions`;
+var API_DCA = `${BASE}/api/dca`;
+var COLORS = window.__COLORS__ || (window.__COLORS__ = ['#4f98a3','#e8af34','#6daa45','#5591c7','#fdab43','#a86fdf','#dd6974','#bb653b','#d163a7','#01696f']);
 
 let positions = [];
 let dcaEntries = [];
@@ -2068,17 +2075,13 @@ function openAddModal() {
   editingTicker = null;
   document.getElementById('modalTitle').textContent = 'Añadir Posición';
   document.getElementById('modalSaveBtn').textContent = 'Crear posición';
-  document.getElementById('fTicker').value = '';
   document.getElementById('fTicker').disabled = false;
-  document.getElementById('fYahoo').value = '';
-  document.getElementById('fName').value = '';
-  document.getElementById('fSector').value = '';
-  document.getElementById('fShares').value = '';
-  document.getElementById('fAvgPrice').value = '';
-  document.getElementById('fCurrentPrice').value = '';
   selectedColor = COLORS[positions.length % COLORS.length];
-  document.getElementById('fColor').value = selectedColor;
   buildColorPicker();
+  // Sync Alpine posForm
+  const app = document.body._x_dataStack?.[0];
+  if (app) { app.resetPosForm(); app.posForm.color = selectedColor; app.modal = 'position'; }
+  document.getElementById('fColor').value = selectedColor;
   document.getElementById('positionModal').style.display = 'flex';
 }
 
@@ -2088,21 +2091,32 @@ function openEditModal(ticker) {
   editingTicker = ticker;
   document.getElementById('modalTitle').textContent = 'Editar ' + ticker;
   document.getElementById('modalSaveBtn').textContent = 'Guardar cambios';
-  document.getElementById('fTicker').value = pos.ticker;
   document.getElementById('fTicker').disabled = true;
+  selectedColor = pos.color || COLORS[0];
+  buildColorPicker();
+  // Sync Alpine posForm
+  const app = document.body._x_dataStack?.[0];
+  if (app) {
+    app.posForm = { ticker: pos.ticker, name: pos.name || '', yahooTicker: pos.yahooTicker || '', sector: pos.sector || '', shares: pos.shares, avgPrice: pos.avgPrice, currentPrice: pos.currentPrice || '', color: selectedColor };
+    app.modal = 'position';
+  }
+  // Also set DOM values for non-Alpine fallback
+  document.getElementById('fTicker').value = pos.ticker;
   document.getElementById('fYahoo').value = pos.yahooTicker || '';
   document.getElementById('fName').value = pos.name || '';
   document.getElementById('fSector').value = pos.sector || '';
   document.getElementById('fShares').value = pos.shares;
   document.getElementById('fAvgPrice').value = pos.avgPrice;
   document.getElementById('fCurrentPrice').value = pos.currentPrice || '';
-  selectedColor = pos.color || COLORS[0];
   document.getElementById('fColor').value = selectedColor;
-  buildColorPicker();
   document.getElementById('positionModal').style.display = 'flex';
 }
 
-function closeModal() { document.getElementById('positionModal').style.display = 'none'; }
+function closeModal() {
+  document.getElementById('positionModal').style.display = 'none';
+  const app = document.body._x_dataStack?.[0];
+  if (app) app.modal = null;
+}
 
 async function savePosition() {
   const ticker = document.getElementById('fTicker').value.trim().toUpperCase();
@@ -2214,20 +2228,27 @@ function setDcaType(type) {
 function openDcaModal(type) {
   dcaType = type || 'BUY';
   const sel = document.getElementById('dcaTicker');
-  // Solo posiciones activas (con shares > 0)
   const availablePositions = positions.filter(p => p.shares > 0);
   sel.innerHTML = availablePositions.map(p => {
     return `<option value="${p.ticker}">${p.ticker} – ${p.name || p.ticker}</option>`;
   }).join('');
-  document.getElementById('dcaDate').value = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dcaDate').value = today;
   document.getElementById('dcaShares').value = '';
   document.getElementById('dcaPrice').value = '';
   document.getElementById('dcaPreview').innerHTML = 'Rellena los campos para ver la vista previa.';
   document.getElementById('dcaModal').style.display = 'flex';
+  // Sync Alpine
+  const app = document.body._x_dataStack?.[0];
+  if (app) { app.dcaForm = { type: dcaType, ticker: '', shares: '', price: '', date: today }; app.modal = 'dca'; }
   setDcaType(dcaType);
 }
 
-function closeDcaModal() { document.getElementById('dcaModal').style.display = 'none'; }
+function closeDcaModal() {
+  document.getElementById('dcaModal').style.display = 'none';
+  const app = document.body._x_dataStack?.[0];
+  if (app) app.modal = null;
+}
 
 function updateDcaPreview() {
   const ticker = document.getElementById('dcaTicker').value;
@@ -2423,7 +2444,11 @@ async function deleteDca(id) {
 
 // ===================== TOAST =====================
 function showToast(msg, type = 'success') {
+  const app = document.body._x_dataStack?.[0];
+  if (app && typeof app.toast === 'function') { app.toast(msg, type); return; }
+  // Fallback if Alpine not available
   const container = document.getElementById('toastContainer');
+  if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = msg;
@@ -2432,27 +2457,7 @@ function showToast(msg, type = 'success') {
 }
 
 // ===================== THEME =====================
-(function () {
-  const btn = document.querySelector('[data-theme-toggle]');
-  const root = document.documentElement;
-  let theme = localStorage.getItem('theme_pref') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
-  root.setAttribute('data-theme', theme);
-  function updateIcon() {
-    if (!btn) return;
-    btn.innerHTML = theme === 'dark'
-      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
-      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-  }
-  updateIcon();
-  btn && btn.addEventListener('click', () => {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', theme);
-    try { localStorage.setItem('theme_pref', theme); } catch (e) { }
-    updateIcon();
-    renderPieChart();
-    loadHistory();
-  });
-})();
+// Theme handled by Alpine.js store (js/alpine-store.js)
 
 
 // ===================== CHART VIEW TOGGLE =====================
@@ -5176,4 +5181,3 @@ setInterval(() => loadAll(), 90000);
 </script>
 </body>
 </html>
-

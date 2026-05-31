@@ -35,3 +35,4 @@ build/
 ### SQLite DB ###
 data/*.db
 
+/plans

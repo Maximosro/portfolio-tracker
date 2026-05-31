@@ -1,0 +1,85 @@
+/* ═══════════════════════════════════════════════════════════════
+   Portfolio Tracker — Design Tokens
+   Shared by: index.html, mobile.html, simuladores.html
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Typography */
+  --font-sans: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --font-body: var(--font-sans); /* backwards compat */
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Radii */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layout */
+  --content-wide: 1600px;
+}
+
+/* ═══════════════════════════ LIGHT THEME ═══════════════════════════ */
+[data-theme="light"] {
+  --color-bg: #f7f6f2;
+  --color-surface: #f9f8f5;
+  --color-surface-2: #fbfbf9;
+  --color-surface-offset: #f3f0ec;
+  --color-surface-dynamic: #e6e4df;
+  --color-divider: #dcd9d5;
+  --color-border: #d4d1ca;
+  --color-text: #28251d;
+  --color-text-muted: #7a7974;
+  --color-text-faint: #bab9b4;
+  --color-primary: #01696f;
+  --color-primary-hover: #0c4e54;
+  --color-success: #437a22;
+  --color-notification: #a13544;
+  --color-gold: #d19900;
+  --color-orange: #da7101;
+  --shadow-sm: 0 1px 2px oklch(0.2 0.01 80 / 0.06);
+  --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08);
+}
+
+/* ═══════════════════════════ DARK THEME ═══════════════════════════ */
+[data-theme="dark"] {
+  --color-bg: #0a0b0f;
+  --color-surface: #111318;
+  --color-surface-2: #1e2028;
+  --color-surface-offset: #1b1d24;
+  --color-surface-dynamic: #2a2d36;
+  --color-divider: #262830;
+  --color-border: #32353f;
+  --color-text: #d0d1d8;
+  --color-text-muted: #7a7d8a;
+  --color-text-faint: #4a4d58;
+  --color-primary: #3cc9b4;
+  --color-primary-hover: #2aa18e;
+  --color-success: #4ade80;
+  --color-notification: #f87171;
+  --color-gold: #fbbf24;
+  --color-orange: #fdab43;
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.25);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.35);
+}
