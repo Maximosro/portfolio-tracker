@@ -6,7 +6,10 @@ import com.sro.myportfoliotracker.service.PortfolioMetricsService;
 import com.sro.myportfoliotracker.service.PortfolioSnapshotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/metrics")
@@ -14,17 +17,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class MetricsController {
 
-    private final PortfolioMetricsService metricsService;
-    private final PortfolioSnapshotService snapshotService;
+  private final PortfolioMetricsService metricsService;
+  private final PortfolioSnapshotService snapshotService;
 
-    @GetMapping
-    public ResponseEntity<PortfolioMetricsDto> getMetrics() {
-        return ResponseEntity.ok(metricsService.calculateMetrics());
-    }
+  @GetMapping
+  public ResponseEntity<PortfolioMetricsDto> getMetrics() {
+    return ResponseEntity.ok(metricsService.calculateMetrics());
+  }
 
-    @GetMapping("/returns")
-    public ResponseEntity<PeriodReturnsDto> getReturns() {
-        return ResponseEntity.ok(snapshotService.calculateReturns());
-    }
+  @GetMapping("/returns")
+  public ResponseEntity<PeriodReturnsDto> getReturns() {
+    return ResponseEntity.ok(snapshotService.calculateReturns());
+  }
 }
 
