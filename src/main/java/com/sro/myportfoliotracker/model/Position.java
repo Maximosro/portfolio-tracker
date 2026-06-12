@@ -1,6 +1,5 @@
 package com.sro.myportfoliotracker.model;
 
-import com.sro.myportfoliotracker.config.InstantStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,7 +55,6 @@ public class Position {
     private Long avgVolume;
 
     @Column(name = "last_price_update")
-    @Convert(converter = InstantStringConverter.class)
     private Instant lastPriceUpdate;
 }
 

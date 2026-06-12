@@ -1,6 +1,5 @@
 package com.sro.myportfoliotracker.model;
 
-import com.sro.myportfoliotracker.config.InstantStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,7 +48,6 @@ public class PositionAlert {
     private Double distancePct;
 
     @Column(name = "triggered_at", nullable = false)
-    @Convert(converter = InstantStringConverter.class)
     private Instant triggeredAt;
 
     @Column(name = "notified_telegram", nullable = false)

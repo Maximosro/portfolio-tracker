@@ -1,6 +1,5 @@
 package com.sro.myportfoliotracker.model;
 
-import com.sro.myportfoliotracker.config.InstantStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,11 +47,9 @@ public class WatchlistAlert {
     private Boolean triggered = false;
 
     @Column(name = "last_triggered_at")
-    @Convert(converter = InstantStringConverter.class)
     private Instant lastTriggeredAt;
 
     @Column(name = "created_at")
-    @Convert(converter = InstantStringConverter.class)
     private Instant createdAt;
 }
 

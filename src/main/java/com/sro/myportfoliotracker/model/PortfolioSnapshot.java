@@ -1,6 +1,5 @@
 package com.sro.myportfoliotracker.model;
 
-import com.sro.myportfoliotracker.config.LocalDateStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +23,6 @@ public class PortfolioSnapshot {
     private Long id;
 
     @Column(nullable = false)
-    @Convert(converter = LocalDateStringConverter.class)
     private LocalDate date;
 
     /**

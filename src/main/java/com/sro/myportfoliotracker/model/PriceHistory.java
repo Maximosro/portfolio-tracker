@@ -1,6 +1,5 @@
 package com.sro.myportfoliotracker.model;
 
-import com.sro.myportfoliotracker.config.InstantStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +28,6 @@ public class PriceHistory {
     private String ticker;
 
     @Column(nullable = false)
-    @Convert(converter = InstantStringConverter.class)
     private Instant timestamp;
 
     /**
