@@ -68,15 +68,17 @@ class PriceHistoryPurgeServiceTest {
           .build());
     }
 
-    // Zona horaria (7-30 días): devolver los 6 registros
+    // 3 zonas: 1-7d (hourly), 7-30d (daily), 30-365d (weekly)
+    // Records de hace 10 días → zona 7-30d (daily bucket)
     when(priceHistoryRepository.findByTickerAndTimestampBetweenOrderByTimestampAsc(
         eq(TICKER), any(Instant.class), any(Instant.class)))
-        .thenReturn(records)    // primera llamada: zona horaria
-        .thenReturn(List.of()); // segunda llamada: zona diaria (vacía)
+        .thenReturn(List.of())  // zona 1-7d: vacía (records son más antiguos)
+        .thenReturn(records)    // zona 7-30d: 6 registros en el mismo día
+        .thenReturn(List.of()); // zona 30-365d: vacía
 
     int removed = purgeService.purge();
 
-    // Debe eliminar 5 de los 6 (mantener solo el último: id=6)
+    // 6 registros en el mismo día → compactación diaria: elimina 5, mantiene el último (id=6)
     assertEquals(5, removed);
     verify(priceHistoryRepository).deleteAllByIdIn(idsCaptor.capture());
     List<Long> deletedIds = idsCaptor.getValue();
@@ -86,8 +88,8 @@ class PriceHistoryPurgeServiceTest {
   }
 
   /**
-   * Registros de hace 45 días (zona diaria): con 3 registros en el mismo día, debe eliminar 2 y
-   * mantener solo el último.
+   * Registros de hace 45 días (zona 30-365d, weekly): con 3 registros en el mismo día (misma semana),
+   * debe eliminar 2 y mantener solo el último.
    */
   @Test
   void purge_compactsDailyZone_keepsLastPerDay() {
@@ -104,10 +106,13 @@ class PriceHistoryPurgeServiceTest {
           .build());
     }
 
+    // 3 zonas: 1-7d (hourly), 7-30d (daily), 30-365d (weekly)
+    // Records de hace 45 días → zona 30-365d (weekly bucket)
     when(priceHistoryRepository.findByTickerAndTimestampBetweenOrderByTimestampAsc(
         eq(TICKER), any(Instant.class), any(Instant.class)))
-        .thenReturn(List.of())  // primera llamada: zona horaria (vacía)
-        .thenReturn(records);   // segunda llamada: zona diaria
+        .thenReturn(List.of())  // zona 1-7d: vacía
+        .thenReturn(List.of())  // zona 7-30d: vacía
+        .thenReturn(records);   // zona 30-365d: 3 registros en la misma semana
 
     int removed = purgeService.purge();
 
@@ -140,21 +145,21 @@ class PriceHistoryPurgeServiceTest {
    */
   @Test
   void purge_singleRecordPerBucket_noDeletes() {
-    // Un registro por hora diferente, en zona horaria
-    Instant base = Instant.now().minus(15, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    // Un registro por DÍA diferente, en zona 7-30d (daily bucket) → 1 por bucket
+    Instant base = Instant.now().minus(15, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
     List<PriceHistory> records = List.of(
         PriceHistory.builder().id(1L).ticker(TICKER).timestamp(base).rawPrice(100.0).currency("USD")
             .priceEur(95.0).build(),
-        PriceHistory.builder().id(2L).ticker(TICKER).timestamp(base.plus(1, ChronoUnit.HOURS))
+        PriceHistory.builder().id(2L).ticker(TICKER).timestamp(base.plus(1, ChronoUnit.DAYS))
             .rawPrice(101.0).currency("USD").priceEur(96.0).build(),
-        PriceHistory.builder().id(3L).ticker(TICKER).timestamp(base.plus(2, ChronoUnit.HOURS))
+        PriceHistory.builder().id(3L).ticker(TICKER).timestamp(base.plus(2, ChronoUnit.DAYS))
             .rawPrice(102.0).currency("USD").priceEur(97.0).build()
     );
 
+    // 3 zonas: zona 1-7d vacía, zona 7-30d con 3 registros en 3 días distintos (1/bucket → 0 borrados), zona 30-365d vacía
     when(priceHistoryRepository.findByTickerAndTimestampBetweenOrderByTimestampAsc(
         eq(TICKER), any(Instant.class), any(Instant.class)))
-        .thenReturn(records)
-        .thenReturn(List.of());
+        .thenReturn(List.of(), records, List.of());
 
     int removed = purgeService.purge();
 
@@ -186,14 +191,13 @@ class PriceHistoryPurgeServiceTest {
             .rawPrice(302.0).currency("USD").priceEur(282.0).build()
     );
 
-    // AAPL: zona horaria, zona diaria
-    // MSFT: zona horaria, zona diaria
+    // 3 zonas por ticker: AAPL (zona 7-30d) y MSFT (zona 7-30d)
     when(priceHistoryRepository.findByTickerAndTimestampBetweenOrderByTimestampAsc(
         eq("AAPL"), any(Instant.class), any(Instant.class)))
-        .thenReturn(aaplRecords).thenReturn(List.of());
+        .thenReturn(List.of()).thenReturn(aaplRecords).thenReturn(List.of());
     when(priceHistoryRepository.findByTickerAndTimestampBetweenOrderByTimestampAsc(
         eq("MSFT"), any(Instant.class), any(Instant.class)))
-        .thenReturn(msftRecords).thenReturn(List.of());
+        .thenReturn(List.of()).thenReturn(msftRecords).thenReturn(List.of());
 
     int removed = purgeService.purge();
 
@@ -218,16 +222,21 @@ class PriceHistoryPurgeServiceTest {
   @Test
   void getStats_returnsCorrectMap() {
     when(priceHistoryRepository.count()).thenReturn(5000L);
+    // 4 llamadas a countByTimestampBefore: dayAgo, weekAgo, monthAgo, yearAgo
     when(priceHistoryRepository.countByTimestampBefore(any(Instant.class)))
-        .thenReturn(3000L)  // olderThan7Days
-        .thenReturn(1000L); // olderThan30Days
+        .thenReturn(3000L)  // olderThan1Day  (call 1)
+        .thenReturn(1000L)  // olderThan7Days  (call 2)
+        .thenReturn(500L)   // olderThan30Days (call 3)
+        .thenReturn(100L);  // olderThan365Days (call 4)
 
     Map<String, Object> stats = purgeService.getStats();
 
     assertEquals(5000L, stats.get("totalRecords"));
-    assertEquals(3000L, stats.get("olderThan7Days"));
-    assertEquals(1000L, stats.get("olderThan30Days"));
-    assertEquals(2000L, stats.get("recentRecords"));
+    assertEquals(2000L, stats.get("today"));            // 5000 - 3000
+    assertEquals(3000L, stats.get("olderThan1Day"));
+    assertEquals(1000L, stats.get("olderThan7Days"));
+    assertEquals(500L, stats.get("olderThan30Days"));
+    assertEquals(100L, stats.get("olderThan365Days"));
   }
 }
 

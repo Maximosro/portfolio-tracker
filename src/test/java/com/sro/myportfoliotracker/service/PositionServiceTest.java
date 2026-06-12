@@ -34,6 +34,12 @@ class PositionServiceTest {
   @Mock
   private PriceHistoryRepository priceHistoryRepository;
 
+  @Mock
+  private MarketScheduleService marketScheduleService;
+
+  @Mock
+  private DcaService dcaService;
+
   @InjectMocks
   private PositionService positionService;
 

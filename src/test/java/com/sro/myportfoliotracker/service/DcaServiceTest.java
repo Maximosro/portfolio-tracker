@@ -29,6 +29,8 @@ class DcaServiceTest {
   private DcaEntryRepository dcaEntryRepository;
   @Mock
   private PositionRepository positionRepository;
+  @Mock
+  private ActivityLogService activityLog;
 
   @InjectMocks
   private DcaService dcaService;
