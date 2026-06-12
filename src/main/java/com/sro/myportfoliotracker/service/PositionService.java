@@ -47,6 +47,10 @@ public class PositionService {
             position.setTargetPct(0.0);
         }
 
+        // Guardar la posición primero para que exista antes de insertar en dca_history
+        // (la FK fk_dca_history_ticker lo requiere en PostgreSQL/Supabase)
+        Position saved = positionRepository.save(position);
+
         // Si la posición se crea con acciones iniciales, registrar una entrada DCA
         // para que sea la fuente de verdad y recalcular desde ahí.
         final boolean hasInitialPosition = position.getShares() != null && position.getShares() > 0
@@ -61,14 +65,12 @@ public class PositionService {
                     .type("BUY")
                     .build();
             dcaEntryRepository.save(seed);
-        }
 
-        // Recalcular desde DCA para que shares y avgPrice sean consistentes
-        if (hasInitialPosition) {
+            // Recalcular desde DCA para que shares y avgPrice sean consistentes
             dcaService.recalculatePositionFromDca(position.getTicker(), position);
+            saved = positionRepository.save(position);
         }
 
-        Position saved = positionRepository.save(position);
         warnIfNoMarketSchedule(saved.getYahooTicker());
         return saved;
     }
