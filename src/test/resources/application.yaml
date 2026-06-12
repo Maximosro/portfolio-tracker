@@ -10,3 +10,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+
+supabase:
+  jwt:
+    jwks-uri: https://agtkcnxmlbccbwmsuxdz.supabase.co/auth/v1/.well-known/jwks.json

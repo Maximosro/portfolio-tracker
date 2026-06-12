@@ -17,6 +17,8 @@
 <script src="js/formatters.js"></script>
 <script src="js/api.js"></script>
 <script src="js/charts.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/auth.js"></script>
 <style>
 /* Design Tokens: css/tokens.css */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -229,6 +231,9 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
     </button>
     <button class="icon-btn" onclick="toggleTheme()" aria-label="Cambiar tema">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="icon-btn" onclick="signOut()" aria-label="Cerrar sesión" title="Cerrar sesión">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     </button>
     <a href="index.html" class="icon-btn" title="Versión escritorio" style="text-decoration:none">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -505,6 +510,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 <script>
 // ===================== CONFIG =====================
 var BASE = location.origin + '/portfoliotracker';
+window.__CONTEXT_PATH__ = '/portfoliotracker';
 var COLORS = window.__COLORS__ || ['#4f98a3','#e8af34','#6daa45','#5591c7','#fdab43','#a86fdf','#dd6974','#bb653b','#d163a7','#01696f'];
 
 let positions = [], dcaEntries = [], metrics = null, investmentPlan = null;
@@ -621,9 +627,9 @@ async function loadAll(){
     positions = await posResp.json();
     dcaEntries = await dcaResp.json();
     if(metricsResp && metricsResp.ok) metrics = await metricsResp.json(); else metrics = null;
-    try{ const r = await fetch(`${BASE}/api/investment-plan`); if(r.ok) investmentPlan = await r.json(); }catch(e){}
-    try{ const r = await fetch(`${BASE}/api/alerts`); if(r.ok) currentAlerts = await r.json(); else currentAlerts=[]; }catch(e){ currentAlerts=[]; }
-    try{ marketSchedules = await (await fetch(`${BASE}/api/market-schedules`)).json(); }catch(e){ marketSchedules=[]; }
+    try{ const r = await authFetch(`${BASE}/api/investment-plan`); if(r.ok) investmentPlan = await r.json(); }catch(e){}
+    try{ const r = await authFetch(`${BASE}/api/alerts`); if(r.ok) currentAlerts = await r.json(); else currentAlerts=[]; }catch(e){ currentAlerts=[]; }
+    try{ marketSchedules = await (await authFetch(`${BASE}/api/market-schedules`)).json(); }catch(e){ marketSchedules=[]; }
     renderAll();
     renderMAlerts();
   }catch(e){ showToast('Error conectando con el servidor','error') }
@@ -921,7 +927,7 @@ function calcYBounds(datasets,range){
 
 async function loadMPdChart(){
   try{
-    const r=await fetch(`${BASE}/api/prices/history?range=${mPdRange}`);
+    const r=await authFetch(`${BASE}/api/prices/history?range=${mPdRange}`);
     if(!r.ok)return;const data=await r.json();
     if(!data||data.length===0)return;
 
@@ -1022,7 +1028,7 @@ async function loadPortfolioDetail(){
 
   // Period returns
   try{
-    const r=await fetch(`${BASE}/api/metrics/returns`);
+    const r=await authFetch(`${BASE}/api/metrics/returns`);
     if(r.ok){
       const data=await r.json();
       const p=data.periods||{};
@@ -1042,7 +1048,7 @@ async function loadPortfolioDetail(){
 
 async function loadMEquityChart(){
   try{
-    const r=await fetch(`${BASE}/api/snapshots?range=${mEqRange}`);if(!r.ok)return;const data=await r.json();
+    const r=await authFetch(`${BASE}/api/snapshots?range=${mEqRange}`);if(!r.ok)return;const data=await r.json();
     if(data.length===0)return;
     const c=chartColors();
     if(mEquityChart)mEquityChart.destroy();
@@ -1087,7 +1093,7 @@ async function openMDetail(ticker){
 
   // Load detail info (limits, notes)
   try{
-    const r=await fetch(`${BASE}/api/positions/${encodeURIComponent(ticker)}/detail`);
+    const r=await authFetch(`${BASE}/api/positions/${encodeURIComponent(ticker)}/detail`);
     if(r.ok){
       const d=await r.json();
       let limitsHtml='';
@@ -1142,7 +1148,7 @@ async function loadMDetailChart(range){
   const p=positions.find(x=>x.ticker===currentDetailTicker);
   const color=p?p.color||COLORS[0]:'#4f98a3';
   try{
-    const r=await fetch(`${BASE}/api/prices/history/${encodeURIComponent(currentDetailTicker)}?range=${range}`);
+    const r=await authFetch(`${BASE}/api/prices/history/${encodeURIComponent(currentDetailTicker)}?range=${range}`);
     if(!r.ok)return;const data=await r.json();if(!data||data.length===0)return;
 
     const sorted=[...data].sort((a,b)=>a.timestamp.localeCompare(b.timestamp));
@@ -1204,7 +1210,7 @@ async function runProjection(){
   if(monthly)body.monthlyContribution=parseFloat(monthly);
   if(ret)body.expectedReturnPct=parseFloat(ret);
   try{
-    const r=await fetch(`${BASE}/api/simulator/projection`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await authFetch(`${BASE}/api/simulator/projection`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
     const s=d.summary;
     document.getElementById('simKpi-projection').innerHTML=simKpiHtml([
@@ -1238,7 +1244,7 @@ async function runCompound(){
     annualFeePct:+document.getElementById('sCompoundFee').value||0
   };
   try{
-    const r=await fetch(`${BASE}/api/simulator/compound`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await authFetch(`${BASE}/api/simulator/compound`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
     document.getElementById('simKpi-compound').innerHTML=simKpiHtml([
       ['Valor Final',fmtK(d.finalValue)+' €','positive'],
@@ -1268,7 +1274,7 @@ async function runMortgage(){
     extraMonthly:+document.getElementById('sMortgageExtra').value||0
   };
   try{
-    const r=await fetch(`${BASE}/api/simulator/mortgage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await authFetch(`${BASE}/api/simulator/mortgage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
     const winColor=d.winnerStrategy==='INVERTIR'?'var(--color-success)':'var(--color-gold)';
     const winIcon=d.winnerStrategy==='INVERTIR'?'📈':'🏠';
@@ -1305,7 +1311,7 @@ async function runWithdrawal(){
   if(fixed)body.fixedMonthlyWithdrawal=parseFloat(fixed);
   if(ret)body.expectedReturnPct=parseFloat(ret);
   try{
-    const r=await fetch(`${BASE}/api/simulator/withdrawal`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await authFetch(`${BASE}/api/simulator/withdrawal`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
     const survIcon=d.portfolioSurvives?'✅':'⚠️';
     document.getElementById('simKpi-withdrawal').innerHTML=simKpiHtml([
@@ -1339,7 +1345,7 @@ async function runMonteCarlo(){
   if(monthly)body.monthlyContribution=parseFloat(monthly);
   if(goal)body.goalAmount=parseFloat(goal);
   try{
-    const r=await fetch(`${BASE}/api/simulator/montecarlo`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await authFetch(`${BASE}/api/simulator/montecarlo`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error();const d=await r.json();
     const kpis=[
       ['Mediana (P50)',fmtK(d.p50Median)+' €','positive'],
@@ -1436,8 +1442,11 @@ function closeMAlerts(){
 }
 
 // ===================== INIT =====================
-loadAll();
-setInterval(()=>loadAll(),90000);
+(async function() {
+  await requireAuth();
+  loadAll();
+  setInterval(()=>loadAll(),90000);
+})();
 </script>
 </body>
 </html>
