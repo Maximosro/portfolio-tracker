@@ -620,9 +620,9 @@ function showToast(msg,type='success'){
 async function loadAll(){
   try{
     const [posResp, dcaResp, metricsResp] = await Promise.all([
-      fetch(`${BASE}/api/positions`),
-      fetch(`${BASE}/api/dca`),
-      fetch(`${BASE}/api/metrics`).catch(()=>null)
+      authFetch(`${BASE}/api/positions`),
+      authFetch(`${BASE}/api/dca`),
+      authFetch(`${BASE}/api/metrics`).catch(()=>null)
     ]);
     positions = await posResp.json();
     dcaEntries = await dcaResp.json();
