@@ -17,6 +17,8 @@
 <script src="js/api.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/alpine-store.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/auth.js"></script>
 <!-- CSS: tokens.css + desktop.css -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -496,6 +498,9 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       </button>
       <button class="theme-btn" @click="toggleTheme()" aria-label="Cambiar tema">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="signOut()" title="Cerrar sesión" style="margin-left:var(--space-1)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
     </div>
   </header>
@@ -3290,7 +3295,11 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
 
 <script>
 // ===================== CONFIG =====================
-var BASE = window.__BASE__ || (window.__BASE__ = document.baseURI.replace(/\/+$/, ''));
+var BASE = window.__BASE__ || (window.__BASE__ = (function() {
+  var path = window.location.pathname.replace(/\/[^/]*\.[^/]*$/, '').replace(/\/+$/, '') || '';
+  return window.location.origin + path;
+})());
+window.__CONTEXT_PATH__ = '/portfoliotracker';
 var API = `${BASE}/api/positions`;
 var API_DCA = `${BASE}/api/dca`;
 var COLORS = window.__COLORS__ || (window.__COLORS__ = ['#4f98a3','#e8af34','#6daa45','#5591c7','#fdab43','#a86fdf','#dd6974','#bb653b','#d163a7','#01696f']);
@@ -3305,13 +3314,13 @@ let positionDetailsMap = {};
 
 // ===================== API CALLS =====================
 async function apiGet() {
-  const resp = await fetch(API);
+  const resp = await authFetch(API);
   if (!resp.ok) throw new Error('Error cargando posiciones');
   return resp.json();
 }
 
 async function apiCreate(position) {
-  const resp = await fetch(API, {
+  const resp = await authFetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(position)
@@ -3324,7 +3333,7 @@ async function apiCreate(position) {
 }
 
 async function apiUpdate(ticker, position) {
-  const resp = await fetch(`${API}/${encodeURIComponent(ticker)}`, {
+  const resp = await authFetch(`${API}/${encodeURIComponent(ticker)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(position)
@@ -3337,7 +3346,7 @@ async function apiUpdate(ticker, position) {
 }
 
 async function apiDelete(ticker) {
-  const resp = await fetch(`${API}/${encodeURIComponent(ticker)}`, { method: 'DELETE' });
+  const resp = await authFetch(`${API}/${encodeURIComponent(ticker)}`, { method: 'DELETE' });
   if (!resp.ok) throw new Error('Error eliminando posición');
 }
 
@@ -3570,7 +3579,7 @@ function clearDcaTarget(event) {
 /** Persiste el plan de inversión en BD y actualiza la variable global + KPIs */
 async function syncDcaTargetToBackend(monthlyBudget, budgetType, notes) {
   try {
-    const resp = await fetch(`${BASE}/api/investment-plan`, {
+    const resp = await authFetch(`${BASE}/api/investment-plan`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ id: 1, monthlyBudget, budgetType: budgetType || 'FIJO', notes: notes || null })
@@ -3585,7 +3594,7 @@ async function syncDcaTargetToBackend(monthlyBudget, budgetType, notes) {
 /** Carga el plan de inversión desde BD a la variable global */
 async function loadInvestmentPlan() {
   try {
-    investmentPlan = await fetch(`${BASE}/api/investment-plan`).then(r => r.json());
+    investmentPlan = await authFetch(`${BASE}/api/investment-plan`).then(r => r.json());
   } catch (e) { investmentPlan = null; }
 }
 
@@ -3594,7 +3603,7 @@ let plannedCashFlows = [];
 
 async function loadCashFlows() {
   try {
-    plannedCashFlows = await fetch(`${BASE}/api/planned-cashflows`).then(r => r.json());
+    plannedCashFlows = await authFetch(`${BASE}/api/planned-cashflows`).then(r => r.json());
   } catch (e) { plannedCashFlows = []; }
 }
 
@@ -3635,7 +3644,7 @@ async function addCashFlow(event) {
   const type = document.getElementById('cfType').value;
   if (!desc || !amount || !date) { alert('Rellena descripción, importe y fecha'); return; }
   try {
-    await fetch(`${BASE}/api/planned-cashflows`, {
+    await authFetch(`${BASE}/api/planned-cashflows`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ description: desc, amount, expectedDate: date, type })
     });
@@ -3651,7 +3660,7 @@ async function addCashFlow(event) {
 async function executeCashFlow(event, id) {
   event.stopPropagation();
   try {
-    await fetch(`${BASE}/api/planned-cashflows/${id}/execute`, { method: 'PATCH' });
+    await authFetch(`${BASE}/api/planned-cashflows/${id}/execute`, { method: 'PATCH' });
     await loadCashFlows();
     renderCashFlows();
   } catch (e) { alert('Error: ' + e); }
@@ -3661,7 +3670,7 @@ async function deleteCashFlow(event, id) {
   event.stopPropagation();
   if (!confirm('¿Eliminar este flujo planificado?')) return;
   try {
-    await fetch(`${BASE}/api/planned-cashflows/${id}`, { method: 'DELETE' });
+    await authFetch(`${BASE}/api/planned-cashflows/${id}`, { method: 'DELETE' });
     await loadCashFlows();
     renderCashFlows();
   } catch (e) { alert('Error: ' + e); }
@@ -3716,7 +3725,7 @@ async function saveDcaAllocation(event) {
   const existing = positionDetailsMap[ticker] || { ticker };
   existing.monthlyDcaAmount = val;
   try {
-    const resp = await fetch(`${BASE}/api/positions/${ticker}/detail`, {
+    const resp = await authFetch(`${BASE}/api/positions/${ticker}/detail`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(existing)
     });
@@ -4086,13 +4095,13 @@ async function deletePosition(ticker) {
 
 // ===================== DCA API =====================
 async function apiDcaGetAll() {
-  const resp = await fetch(API_DCA);
+  const resp = await authFetch(API_DCA);
   if (!resp.ok) throw new Error('Error cargando historial DCA');
   return resp.json();
 }
 
 async function apiDcaCreate(entry) {
-  const resp = await fetch(API_DCA, {
+  const resp = await authFetch(API_DCA, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(entry)
@@ -4105,7 +4114,7 @@ async function apiDcaCreate(entry) {
 }
 
 async function apiDcaDelete(id) {
-  const resp = await fetch(`${API_DCA}/${id}`, { method: 'DELETE' });
+  const resp = await authFetch(`${API_DCA}/${id}`, { method: 'DELETE' });
   if (!resp.ok) throw new Error('Error eliminando entrada DCA');
 }
 
@@ -4425,7 +4434,7 @@ async function loadHistory() {
     ? `${BASE}/api/prices/history?range=${currentRange}`
     : `${BASE}/api/prices/history/${encodeURIComponent(ticker)}?range=${currentRange}`;
   try {
-    const resp = await fetch(url);
+    const resp = await authFetch(url);
     if (!resp.ok) return;
     const data = await resp.json();
     renderHistoryChart(data, ticker);
@@ -4804,13 +4813,13 @@ let editingWatchlistId = null;
 let wlPanelOpen = false;
 
 async function apiWatchlistGetAll() {
-  const resp = await fetch(API_WATCHLIST);
+  const resp = await authFetch(API_WATCHLIST);
   if (!resp.ok) throw new Error('Error cargando watchlist');
   return resp.json();
 }
 
 async function apiWatchlistCreate(item) {
-  const resp = await fetch(API_WATCHLIST, {
+  const resp = await authFetch(API_WATCHLIST, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(item)
@@ -4823,7 +4832,7 @@ async function apiWatchlistCreate(item) {
 }
 
 async function apiWatchlistUpdate(id, item) {
-  const resp = await fetch(`${API_WATCHLIST}/${id}`, {
+  const resp = await authFetch(`${API_WATCHLIST}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(item)
@@ -4836,7 +4845,7 @@ async function apiWatchlistUpdate(id, item) {
 }
 
 async function apiWatchlistDelete(id) {
-  const resp = await fetch(`${API_WATCHLIST}/${id}`, { method: 'DELETE' });
+  const resp = await authFetch(`${API_WATCHLIST}/${id}`, { method: 'DELETE' });
   if (!resp.ok) throw new Error('Error eliminando de watchlist');
 }
 
@@ -4927,7 +4936,7 @@ async function refreshWatchlist() {
   btn.disabled = true;
   showToast('Actualizando watchlist…', 'success');
   try {
-    const resp = await fetch(`${API_WATCHLIST}/refresh`, { method: 'POST' });
+    const resp = await authFetch(`${API_WATCHLIST}/refresh`, { method: 'POST' });
     if (!resp.ok) throw new Error('Error actualizando');
     const data = await resp.json();
     showToast(`${data.updated} precios actualizados ✓`, 'success');
@@ -5048,7 +5057,7 @@ function closeWlAlertModal() {
 async function renderWlAlerts() {
   const list = document.getElementById('wlAlertList');
   try {
-    const resp = await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts`);
+    const resp = await authFetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts`);
     const alerts = await resp.json();
     if (!alerts.length) {
       list.innerHTML = '<div style="text-align:center;color:var(--color-text-muted);font-size:var(--text-sm);padding:var(--space-3)">Sin alertas configuradas</div>';
@@ -5088,7 +5097,7 @@ async function addWlAlert() {
   const threshold = parseFloat(document.getElementById('wlAlertThreshold').value);
   if (isNaN(threshold) || threshold <= 0) { showToast('Introduce un umbral válido', 'error'); return; }
   try {
-    const resp = await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts`, {
+    const resp = await authFetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ alertType, threshold, enabled: true })
@@ -5102,7 +5111,7 @@ async function addWlAlert() {
 
 async function toggleWlAlert(alertId, enabled) {
   try {
-    await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts/${alertId}`, {
+    await authFetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts/${alertId}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ enabled })
@@ -5114,7 +5123,7 @@ async function toggleWlAlert(alertId, enabled) {
 async function deleteWlAlert(alertId) {
   if (!confirm('¿Eliminar esta alerta?')) return;
   try {
-    await fetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts/${alertId}`, { method: 'DELETE' });
+    await authFetch(`${API_WATCHLIST}/${wlAlertCurrentItemId}/alerts/${alertId}`, { method: 'DELETE' });
     showToast('Alerta eliminada', 'success');
     await renderWlAlerts();
   } catch (e) { showToast('Error eliminando', 'error'); }
@@ -5255,11 +5264,11 @@ async function loadTelegramChannel(forceRefresh) {
   body.innerHTML = `<div class="news-loading"><div class="news-spinner"></div><span style="font-size:var(--text-sm)">${forceRefresh ? 'Actualizando' : 'Cargando'} @ultimominutoOTC…</span></div>`;
 
   if (forceRefresh) {
-    try { await fetch(`${BASE}/api/telegram/channel/poll`, { method: 'POST' }); } catch (e) {}
+    try { await authFetch(`${BASE}/api/telegram/channel/poll`, { method: 'POST' }); } catch (e) {}
   }
 
   try {
-    const resp = await fetch(`${BASE}/api/telegram/channel/messages`);
+    const resp = await authFetch(`${BASE}/api/telegram/channel/messages`);
     const data = await resp.json();
     tgChannelMessages = data.items || [];
 
@@ -5310,7 +5319,7 @@ async function loadNews() {
   body.innerHTML = `<div class="news-loading"><div class="news-spinner"></div><span style="font-size:var(--text-sm)">Buscando noticias…</span></div>`;
 
   try {
-    const resp = await fetch(`${BASE}/api/news`);
+    const resp = await authFetch(`${BASE}/api/news`);
     if (!resp.ok) {
       body.innerHTML = `<div class="news-error">Error al obtener noticias del servidor.</div>`;
       return;
@@ -5339,7 +5348,7 @@ async function loadNews() {
 async function exportReport() {
   showToast('Generando informe…', 'success');
   try {
-    const resp = await fetch(`${BASE}/api/export`);
+    const resp = await authFetch(`${BASE}/api/export`);
     if (!resp.ok) throw new Error('Error generando informe');
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
@@ -5793,7 +5802,7 @@ async function saveDetail() {
   };
 
   try {
-    const resp = await fetch(API_DETAIL(detailTicker), {
+    const resp = await authFetch(API_DETAIL(detailTicker), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -5831,7 +5840,7 @@ let telegramConfigured = false;
 
 async function checkTelegramStatus() {
   try {
-    const resp = await fetch(`${BASE}/api/telegram/status`);
+    const resp = await authFetch(`${BASE}/api/telegram/status`);
     if (!resp.ok) return;
     const data = await resp.json();
     const statusText = document.getElementById('telegramStatusText');
@@ -5861,7 +5870,7 @@ async function testTelegram() {
   btn.disabled = true;
   btn.innerHTML = '<span class="news-spinner" style="width:12px;height:12px;border-width:2px"></span> Enviando...';
   try {
-    const resp = await fetch(`${BASE}/api/telegram/test`, { method: 'POST' });
+    const resp = await authFetch(`${BASE}/api/telegram/test`, { method: 'POST' });
     const data = await resp.json();
     if (data.success) {
       btn.innerHTML = '✅ ¡Enviado!';
@@ -5916,7 +5925,7 @@ async function saveTelegramConfig() {
   saveBtn.innerHTML = '<span class="news-spinner" style="width:12px;height:12px;border-width:2px"></span> Configurando...';
 
   try {
-    const resp = await fetch(`${BASE}/api/telegram/configure`, {
+    const resp = await authFetch(`${BASE}/api/telegram/configure`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ botToken, chatId })
@@ -5955,7 +5964,7 @@ function toggleAlertPanel() {
 
 async function loadAlerts() {
   try {
-    const resp = await fetch(`${BASE}/api/alerts`);
+    const resp = await authFetch(`${BASE}/api/alerts`);
     if (!resp.ok) return;
     currentAlerts = await resp.json();
     renderAlerts();
@@ -6084,7 +6093,7 @@ function renderAlerts() {
 // ===================== PERIOD RETURNS =====================
 async function loadReturns() {
   try {
-    const resp = await fetch(`${BASE}/api/metrics/returns`);
+    const resp = await authFetch(`${BASE}/api/metrics/returns`);
     if (!resp.ok) return;
     const data = await resp.json();
     const p = data.periods || {};
@@ -6136,7 +6145,7 @@ async function openPeriodHistory(period) {
   document.getElementById('periodHistoryOverlay').classList.add('open');
 
   try {
-    const resp = await fetch(`${BASE}/api/snapshots/period-history?period=${period}`);
+    const resp = await authFetch(`${BASE}/api/snapshots/period-history?period=${period}`);
     if (!resp.ok) throw new Error('Error');
     const data = await resp.json();
     renderPeriodHistoryModal(data, period);
@@ -6315,7 +6324,7 @@ function setEquityRange(range) {
 
 async function loadEquityCurve() {
   try {
-    const resp = await fetch(`${BASE}/api/snapshots?range=${currentEquityRange}`);
+    const resp = await authFetch(`${BASE}/api/snapshots?range=${currentEquityRange}`);
     if (!resp.ok) return;
     const data = await resp.json();
     renderEquityChart(data);
@@ -6489,7 +6498,7 @@ async function loadPdHistory() {
     ? `${BASE}/api/prices/history?range=${pdHistRange}`
     : `${BASE}/api/prices/history/${encodeURIComponent(ticker)}?range=${pdHistRange}`;
   try {
-    const resp = await fetch(url);
+    const resp = await authFetch(url);
     if (!resp.ok) return;
     const data = await resp.json();
     renderPdHistChart(data, ticker);
@@ -6701,7 +6710,7 @@ async function loadActivityLog() {
     const url = logFilter === 'ALL'
       ? `${BASE}/api/activity-log?limit=200`
       : `${BASE}/api/activity-log?category=${logFilter}&limit=200`;
-    const resp = await fetch(url);
+    const resp = await authFetch(url);
     if (!resp.ok) return;
     activityLogEntries = await resp.json();
     renderActivityLog();
@@ -6954,7 +6963,7 @@ async function executeImport() {
   const resultArea = document.getElementById('importResultArea');
 
   try {
-    const resp = await fetch(`${BASE}/api/dca/import`, {
+    const resp = await authFetch(`${BASE}/api/dca/import`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ops)
@@ -7036,7 +7045,7 @@ async function forceRefreshPrices() {
   btn.disabled = true;
   btn.innerHTML = '⏳ Actualizando…';
   try {
-    const resp = await fetch(`${BASE}/api/prices/refresh`, { method: 'POST' });
+    const resp = await authFetch(`${BASE}/api/prices/refresh`, { method: 'POST' });
     if (!resp.ok) throw new Error('Error');
     const result = await resp.json();
     showToast(`Actualización forzada: ${result.updated} OK, ${result.failed} errores`, result.failed > 0 ? 'warning' : 'success');
@@ -7054,13 +7063,13 @@ async function loadAll() {
     positions = await apiGet();
     dcaEntries = await apiDcaGetAll();
     dcaDisplayLimit = 10;
-    try { metrics = await (await fetch(`${BASE}/api/metrics`)).json(); } catch(e) { metrics = null; }
+    try { metrics = await (await authFetch(`${BASE}/api/metrics`)).json(); } catch(e) { metrics = null; }
     try {
-      const details = await (await fetch(`${BASE}/api/position-details`)).json();
+      const details = await (await authFetch(`${BASE}/api/position-details`)).json();
       positionDetailsMap = {};
       details.forEach(d => positionDetailsMap[d.ticker] = d);
     } catch(e) { positionDetailsMap = {}; }
-    try { marketSchedules = await (await fetch(`${BASE}/api/market-schedules`)).json(); } catch(e) { marketSchedules = []; }
+    try { marketSchedules = await (await authFetch(`${BASE}/api/market-schedules`)).json(); } catch(e) { marketSchedules = []; }
     await loadInvestmentPlan();
     await loadCashFlows();
     renderAll();
@@ -7072,10 +7081,13 @@ async function loadAll() {
   }
 }
 
-loadAll();
-checkTelegramStatus();
-// Polling cada 90s para recoger actualizaciones automáticas de precios
-setInterval(() => loadAll(), 90000);
+(async function() {
+  await requireAuth();
+  loadAll();
+  checkTelegramStatus();
+  // Polling cada 90s para recoger actualizaciones automáticas de precios
+  setInterval(() => loadAll(), 90000);
+})();
 
 
 // ═══════════════════════════════════════════
@@ -7191,7 +7203,7 @@ async function runProjection() {
   if (ret !== '') body.expectedReturnPct = parseFloat(ret);
   document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Calculando proyeccion...</span></div>';
   try {
-    var resp = await fetch(BASE + '/api/simulator/projection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var resp = await authFetch(BASE + '/api/simulator/projection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!resp.ok) throw new Error('Error en la simulacion');
     lastResult = await resp.json();
     renderProjection(lastResult);
@@ -7284,7 +7296,7 @@ async function runMortgage() {
   if (ret) body.investmentReturnPct = parseFloat(ret);
   document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Calculando hipoteca vs inversion...</span></div>';
   try {
-    var resp = await fetch(BASE + '/api/simulator/mortgage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var resp = await authFetch(BASE + '/api/simulator/mortgage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!resp.ok) throw new Error('Error en la simulacion');
     var r = await resp.json();
     renderMortgage(r);
@@ -7358,7 +7370,7 @@ async function runWithdrawal() {
   if (ret) body.expectedReturnPct = parseFloat(ret);
   document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Calculando retirada segura...</span></div>';
   try {
-    var resp = await fetch(BASE + '/api/simulator/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var resp = await authFetch(BASE + '/api/simulator/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!resp.ok) throw new Error('Error en la simulacion');
     var r = await resp.json();
     renderWithdrawal(r);
@@ -7417,7 +7429,7 @@ async function runCompound() {
   var body = { initialCapital: parseFloat(document.getElementById('ciInitial').value) || 0, monthlyContribution: parseFloat(document.getElementById('ciMonthly').value) || 500, annualReturnPct: parseFloat(document.getElementById('ciReturn').value) || 7, years: parseInt(document.getElementById('ciYears').value) || 20, annualFeePct: parseFloat(document.getElementById('ciFee').value) || 0, inflationPct: parseFloat(document.getElementById('ciInflation').value) || 2.5 };
   document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Calculando interes compuesto...</span></div>';
   try {
-    var resp = await fetch(BASE + '/api/simulator/compound', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var resp = await authFetch(BASE + '/api/simulator/compound', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!resp.ok) throw new Error('Error en la simulacion');
     var r = await resp.json();
     renderCompound(r);
@@ -7472,7 +7484,7 @@ async function runMonteCarlo() {
   if (goal) body.goalAmount = parseFloat(goal);
   document.getElementById('resultArea').innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Ejecutando ' + body.numSimulations + ' simulaciones...</span></div>';
   try {
-    var resp = await fetch(BASE + '/api/simulator/montecarlo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var resp = await authFetch(BASE + '/api/simulator/montecarlo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!resp.ok) throw new Error('Error en la simulacion');
     var r = await resp.json();
     renderMonteCarlo(r);

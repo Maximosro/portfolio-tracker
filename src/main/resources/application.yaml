@@ -25,7 +25,21 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${supabase.jwt.jwks-uri}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.sro.myportfoliotracker.config: DEBUG
 #telegram:
 #  bot-token: 8740857212:AAGLNpT9xtpcHFd5xE8YfaKUiqNw3zjYv8k
 #  chat-id: "156014286"
 #  enabled: true
+
+supabase:
+  jwt:
+    jwks-uri: https://agtkcnxmlbccbwmsuxdz.supabase.co/auth/v1/.well-known/jwks.json

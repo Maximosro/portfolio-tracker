@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Portfolio Tracker — Iniciar Sesión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  font-family:var(--font-body);font-size:14px;color:var(--color-text);background:var(--color-bg);
+  min-height:100dvh;display:flex;align-items:center;justify-content:center;
+  padding:var(--space-6);line-height:1.5;
+  -webkit-tap-highlight-color:transparent;
+}
+.login-card{
+  background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:var(--radius-xl);padding:var(--space-10) var(--space-8);
+  width:100%;max-width:400px;box-shadow:var(--shadow-md);
+}
+.login-logo{
+  display:flex;align-items:center;justify-content:center;gap:var(--space-3);
+  margin-bottom:var(--space-8);
+}
+.login-logo svg{width:36px;height:36px;color:var(--color-primary)}
+.login-logo span{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.login-title{font-size:14px;font-weight:500;color:var(--color-text-muted);text-align:center;margin-bottom:var(--space-8)}
+.form-group{display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-5)}
+.form-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted)}
+.form-input{
+  background:var(--color-surface-2);border:1px solid var(--color-border);
+  border-radius:var(--radius-md);padding:12px 14px;font-size:14px;
+  color:var(--color-text);width:100%;min-height:48px;
+  font-family:var(--font-body);transition:border-color var(--transition-interactive);
+}
+.form-input:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px oklch(from var(--color-primary) l c h / .15)}
+.form-input::placeholder{color:var(--color-text-faint)}
+.login-btn{
+  display:flex;align-items:center;justify-content:center;gap:var(--space-2);
+  width:100%;padding:14px;border-radius:var(--radius-md);
+  font-size:15px;font-weight:600;font-family:var(--font-body);
+  background:var(--color-primary);color:#fff;border:none;
+  cursor:pointer;min-height:48px;
+  transition:background var(--transition-interactive),opacity var(--transition-interactive);
+}
+.login-btn:hover{background:var(--color-primary-hover)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed}
+.login-error{
+  display:none;background:oklch(from var(--color-notification) l c h / .1);
+  color:var(--color-notification);border:1px solid oklch(from var(--color-notification) l c h / .25);
+  border-radius:var(--radius-md);padding:10px 14px;font-size:13px;
+  margin-bottom:var(--space-5);text-align:center;
+}
+.login-error.visible{display:block}
+.spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.spinner.visible{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.login-footer{text-align:center;margin-top:var(--space-6);font-size:11px;color:var(--color-text-faint)}
+/* Responsive */
+@media(max-width:480px){
+  body{padding:var(--space-4);align-items:flex-start;padding-top:15dvh}
+  .login-card{padding:var(--space-8) var(--space-5)}
+}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="login-logo">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="18" width="6" height="12" rx="2" fill="currentColor" opacity=".4"/>
+      <rect x="10" y="12" width="6" height="18" rx="2" fill="currentColor" opacity=".65"/>
+      <rect x="18" y="6" width="6" height="24" rx="2" fill="currentColor" opacity=".85"/>
+      <rect x="26" y="2" width="4" height="28" rx="2" fill="currentColor"/>
+      <path d="M4 16 L13 10 L20 4 L28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>
+    </svg>
+    <span>Portfolio Tracker</span>
+  </div>
+  <div class="login-title">Inicia sesión para acceder a tu cartera</div>
+
+  <div class="login-error" id="loginError">Email o contraseña incorrectos</div>
+
+  <form id="loginForm" autocomplete="on">
+    <div class="form-group">
+      <label class="form-label" for="email">Email</label>
+      <input class="form-input" type="email" id="email" name="email"
+             placeholder="tu@email.com" autocomplete="email" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="password">Contraseña</label>
+      <input class="form-input" type="password" id="password" name="password"
+             placeholder="••••••••" autocomplete="current-password" required minlength="1">
+    </div>
+    <button type="submit" class="login-btn" id="loginBtn">
+      <span id="loginBtnText">Iniciar Sesión</span>
+      <span class="spinner" id="loginSpinner"></span>
+    </button>
+  </form>
+
+  <div class="login-footer">Acceso restringido · Cuenta única</div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// Login page logic
+// ════════════════════════════════════════
+var SUPABASE_URL = 'https://agtkcnxmlbccbwmsuxdz.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_W_Nc9hzh_M-uMNMbTPeE5w_6IKDgPd3';
+var CONTEXT_PATH = '/portfoliotracker';
+
+var _supabase = null;
+var elError = document.getElementById('loginError');
+var elBtn = document.getElementById('loginBtn');
+var elBtnText = document.getElementById('loginBtnText');
+var elSpinner = document.getElementById('loginSpinner');
+
+function initClient() {
+  if (_supabase) return _supabase;
+  _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return _supabase;
+}
+
+function showError(msg) {
+  elError.textContent = msg;
+  elError.classList.add('visible');
+}
+
+function hideError() {
+  elError.classList.remove('visible');
+}
+
+function setLoading(loading) {
+  elBtn.disabled = loading;
+  elBtnText.style.display = loading ? 'none' : '';
+  elSpinner.classList.toggle('visible', loading);
+}
+
+// ── Form submit handler (registered first, before async checks)
+function handleLogin(e) {
+  if (e) e.preventDefault();
+  hideError();
+
+  var email = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+
+  if (!email) { showError('Introduce tu email'); return; }
+  if (!password) { showError('Introduce tu contraseña'); return; }
+
+  setLoading(true);
+
+  initClient();
+  _supabase.auth.signInWithPassword({ email: email, password: password })
+    .then(function(resp) {
+      if (resp.error) {
+        if (resp.error.message && resp.error.message.toLowerCase().indexOf('invalid') !== -1) {
+          showError('Email o contraseña incorrectos');
+        } else {
+          showError(resp.error.message || 'Error al iniciar sesión');
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (resp.data && resp.data.session) {
+        // Store session in localStorage before redirect
+        var storageKey = 'sb-' + btoa(SUPABASE_URL).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_') + '-auth-token';
+        try { localStorage.setItem(storageKey, JSON.stringify(resp.data.session)); } catch(_) {}
+        // Brief delay then redirect
+        setTimeout(function() {
+          window.location.replace(CONTEXT_PATH + '/index.html');
+        }, 500);
+      } else {
+        showError('Error inesperado. Inténtalo de nuevo.');
+        setLoading(false);
+      }
+    })
+    .catch(function(err) {
+      showError('Error de conexión. Revisa tu red e inténtalo de nuevo.');
+      console.error('Login error:', err);
+      setLoading(false);
+    });
+}
+
+// Register form handler
+document.getElementById('loginForm').addEventListener('submit', handleLogin);
+document.getElementById('loginBtn').addEventListener('click', handleLogin);
+
+// Check for existing session on load
+(async function() {
+  initClient();
+  try {
+    var resp = await _supabase.auth.getSession();
+    if (resp.data && resp.data.session) {
+      window.location.replace(CONTEXT_PATH + '/index.html');
+      return;
+    }
+  } catch (e) { /* no session — stay on login */ }
+
+  var savedTheme = localStorage.getItem('theme');
+  if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+})();
+</script>
+
+</body>
+</html>
