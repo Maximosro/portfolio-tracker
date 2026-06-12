@@ -1,6 +1,5 @@
 package com.sro.myportfoliotracker.model;
 
-import com.sro.myportfoliotracker.config.InstantStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,11 +48,9 @@ public class WatchlistItem {
     private String currency;
 
     @Column(name = "last_price_update")
-    @Convert(converter = InstantStringConverter.class)
     private Instant lastPriceUpdate;
 
     @Column(name = "created_at")
-    @Convert(converter = InstantStringConverter.class)
     private Instant createdAt;
 
     @Column

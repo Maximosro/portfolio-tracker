@@ -12,20 +12,20 @@ spring:
       pool:
         size: 4
   datasource:
-    url: jdbc:sqlite:./data/portfolio.db
-    driver-class-name: org.sqlite.JDBC
+    url: jdbc:postgresql://db.agtkcnxmlbccbwmsuxdz.supabase.co:6543/postgres?sslmode=require
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: ${SUPABASE_DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.community.dialect.SQLiteDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
 #telegram:
 #  bot-token: 8740857212:AAGLNpT9xtpcHFd5xE8YfaKUiqNw3zjYv8k
 #  chat-id: "156014286"
 #  enabled: true
-

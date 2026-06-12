@@ -1,5 +1,6 @@
 package com.sro.myportfoliotracker.service;
 
+import com.sro.myportfoliotracker.model.DcaEntry;
 import com.sro.myportfoliotracker.model.Position;
 import com.sro.myportfoliotracker.repository.DcaEntryRepository;
 import com.sro.myportfoliotracker.repository.PositionDetailRepository;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +25,7 @@ public class PositionService {
     private final DcaEntryRepository dcaEntryRepository;
     private final PriceHistoryRepository priceHistoryRepository;
     private final MarketScheduleService marketScheduleService;
+    private final DcaService dcaService;
 
     public List<Position> findAll() {
         return positionRepository.findAll();
@@ -42,6 +45,27 @@ public class PositionService {
 
         if (position.getTargetPct() == null) {
             position.setTargetPct(0.0);
+        }
+
+        // Si la posición se crea con acciones iniciales, registrar una entrada DCA
+        // para que sea la fuente de verdad y recalcular desde ahí.
+        final boolean hasInitialPosition = position.getShares() != null && position.getShares() > 0
+                && position.getAvgPrice() != null && position.getAvgPrice() > 0;
+
+        if (hasInitialPosition) {
+            final DcaEntry seed = DcaEntry.builder()
+                    .ticker(position.getTicker())
+                    .date(LocalDate.now())
+                    .shares(position.getShares())
+                    .price(position.getAvgPrice())
+                    .type("BUY")
+                    .build();
+            dcaEntryRepository.save(seed);
+        }
+
+        // Recalcular desde DCA para que shares y avgPrice sean consistentes
+        if (hasInitialPosition) {
+            dcaService.recalculatePositionFromDca(position.getTicker(), position);
         }
 
         Position saved = positionRepository.save(position);

@@ -1,6 +1,5 @@
 package com.sro.myportfoliotracker.model;
 
-import com.sro.myportfoliotracker.config.LocalDateStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,7 +39,6 @@ public class PlannedCashFlow {
      * Fecha esperada del flujo.
      */
     @Column(name = "expected_date", nullable = false)
-    @Convert(converter = LocalDateStringConverter.class)
     private LocalDate expectedDate;
 
     /**

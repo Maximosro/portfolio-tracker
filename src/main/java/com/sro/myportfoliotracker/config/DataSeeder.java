@@ -56,19 +56,19 @@ public class DataSeeder {
 
         log.info("Insertando horarios de mercado por defecto...");
         String[] inserts = {
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES (NULL, 'US (NYSE/NASDAQ)', 'America/New_York', '09:30', '16:00', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.DE', 'Alemania (XETRA)', 'Europe/Berlin', '08:00', '17:30', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.F', 'Alemania (Frankfurt)', 'Europe/Berlin', '08:00', '20:00', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.L', 'Reino Unido (LSE)', 'Europe/London', '08:00', '16:30', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.MC', 'España (BME)', 'Europe/Madrid', '09:00', '17:30', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.PA', 'Francia (Euronext Paris)', 'Europe/Paris', '09:00', '17:30', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.MI', 'Italia (Borsa Italiana)', 'Europe/Rome', '09:00', '17:30', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.AS', 'Países Bajos (Euronext Amsterdam)', 'Europe/Amsterdam', '09:00', '17:30', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.TO', 'Canadá (TSX)', 'America/Toronto', '09:30', '16:00', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.HK', 'Hong Kong (HKEX)', 'Asia/Hong_Kong', '09:30', '16:00', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.T', 'Japón (TSE)', 'Asia/Tokyo', '09:00', '15:00', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.SW', 'Suiza (SIX)', 'Europe/Zurich', '09:00', '17:30', 1)",
-            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.BR', 'Bélgica (Euronext Brussels)', 'Europe/Brussels', '09:00', '17:30', 1)",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES (NULL, 'US (NYSE/NASDAQ)', 'America/New_York', '09:30', '16:00', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.DE', 'Alemania (XETRA)', 'Europe/Berlin', '08:00', '17:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.F', 'Alemania (Frankfurt)', 'Europe/Berlin', '08:00', '20:00', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.L', 'Reino Unido (LSE)', 'Europe/London', '08:00', '16:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.MC', 'España (BME)', 'Europe/Madrid', '09:00', '17:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.PA', 'Francia (Euronext Paris)', 'Europe/Paris', '09:00', '17:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.MI', 'Italia (Borsa Italiana)', 'Europe/Rome', '09:00', '17:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.AS', 'Países Bajos (Euronext Amsterdam)', 'Europe/Amsterdam', '09:00', '17:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.TO', 'Canadá (TSX)', 'America/Toronto', '09:30', '16:00', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.HK', 'Hong Kong (HKEX)', 'Asia/Hong_Kong', '09:30', '16:00', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.T', 'Japón (TSE)', 'Asia/Tokyo', '09:00', '15:00', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.SW', 'Suiza (SIX)', 'Europe/Zurich', '09:00', '17:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
+            "INSERT INTO market_schedules (ticker_suffix, market_name, timezone, open_time, close_time, enabled) VALUES ('.BR', 'Bélgica (Euronext Brussels)', 'Europe/Brussels', '09:00', '17:30', true) ON CONFLICT (ticker_suffix) DO NOTHING",
         };
 
         for (String sql : inserts) {
