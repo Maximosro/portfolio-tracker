@@ -64,6 +64,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u Maximosro --password-stdin
             cd /root
             docker compose pull portfolio-tracker
             docker compose up -d portfolio-tracker
