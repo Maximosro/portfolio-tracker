@@ -3,6 +3,8 @@ name: Build and Deploy to Hostinger KVM
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main, dev]
   workflow_dispatch:
 
 env:
@@ -34,6 +36,7 @@ jobs:
         run: ./mvnw test -B
 
       - name: Log in to Container Registry
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -41,6 +44,7 @@ jobs:
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Extract Docker metadata (tags + labels)
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -50,13 +54,16 @@ jobs:
             type=sha,prefix=sha-,format=short
 
       - name: Build and push Docker image
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
       - name: Deploy to VPS via SSH
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -71,6 +78,7 @@ jobs:
             docker compose ps portfolio-tracker
 
       - name: Smoke test
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           sleep 5
           HTTP_CODE=$(curl -f -s -o /dev/null -w "%{http_code}" https://portfolio.srv1158554.hstgr.cloud/portfoliotracker/ || echo "FAILED")
