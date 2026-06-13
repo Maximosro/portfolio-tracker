@@ -74,11 +74,15 @@ jobs:
 
       - name: Smoke test
         run: |
-          sleep 5
-          HTTP_CODE=$(curl -f -s -o /dev/null -w "%{http_code}" https://portfolio.srv1158554.hstgr.cloud/portfoliotracker/ || echo "FAILED")
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
-            echo "Smoke test passed (HTTP $HTTP_CODE)"
-          else
-            echo "Smoke test failed (HTTP $HTTP_CODE)"
-            exit 1
-          fi
+          echo "Waiting for app to start..."
+          for i in $(seq 1 12); do
+            HTTP_CODE=$(curl -f -s -o /dev/null -w "%{http_code}" https://portfolio.srv1158554.hstgr.cloud/portfoliotracker/ || echo "000")
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+              echo "Smoke test passed (HTTP $HTTP_CODE) after ${i}x5s"
+              exit 0
+            fi
+            echo "Attempt $i/12: HTTP $HTTP_CODE — waiting..."
+            sleep 5
+          done
+          echo "Smoke test failed after 60s"
+          exit 1
