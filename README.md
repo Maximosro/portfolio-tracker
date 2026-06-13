@@ -51,26 +51,37 @@ financieros, notificaciones Telegram y genera informes optimizados para análisi
 
 ## 🚀 Arranque rápido
 
-### Desarrollo local (con Supabase)
+### Desarrollo local (perfil `standalone` — PostgreSQL en Docker)
 
-La app en desarrollo se conecta a Supabase igual que en producción. Necesitas la variable de entorno:
+Por defecto, la app arranca con el perfil `standalone`, que usa PostgreSQL local en Docker.
+No necesitas configurar nada:
 
 ```bash
-export SUPABASE_DB_PASSWORD="tuPassword"
+# 1. Arrancar PostgreSQL local (solo la primera vez o tras reiniciar)
+docker compose up -d
+
+# 2. Arrancar la app — el perfil standalone se activa automáticamente
 ./mvnw spring-boot:run
 ```
 
-Accede en `http://localhost:19480/portfoliotracker/` → redirige a login → autentícate con tu email/contraseña de Supabase.
+La BD local usa PostgreSQL 17 (`portfoliodb` / `portfolio` / `p0rtf0l10` en `localhost:5432`).
+pgAdmin está disponible en `http://localhost:5050` (admin@portfolio.dev / admin).
 
-### Desarrollo local (modo offline con H2)
+> **Nota**: La autenticación JWT se valida contra Supabase. Necesitas internet para hacer login, pero los datos de tu portfolio se guardan en la BD local.
 
-Para trabajar sin conexión a internet, usa el perfil `h2`:
+### Desarrollo contra Supabase (perfil `pro`)
+
+Si necesitas trabajar directamente contra la BD de Supabase:
 
 ```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=h2
+export SUPABASE_DB_PASSWORD="tuPassword"
+./mvnw spring-boot:run -Dspring-boot.run.profiles=pro
 ```
 
-Esto usa H2 en disco (`data/portfolio.mv.db`) en modo PostgreSQL y omite la autenticación.
+### Producción (Docker)
+
+La imagen Docker activa el perfil `pro` automáticamente (`ENV SPRING_PROFILES_ACTIVE=pro` en el Dockerfile).
+No requiere configuración adicional.
 
 ### Tests
 

@@ -76,8 +76,10 @@
 
 | Variable | Entorno | Descripción |
 |----------|---------|-------------|
-| `SUPABASE_DB_PASSWORD` | todos | Password BD Supabase |
-| `SPRING_PROFILES_ACTIVE` | opcional | `h2` para desarrollo offline sin auth |
+| `SPRING_PROFILES_ACTIVE` | N/A | No necesaria en local — el perfil `standalone` se activa por defecto (`spring.profiles.default=standalone`) |
+| `SUPABASE_DB_PASSWORD` | solo perfil `pro` | Password BD Supabase (solo si se fuerza `-Dspring-boot.run.profiles=pro`) |
+
+> El Dockerfile fuerza `ENV SPRING_PROFILES_ACTIVE=pro`, por lo que el contenedor siempre usa Supabase sin necesidad de configurarlo en `docker-compose-vps.yml`.
 
 ## GitHub Actions
 

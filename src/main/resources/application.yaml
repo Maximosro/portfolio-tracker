@@ -7,19 +7,14 @@ server:
 spring:
   application:
     name: MyPortFolioTracker
+  profiles:
+    default: standalone
   task:
     scheduling:
       pool:
         size: 4
-  datasource:
-    url: jdbc:postgresql://db.agtkcnxmlbccbwmsuxdz.supabase.co:6543/postgres?sslmode=require
-    driver-class-name: org.postgresql.Driver
-    username: postgres
-    password: ${SUPABASE_DB_PASSWORD}
   jpa:
     open-in-view: false
-    hibernate:
-      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -35,10 +30,6 @@ logging:
   level:
     org.springframework.security: DEBUG
     com.sro.myportfoliotracker.config: DEBUG
-#telegram:
-#  bot-token: 8740857212:AAGLNpT9xtpcHFd5xE8YfaKUiqNw3zjYv8k
-#  chat-id: "156014286"
-#  enabled: true
 
 supabase:
   jwt:
