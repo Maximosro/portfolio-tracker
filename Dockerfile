@@ -39,6 +39,9 @@ USER appuser:appgroup
 # Exponer el puerto de la app (solo documentación — networking vía Docker)
 EXPOSE 19480
 
+# Forzar perfil pro (Supabase) en el contenedor
+ENV SPRING_PROFILES_ACTIVE=pro
+
 # JVM options para producción (sobrescribible vía env var)
 ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 
