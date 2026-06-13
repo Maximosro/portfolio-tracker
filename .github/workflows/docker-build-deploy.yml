@@ -62,7 +62,19 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -v -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cd /root && docker compose pull portfolio-tracker && docker compose up -d portfolio-tracker && docker compose ps portfolio-tracker"
+          for i in $(seq 1 3); do
+            echo "SSH attempt $i/3..."
+            if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 -o ServerAliveInterval=10 -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cd /root && docker compose pull portfolio-tracker && docker compose up -d portfolio-tracker && docker compose ps portfolio-tracker"; then
+              echo "SSH deploy OK (attempt $i)"
+              break
+            fi
+            if [ "$i" -eq 3 ]; then
+              echo "SSH deploy FAILED after 3 attempts"
+              exit 1
+            fi
+            echo "Retrying in 10s..."
+            sleep 10
+          done
 
       - name: Smoke test
         run: |
