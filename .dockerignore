@@ -1,0 +1,46 @@
+# Build output — se genera dentro del contenedor
+target/
+build/
+dist/
+
+# Git — no necesario para build
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Datos locales — en producción se usa Supabase
+data/
+*.db
+
+# Documentación y planes
+*.md
+README.md
+REDDIT_POST.md
+plans/
+.claude/
+
+# Docker — no recursivo
+Dockerfile
+.dockerignore
+docker-compose*.yml
+compose*.yaml
+
+# Playwright y otros MCP
+.playwright-mcp/
+
+# Logs
+*.log
+
+# Windows scripts (no usados en Linux)
+*.bat
+*.cmd

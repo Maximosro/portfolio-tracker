@@ -1,84 +1,124 @@
 # 📊 Portfolio Tracker
 
-Aplicación de escritorio/web **100% local y gratuita** para seguimiento de inversiones con
-estrategia **Dollar Cost Averaging (DCA)**.  
-Gestiona posiciones, historial de compras/ventas, alertas operativas, watchlist con alertas,
-simuladores financieros, notificaciones Telegram y genera informes optimizados para análisis con IA.
+Aplicación web para seguimiento de inversiones con estrategia **Dollar Cost Averaging (DCA)**.  
+Gestiona posiciones, historial de compras/ventas, alertas operativas, watchlist, simuladores
+financieros, notificaciones Telegram y genera informes optimizados para análisis con IA.
 
-> **Tus datos nunca salen de tu ordenador.** Sin registro, sin cloud, sin suscripciones, sin
-> telemetría.
+> **Producción**: Supabase PostgreSQL + Auth · **Desarrollo**: H2 en memoria · **Despliegue**: Docker en Hostinger KVM con Traefik + Let's Encrypt
 
 ---
+
+## Arquitectura
+
+```
+┌─ Navegador ──────────────────────────────────────────┐
+│  login.html → index.html / mobile.html                │
+│  Alpine.js + Chart.js + @supabase/supabase-js (CDN)  │
+└────────────────────┬─────────────────────────────────┘
+                     │ HTTPS (TLS 1.3)
+                     ▼
+┌─ Hostinger KVM ───────────────────────────────────────┐
+│  Traefik (reverse proxy + Let's Encrypt)              │
+│  ├── n8n.srv1158554.hstgr.cloud → n8n                │
+│  └── portfolio.srv1158554.hstgr.cloud → :19480        │
+│  portfolio-tracker (Docker, Spring Boot, Java 21)      │
+└────────────────────┬─────────────────────────────────┘
+                     │ JDBC (SSL)
+                     ▼
+┌─ Supabase Cloud ──────────────────────────────────────┐
+│  PostgreSQL 17 · Auth (JWT ES256) · RLS               │
+└───────────────────────────────────────────────────────┘
+```
 
 ## Stack
 
-- **Backend:** Spring Boot 4.0.5 / Java 21
-- **Base de datos:** SQLite (`data/portfolio.db`) — zero config
-- **Frontend:** HTML + JavaScript vanilla (Chart.js) — sin frameworks pesados
-- **Precios:** Yahoo Finance (conversión automática a EUR)
-- **Noticias:** Google News (scraping RSS)
-- **Notificaciones:** Telegram Bot API (opcional)
-- **Tipos de cambio:** open.er-api.com (caché de 6h)
+| Capa | Tecnología |
+|------|-----------|
+| **Backend** | Spring Boot 4.0.5 / Java 21 |
+| **Base de datos** | Supabase PostgreSQL 17 (prod) · H2 (test) |
+| **Auth** | Supabase Auth (email + password, JWT ES256) |
+| **Frontend** | HTML5 + CSS3 + Alpine.js 3.14 + Chart.js 4.4 |
+| **Reverse proxy** | Traefik + Let's Encrypt TLS |
+| **Despliegue** | Docker (multi-stage) → GHCR → Hostinger KVM |
+| **Precios** | Yahoo Finance (conversión automática a EUR) |
+| **Divisas** | open.er-api.com (caché 6h) |
+| **Notificaciones** | Telegram Bot API (opcional) |
 
 ## Requisitos
 
-- Java 21+
+- **Desarrollo local**: Java 21+
+- **Despliegue**: Docker 29+ (solo para build y push)
 
 ## 🚀 Arranque rápido
 
-### Desarrollo
+### Desarrollo local (con Supabase)
+
+La app en desarrollo se conecta a Supabase igual que en producción. Necesitas la variable de entorno:
 
 ```bash
+export SUPABASE_DB_PASSWORD="tuPassword"
 ./mvnw spring-boot:run
 ```
 
-### Producción (JAR ejecutable)
+Accede en `http://localhost:19480/portfoliotracker/` → redirige a login → autentícate con tu email/contraseña de Supabase.
+
+### Desarrollo local (modo offline con H2)
+
+Para trabajar sin conexión a internet, usa el perfil `h2`:
 
 ```bash
-./mvnw clean package -DskipTests
-java -jar target/PortfolioTracker.jar
+./mvnw spring-boot:run -Dspring-boot.run.profiles=h2
 ```
 
-### 🌐 Acceso web
+Esto usa H2 en disco (`data/portfolio.mv.db`) en modo PostgreSQL y omite la autenticación.
 
-```
-http://localhost:19480/portfoliotracker/
-```
+### Tests
 
-> Puerto: `19480` — Context path: `/portfoliotracker`  
-> La app escucha en `0.0.0.0`, accesible desde otros dispositivos de la red local.
+```bash
+./mvnw test   # H2 en memoria, sin auth
+```
 
 ---
 
-## 📦 Distribución portable
+## 🐳 Despliegue con Docker
 
-Al ejecutar `mvn package` se genera un **zip autocontenido** en `target/PortfolioTracker-dist.zip`:
+### Build local
 
-```
-PortfolioTracker/
-├── PortfolioTracker.jar         ← JAR ejecutable (app + web + seeds)
-├── start.bat                    ← Arranque manual (Windows)
-├── start.sh                     ← Arranque manual (Linux/Mac)
-├── install-service.bat          ← Instalar como servicio Windows (auto-arranque)
-├── uninstall-service.bat        ← Desinstalar servicio Windows
-└── data/
-    ├── portfolio.db             ← Base de datos con tus datos
-    ├── seed.sql                 ← Datos semilla (posiciones iniciales)
-    └── price_history_seed.sql   ← Precios semilla
+```bash
+docker build -t ghcr.io/<tu-usuario>/portfolio-tracker:latest .
 ```
 
-### Instalar como servicio en Windows 11
+### Publicar en GitHub Container Registry
 
-1. Descomprimir `PortfolioTracker-dist.zip`
-2. Clic derecho en **`install-service.bat`** → **Ejecutar como administrador**
-3. El servicio arrancará automáticamente cada vez que inicies sesión en Windows
-4. Acceder en: **http://localhost:19480/portfoliotracker/**
-5. Para desinstalar: ejecutar `uninstall-service.bat` como administrador
+```bash
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u <tu-usuario> --password-stdin
+docker push ghcr.io/<tu-usuario>/portfolio-tracker:latest
+```
 
-### Uso manual
+### Desplegar en VPS (Hostinger KVM)
 
-- **Windows:** doble clic en `start.bat` (abre el navegador automáticamente)
-- **Linux/Mac:** `./start.sh`
+La VPS debe tener Docker + Traefik. El `docker-compose-vps.yml` de referencia está en la raíz del proyecto.
+
+```bash
+# En la VPS
+docker compose pull portfolio-tracker
+docker compose up -d portfolio-tracker
+```
+
+---
+
+## 🔐 Autenticación
+
+La app usa **Supabase Auth** con login client-side:
+
+1. `index.html` carga → `requireAuth()` verifica sesión en localStorage
+2. Sin sesión → redirige a `login.html`
+3. Login con email + password vía `@supabase/supabase-js` CDN
+4. Token JWT (ES256) se adjunta en `Authorization: Bearer` a todas las llamadas API
+5. Backend valida el JWT contra las claves públicas de Supabase (JWKS)
+
+**Endpoint protegidos**: todos bajo `/api/**` requieren token JWT válido.  
+**Usuario**: single-user (el propietario). Creado manualmente en Supabase Dashboard → Authentication.
 
 ---
 
@@ -86,33 +126,27 @@ PortfolioTracker/
 
 ### 📈 Dashboard y posiciones
 
-- Panel de resumen con KPIs: capital invertido, valor actual, P&L (no realizado + realizado), XIRR,
-  inversión del mes
+- Panel de resumen con KPIs: capital invertido, valor actual, P&L (no realizado + realizado), XIRR, inversión del mes
 - Tabla de posiciones con precio actual, variación diaria, P&L por posición y TIR individual
 - Gráfico de distribución de cartera (tarta) con pesos por posición
-- Gráfico de evolución de precios por ticker con rangos seleccionables (1D, 1S, 1M, 3M, 6M, 1A, YTD,
-  Todo)
-- **Posiciones cerradas**: cuando vendes todas las participaciones, la posición se mueve a una
-  sección dedicada con P&L realizado, periodo de tenencia y TIR
+- Gráfico de evolución de precios por ticker con rangos seleccionables (1D, 1S, 1M, 3M, 6M, 1A, YTD, Todo)
+- **Posiciones cerradas**: cuando vendes todas las participaciones, la posición se mueve a una sección dedicada con P&L realizado, periodo de tenencia y TIR
 
 ### 🔄 Gestión DCA completa (compras y ventas)
 
 - Registro de operaciones de **compra (BUY)** y **venta (SELL)**
-- Al registrar cualquier operación, se **recalculan automáticamente** `shares` y `avgPrice` de la
-  posición
+- Al registrar cualquier operación, se **recalculan automáticamente** `shares` y `avgPrice` de la posición
 - **P&L realizado** por cada venta: `(precio venta − precio medio) × acciones vendidas`
 - Vista previa en tiempo real del nuevo precio medio antes de confirmar
 - Paginación con "Ver más" para historiales largos
-- **Importación masiva** de operaciones desde archivo JSON (crea posiciones automáticamente si no
-  existen)
+- **Importación masiva** de operaciones desde archivo JSON (crea posiciones automáticamente si no existen)
 
 ### ⚙️ Detalle operativo por posición
 
 Cada posición tiene un panel con pestañas:
 
 - **Resumen:** Peso en cartera, estadísticas, nivel de riesgo, estrategia
-- **Límites:** Stop-loss, take-profit, trailing stop, DCA target, alertas de precio, con indicadores
-  de distancia
+- **Límites:** Stop-loss, take-profit, trailing stop, DCA target, alertas de precio, con indicadores de distancia
 - **Notas:** Espacio libre para análisis personal (hasta 2.000 caracteres)
 - **🤖 IA:** Generador de prompts para Claude/ChatGPT con importación automática de respuestas JSON
 
@@ -124,10 +158,8 @@ Cada posición tiene un panel con pestañas:
 - Divisas soportadas: EUR, USD, GBP, GBp/GBX, CHF, SEK y cualquier otra devuelta por la API
 - Cada precio se guarda en `price_history` para gráficos y consultas históricas
 - **Snapshot de cierre** a medianoche: guarda `previousClose` para calcular variación diaria
-- **Control de horarios de mercado:** solo consulta precios cuando el mercado está abierto (
-  configurable)
-- **Ventana post-cierre** de 10 minutos con reintentos automáticos para capturar el precio de cierre
-  real
+- **Control de horarios de mercado:** solo consulta precios cuando el mercado está abierto (configurable)
+- **Ventana post-cierre** de 10 minutos con reintentos automáticos para capturar el precio de cierre real
 
 ### 🔔 Sistema de alertas
 
@@ -177,8 +209,7 @@ Cada posición tiene un panel con pestañas:
 ### 📄 Exportación / Informes para IA
 
 - Informe Markdown completo optimizado para LLMs
-- Incluye: resumen ejecutivo, detalle por posición, historial DCA, distribución, riesgo (HHI), plan
-  de inversión
+- Incluye: resumen ejecutivo, detalle por posición, historial DCA, distribución, riesgo (HHI), plan de inversión
 
 ### ✈️ Integración con Telegram (opcional)
 
@@ -223,19 +254,29 @@ Cada posición tiene un panel con pestañas:
 
 ## Base de datos
 
-- Archivo SQLite en `data/portfolio.db` (ruta relativa al directorio de ejecución)
-- Se crea automáticamente al arrancar si no existe
-- Si la BD está vacía, se ejecutan los seeds (busca primero en `./data/`, luego dentro del JAR)
-- `ddl-auto: update` — Hibernate gestiona el esquema automáticamente
-- Tablas: `positions`, `dca_history`, `position_details`, `price_history`, `portfolio_snapshots`,
-  `watchlist`, `watchlist_alert`, `market_schedules`, `investment_plan`, `planned_cash_flows`,
-  `app_settings`, `telegram_channel_messages`
+**Producción**: Supabase PostgreSQL 17 — conexión JDBC con SSL a `db.agtkcnxmlbccbwmsuxdz.supabase.co:6543`.  
+**Desarrollo**: H2 en memoria (modo PostgreSQL) o H2 en disco con perfil `h2`.
+
+Tablas: `positions`, `dca_history`, `position_details`, `price_history`, `portfolio_snapshots`, `watchlist`, `watchlist_alert`, `market_schedules`, `investment_plan`, `planned_cash_flows`, `app_settings`, `telegram_channel_messages`, `position_alerts`
+
+Hibernate `ddl-auto`: `validate` (prod) / `create-drop` (test).
+
+---
+
+## Variables de entorno
+
+| Variable | Entorno | Descripción |
+|----------|---------|-------------|
+| `SUPABASE_DB_PASSWORD` | todos | Password de la BD Supabase |
+| `SPRING_PROFILES_ACTIVE` | opcional | `h2` para desarrollo offline sin auth |
+| `SPRING_DEVTOOLS_RESTART_ENABLED` | producción | `false` para deshabilitar hot-reload |
+| `TZ` | producción | Zona horaria (ej. `Europe/Madrid`) |
 
 ---
 
 ## API REST
 
-Todos los endpoints están bajo el context path `/portfoliotracker`.
+Todos los endpoints bajo `/portfoliotracker`. Los endpoints `/api/**` requieren autenticación (Bearer JWT de Supabase).
 
 ### Posiciones
 
@@ -398,3 +439,29 @@ Rangos válidos: `1d`, `1w`, `1m`, `3m`, `6m`, `1y`, `ytd`, `all`
 | `0 55 23 * * *`      | Snapshot diario del portfolio                          |
 | `0 0 2 * * *`        | Compactación histórico de precios                      |
 | `0 0 18 * * MON-FRI` | Resumen diario Telegram                                |
+
+---
+
+## Estructura del proyecto
+
+```
+src/main/java/com/sro/myportfoliotracker/
+  config/         → AppConfig, SecurityConfig, MobileRedirectFilter, DataSeeder
+  controller/     → 16 controladores REST
+  dto/            → DTOs + simuladores
+  model/          → 11 entidades JPA
+  repository/     → 12 repositorios Spring Data JPA
+  service/        → 19 servicios de negocio + simuladores
+
+src/main/resources/static/
+  login.html      → Página de login (Supabase Auth)
+  index.html      → SPA desktop (~6000 líneas)
+  mobile.html     → SPA mobile (~1500 líneas)
+  css/            → tokens.css, desktop.css, mobile.css
+  js/             → api.js, auth.js, alpine-store.js, charts.js, formatters.js
+
+src/test/         → Tests JUnit 5 + H2 (43 tests)
+
+Dockerfile        → Build multi-stage (Maven → JRE Alpine)
+docker-compose-vps.yml → Config de despliegue para Hostinger KVM
+```
