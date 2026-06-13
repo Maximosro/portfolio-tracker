@@ -1,0 +1,13 @@
+# Perfil standalone — PostgreSQL local en Docker (compose.yaml)
+# Este perfil es el DEFAULT fuera de Docker (spring.profiles.default=standalone en application.yaml)
+# Requisito previo: docker compose up -d
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/portfoliodb
+    driver-class-name: org.postgresql.Driver
+    username: portfolio
+    password: p0rtf0l10
+  jpa:
+    hibernate:
+      ddl-auto: update

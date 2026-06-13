@@ -1,0 +1,13 @@
+# Perfil pro — Supabase PostgreSQL (producción)
+# Este perfil se activa automáticamente en el contenedor Docker
+# vía ENV SPRING_PROFILES_ACTIVE=pro en el Dockerfile
+
+spring:
+  datasource:
+    url: jdbc:postgresql://db.agtkcnxmlbccbwmsuxdz.supabase.co:6543/postgres?sslmode=require
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: ${SUPABASE_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
