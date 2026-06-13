@@ -60,14 +60,9 @@ jobs:
       - name: Deploy to VPS via SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            cd /root
-            docker compose pull portfolio-tracker
-            docker compose up -d portfolio-tracker
-            docker compose ps portfolio-tracker
-          "
+          ssh -v -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cd /root && docker compose pull portfolio-tracker && docker compose up -d portfolio-tracker && docker compose ps portfolio-tracker"
 
       - name: Smoke test
         run: |
