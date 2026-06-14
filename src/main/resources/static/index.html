@@ -554,15 +554,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         Guia de usuario
       </button>
-      <div class="nav-label">Herramientas</div>
-      <button class="nav-item" @click="drawerOpen = false; if(typeof forceRefreshPrices === 'function') forceRefreshPrices()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        Refrescar precios
-      </button>
-      <button class="nav-item" @click="drawerOpen = false; toggleLogPanel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Log de actividad
-      </button>
     </div>
     <div class="nav-footer">⌘K — Abrir/cerrar menú</div>
   </nav>
@@ -2830,24 +2821,56 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
   </div>
 </div>
 
-<!-- PANEL: ALERTAS -->
+<!-- PANEL: ALERTAS + LOG -->
 <div class="alert-panel" id="alertPanel">
   <div class="alert-panel-header">
-    <div class="news-header-title">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-notification)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      Alertas
+    <div class="news-header-title" style="display:flex;align-items:center;gap:var(--space-3)">
+      <button class="alert-tab-btn active" id="alertTabAlerts" onclick="switchAlertTab('alerts')">🔔 Alertas</button>
+      <button class="alert-tab-btn" id="alertTabLog" onclick="switchAlertTab('log')">📋 Log</button>
       <span id="alertPanelCount" style="font-size:10px;color:var(--color-text-faint);font-weight:400"></span>
     </div>
     <button class="btn-ghost btn btn-sm" onclick="toggleAlertPanel()" style="padding:2px 6px">✕</button>
   </div>
-  <div class="alert-panel-body" id="alertPanelBody">
+
+  <!-- TAB: ALERTAS -->
+  <div class="alert-panel-body" id="alertPanelBodyAlerts">
     <div class="news-placeholder">
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">Sin alertas activas</div>
       <div style="font-size:var(--text-xs)">Todas tus posiciones están dentro de los límites configurados</div>
     </div>
   </div>
-  <div style="border-top:1px solid var(--color-divider);padding:var(--space-3) var(--space-4);flex-shrink:0">
+
+  <!-- TAB: LOG -->
+  <div class="alert-panel-body" id="alertPanelBodyLog" style="display:none">
+    <div style="display:flex;gap:3px;padding:var(--space-2) var(--space-4);border-bottom:1px solid var(--color-divider);flex-wrap:wrap">
+      <button class="log-filter-btn active" data-logfilter="ALL" onclick="setLogFilter('ALL')">Todo</button>
+      <button class="log-filter-btn" data-logfilter="PRICE" onclick="setLogFilter('PRICE')">Precios</button>
+      <button class="log-filter-btn" data-logfilter="TELEGRAM" onclick="setLogFilter('TELEGRAM')">Telegram</button>
+      <button class="log-filter-btn" data-logfilter="WATCHLIST" onclick="setLogFilter('WATCHLIST')">Watchlist</button>
+      <button class="log-filter-btn" data-logfilter="DCA" onclick="setLogFilter('DCA')">DCA</button>
+      <button class="log-filter-btn" data-logfilter="SNAPSHOT" onclick="setLogFilter('SNAPSHOT')">Snapshots</button>
+      <button class="log-filter-btn" data-logfilter="ALERT" onclick="setLogFilter('ALERT')">Alertas</button>
+      <button class="log-filter-btn" data-logfilter="SYSTEM" onclick="setLogFilter('SYSTEM')">Sistema</button>
+    </div>
+    <div class="log-panel-body" id="logPanelBody">
+      <div class="news-placeholder">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">Sin actividad registrada</div>
+        <div style="font-size:var(--text-xs)">La actividad de la aplicación aparecerá aquí</div>
+      </div>
+    </div>
+    <div class="log-panel-footer">
+      <span id="logTimestamp"></span>
+      <button class="btn btn-secondary btn-sm" onclick="loadActivityLog()" style="gap:var(--space-1);padding:var(--space-1) var(--space-2)" title="Actualizar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <span style="opacity:.6">Log funcional en memoria</span>
+    </div>
+  </div>
+
+  <!-- Footer: Leyenda + Telegram (solo visible en tab Alertas) -->
+  <div id="alertPanelFooter" style="border-top:1px solid var(--color-divider);padding:var(--space-3) var(--space-4);flex-shrink:0">
     <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-faint);font-weight:600;margin-bottom:var(--space-2)">Leyenda</div>
     <div style="display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);font-size:10px;color:var(--color-text-muted);line-height:1.6">
       <div style="display:flex;flex-direction:column;gap:var(--space-1)">
@@ -2877,44 +2900,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
         Probar Telegram
       </button>
     </div>
-  </div>
-</div>
-
-<!-- PANEL: LOG DE ACTIVIDAD -->
-<div class="log-panel" id="logPanel">
-  <div class="log-panel-header">
-    <div class="news-header-title">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      Log de Actividad
-      <span id="logPanelCount" style="font-size:10px;color:var(--color-text-faint);font-weight:400"></span>
-    </div>
-    <div style="display:flex;align-items:center;gap:var(--space-2)">
-      <button class="btn btn-secondary btn-sm" onclick="loadActivityLog()" style="gap:var(--space-1);padding:var(--space-1) var(--space-2)" title="Actualizar">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </button>
-      <button class="btn-ghost btn btn-sm" onclick="toggleLogPanel()" style="padding:2px 6px">✕</button>
-    </div>
-  </div>
-  <div style="display:flex;gap:3px;padding:var(--space-2) var(--space-4);border-bottom:1px solid var(--color-divider);flex-wrap:wrap">
-    <button class="log-filter-btn active" data-logfilter="ALL" onclick="setLogFilter('ALL')">Todo</button>
-    <button class="log-filter-btn" data-logfilter="PRICE" onclick="setLogFilter('PRICE')">Precios</button>
-    <button class="log-filter-btn" data-logfilter="TELEGRAM" onclick="setLogFilter('TELEGRAM')">Telegram</button>
-    <button class="log-filter-btn" data-logfilter="WATCHLIST" onclick="setLogFilter('WATCHLIST')">Watchlist</button>
-    <button class="log-filter-btn" data-logfilter="DCA" onclick="setLogFilter('DCA')">DCA</button>
-    <button class="log-filter-btn" data-logfilter="SNAPSHOT" onclick="setLogFilter('SNAPSHOT')">Snapshots</button>
-    <button class="log-filter-btn" data-logfilter="ALERT" onclick="setLogFilter('ALERT')">Alertas</button>
-    <button class="log-filter-btn" data-logfilter="SYSTEM" onclick="setLogFilter('SYSTEM')">Sistema</button>
-  </div>
-  <div class="log-panel-body" id="logPanelBody">
-    <div class="news-placeholder">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">Sin actividad registrada</div>
-      <div style="font-size:var(--text-xs)">La actividad de la aplicación aparecerá aquí</div>
-    </div>
-  </div>
-  <div class="log-panel-footer">
-    <span id="logTimestamp"></span>
-    <span style="opacity:.6">Log funcional en memoria</span>
   </div>
 </div>
 
@@ -5825,11 +5810,30 @@ async function saveDetail() {
 
 // ===================== ALERTS SYSTEM =====================
 let alertsPanelOpen = false;
+let alertPanelTab = 'alerts'; // 'alerts' | 'log'
 let currentAlerts = [];
 // Inicializar previousAlertKeys con las ya vistas para evitar toasts falsos tras recargar
 let previousAlertKeys = new Set(JSON.parse(localStorage.getItem('seenAlertKeys') || '[]'));
 // Restaurar alertas vistas desde localStorage para que sobrevivan al recargar
 let seenAlertKeys = new Set(JSON.parse(localStorage.getItem('seenAlertKeys') || '[]'));
+
+function switchAlertTab(tab) {
+  alertPanelTab = tab;
+  document.getElementById('alertTabAlerts').classList.toggle('active', tab === 'alerts');
+  document.getElementById('alertTabLog').classList.toggle('active', tab === 'log');
+  document.getElementById('alertPanelBodyAlerts').style.display = tab === 'alerts' ? '' : 'none';
+  document.getElementById('alertPanelBodyLog').style.display = tab === 'log' ? '' : 'none';
+  // Mostrar/ocultar footer de leyenda (solo en tab Alertas)
+  const footer = document.getElementById('alertPanelFooter');
+  if (footer) footer.style.display = tab === 'alerts' ? '' : 'none';
+  // Actualizar contador del header
+  const countEl = document.getElementById('alertPanelCount');
+  if (tab === 'alerts') {
+    countEl.textContent = currentAlerts.length > 0 ? '(' + currentAlerts.length + ')' : '';
+  } else {
+    loadActivityLog();
+  }
+}
 
 function persistSeenAlerts() {
   localStorage.setItem('seenAlertKeys', JSON.stringify([...seenAlertKeys]));
@@ -5953,8 +5957,8 @@ function toggleAlertPanel() {
   alertsPanelOpen = !alertsPanelOpen;
   document.getElementById('alertPanel').classList.toggle('open', alertsPanelOpen);
   if (alertsPanelOpen) {
-    // Cerrar log panel si está abierto
-    if (logPanelOpen) { logPanelOpen = false; document.getElementById('logPanel').classList.remove('open'); }
+    // Siempre abrir en pestaña Alertas por defecto
+    switchAlertTab('alerts');
     // Marcar todas las alertas actuales como vistas inmediatamente
     currentAlerts.forEach(a => seenAlertKeys.add(`${a.ticker}|${a.type}`));
     persistSeenAlerts();
@@ -6059,9 +6063,12 @@ function alertIcon(type) {
 }
 
 function renderAlerts() {
-  const body = document.getElementById('alertPanelBody');
+  const body = document.getElementById('alertPanelBodyAlerts');
   const countEl = document.getElementById('alertPanelCount');
-  countEl.textContent = currentAlerts.length > 0 ? `(${currentAlerts.length})` : '';
+  // Solo actualizar contador si la pestaña Alertas está activa
+  if (alertPanelTab === 'alerts') {
+    countEl.textContent = currentAlerts.length > 0 ? `(${currentAlerts.length})` : '';
+  }
 
   if (currentAlerts.length === 0) {
     body.innerHTML = `
@@ -6681,21 +6688,27 @@ function renderPdSingleTickerChart(data, ticker, c, ctx) {
 }
 
 // ===================== ACTIVITY LOG =====================
-let logPanelOpen = false;
 let activityLogEntries = [];
 let logFilter = 'ALL';
 let lastLogCount = 0;
 
 function toggleLogPanel() {
-  logPanelOpen = !logPanelOpen;
-  document.getElementById('logPanel').classList.toggle('open', logPanelOpen);
-  // Cerrar panel de alertas si está abierto
-  if (logPanelOpen && alertsPanelOpen) { alertsPanelOpen = false; document.getElementById('alertPanel').classList.remove('open'); }
-  if (logPanelOpen) {
-    loadActivityLog();
-    // Marcar como visto
-    lastLogCount = activityLogEntries.length;
-    updateLogBadge();
+  if (!alertsPanelOpen) {
+    // Abrir alertPanel en pestaña Log
+    alertsPanelOpen = true;
+    document.getElementById('alertPanel').classList.add('open');
+    switchAlertTab('log');
+    // Marcar alertas como vistas igual que al abrir
+    currentAlerts.forEach(a => seenAlertKeys.add(`${a.ticker}|${a.type}`));
+    persistSeenAlerts();
+    updateAlertBadge();
+  } else if (alertPanelTab === 'log') {
+    // Si ya está abierto en Log, cerrar
+    alertsPanelOpen = false;
+    document.getElementById('alertPanel').classList.remove('open');
+  } else {
+    // Si está abierto en Alertas, cambiar a Log
+    switchAlertTab('log');
   }
 }
 
@@ -6759,11 +6772,14 @@ function logCategoryLabel(cat) {
 
 function renderActivityLog() {
   const body = document.getElementById('logPanelBody');
-  const countEl = document.getElementById('logPanelCount');
+  const countEl = document.getElementById('alertPanelCount');
 
   // Filtrar si hay filtro activo
   const filtered = logFilter === 'ALL' ? activityLogEntries : activityLogEntries.filter(e => e.category === logFilter);
-  countEl.textContent = filtered.length > 0 ? `(${filtered.length})` : '';
+  // Solo actualizar contador si la pestaña Log está activa
+  if (alertPanelTab === 'log') {
+    countEl.textContent = filtered.length > 0 ? `(${filtered.length})` : '';
+  }
 
   if (filtered.length === 0) {
     body.innerHTML = `
