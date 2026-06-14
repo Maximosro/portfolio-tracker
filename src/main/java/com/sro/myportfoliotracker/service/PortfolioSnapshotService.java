@@ -130,6 +130,12 @@ public class PortfolioSnapshotService {
         .mapToDouble(p -> p.getShares() * p.getCurrentPrice())
         .sum();
 
+    // Capital invertido actual (usando avgPrice de posiciones = misma fuente que snapshots)
+    double currentInvested = positions.stream()
+        .filter(p -> p.getCurrentPrice() != null && p.getCurrentPrice() > 0)
+        .mapToDouble(p -> p.getShares() * p.getAvgPrice())
+        .sum();
+
     Map<String, PeriodReturnEntry> periods = new LinkedHashMap<>();
 
     // HOY: usar previousClose
@@ -146,25 +152,25 @@ public class PortfolioSnapshotService {
     }
 
     // SEMANA
-    periods.put("week", calculatePeriodReturn(currentValue, today.minusWeeks(1), "Semana"));
+    periods.put("week", calculatePeriodReturn(currentValue, currentInvested, today.minusWeeks(1), "Semana"));
 
     // MES
-    periods.put("month", calculatePeriodReturn(currentValue, today.minusMonths(1), "Mes"));
+    periods.put("month", calculatePeriodReturn(currentValue, currentInvested, today.minusMonths(1), "Mes"));
 
     // TRIMESTRE
-    periods.put("quarter", calculatePeriodReturn(currentValue, today.minusMonths(3), "Trimestre"));
+    periods.put("quarter", calculatePeriodReturn(currentValue, currentInvested, today.minusMonths(3), "Trimestre"));
 
     // YTD
-    periods.put("ytd", calculatePeriodReturn(currentValue, today.withDayOfYear(1), "YTD"));
+    periods.put("ytd", calculatePeriodReturn(currentValue, currentInvested, today.withDayOfYear(1), "YTD"));
 
     // AÑO
-    periods.put("year", calculatePeriodReturn(currentValue, today.minusYears(1), "1 Año"));
+    periods.put("year", calculatePeriodReturn(currentValue, currentInvested, today.minusYears(1), "1 Año"));
 
     return new PeriodReturnsDto(periods);
   }
 
-  private PeriodReturnEntry calculatePeriodReturn(double currentValue, LocalDate startDate,
-      String label) {
+  private PeriodReturnEntry calculatePeriodReturn(double currentValue, double currentInvested,
+      LocalDate startDate, String label) {
     Optional<PortfolioSnapshot> startSnapshot =
         snapshotRepository.findFirstByDateLessThanEqualOrderByDateDesc(startDate);
 
@@ -173,12 +179,22 @@ public class PortfolioSnapshotService {
     }
 
     double startValue = startSnapshot.get().getTotalValue();
+    double startInvested = startSnapshot.get().getTotalInvested();
     if (startValue <= 0) {
       return new PeriodReturnEntry(null, null, label);
     }
 
-    double contributions = dcaContributionsSince(startDate);
-    return buildReturn(currentValue, startValue, contributions, label);
+    // Usar cambio en P&L (valor - invertido) para excluir aportaciones DCA,
+    // igual que el popup de histórico. Así ambos usan la misma fuente (snapshots).
+    double startPL = startValue - startInvested;
+    double currentPL = currentValue - currentInvested;
+    double returnEur = currentPL - startPL;
+    double returnPct = startValue > 0 ? (returnEur / startValue) * 100 : 0;
+    return new PeriodReturnEntry(
+        Math.round(returnPct * 100.0) / 100.0,
+        Math.round(returnEur * 100.0) / 100.0,
+        label
+    );
   }
 
   private PeriodReturnEntry buildReturn(double currentValue, double startValue,
@@ -243,7 +259,7 @@ public class PortfolioSnapshotService {
    */
   private PeriodHistoryDto buildDailyHistory(LocalDate from, LocalDate to, String label) {
     Optional<PortfolioSnapshot> baseSn = snapshotRepository.findFirstByDateLessThanEqualOrderByDateDesc(
-        from.minusDays(1));
+        from);
     List<PortfolioSnapshot> snapshots = snapshotRepository.findByDateBetweenOrderByDateAsc(from,
         to);
 
@@ -319,7 +335,7 @@ public class PortfolioSnapshotService {
    */
   private PeriodHistoryDto buildWeeklyHistory(LocalDate from, LocalDate to, String label) {
     Optional<PortfolioSnapshot> baseSn = snapshotRepository.findFirstByDateLessThanEqualOrderByDateDesc(
-        from.minusDays(1));
+        from);
     List<PortfolioSnapshot> snapshots = snapshotRepository.findByDateBetweenOrderByDateAsc(from,
         to);
 
@@ -400,7 +416,7 @@ public class PortfolioSnapshotService {
    */
   private PeriodHistoryDto buildMonthlyHistory(LocalDate from, LocalDate to, String label) {
     Optional<PortfolioSnapshot> baseSn = snapshotRepository.findFirstByDateLessThanEqualOrderByDateDesc(
-        from.minusDays(1));
+        from);
     List<PortfolioSnapshot> snapshots = snapshotRepository.findByDateBetweenOrderByDateAsc(from,
         to);
 
