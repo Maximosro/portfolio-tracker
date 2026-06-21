@@ -715,11 +715,12 @@ function renderDashPositions(){
     const pl=calcPL(pos);const plPct=calcPLPct(pos);
     const posXirr=metrics&&metrics.positionXirr?metrics.positionXirr[pos.ticker]:null;
     const dayChange=(pos.currentPrice&&pos.previousClose&&pos.previousClose>0)?((pos.currentPrice-pos.previousClose)/pos.previousClose)*100:null;
+    const dayEur=dayChange!==null?(pos.currentPrice-pos.previousClose)*pos.shares:null;
     const color=pos.color||COLORS[0];
 
     html+=`<tr onclick="switchPage('positions');setTimeout(()=>openMDetail('${pos.ticker}'),100)" style="cursor:pointer">`;
     html+=`<td><div class="m-dash-ticker"><span class="m-pos-dot" style="background:${color}"></span><div><div>${pos.ticker}</div><div class="m-dash-name">${pos.name||''}</div></div></div></td>`;
-    html+=`<td class="${plClass(dayChange)}">${dayChange!==null?fmtPct(dayChange):'<span style="color:var(--color-text-faint)">—</span>'}</td>`;
+    html+=`<td class="${plClass(dayChange)}">${dayChange!==null?fmtPct(dayChange)+'<br><span style="font-size:9px;opacity:.8">'+fmtEur(dayEur)+'</span>':'<span style="color:var(--color-text-faint)">—</span>'}</td>`;
     html+=`<td>${volBadge(pos.volume,pos.avgVolume)}</td>`;
     html+=`<td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:9px;opacity:.8">${fmtPct(plPct)}</span></td>`;
     html+=`<td class="${plClass(posXirr)}">${posXirr!=null?fmtPct(posXirr*100):'—'}</td>`;

@@ -677,6 +677,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
                 <th>Invertido</th>
                 <th>Valor</th>
                 <th>P&amp;L</th>
+                <th>Ventas Par.</th>
                 <th>TIR</th>
                 <th></th>
               </tr>
@@ -3736,7 +3737,7 @@ function renderTable() {
   const closed = positions.filter(p => p.shares <= 0);
 
   if (active.length === 0 && closed.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:var(--space-12);color:var(--color-text-faint)">
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:var(--space-12);color:var(--color-text-faint)">
       <div style="font-size:var(--text-lg);margin-bottom:var(--space-3)">📊</div>
       <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-2)">Sin posiciones aún</div>
       <div style="font-size:var(--text-sm)">Pulsa <strong>"Nueva posición"</strong> para empezar</div>
@@ -3755,6 +3756,7 @@ function renderTable() {
     const realizedPL = metrics && metrics.positionRealizedPL ? metrics.positionRealizedPL[pos.ticker] : null;
     const dayChange = (pos.currentPrice && pos.previousClose && pos.previousClose > 0)
         ? ((pos.currentPrice - pos.previousClose) / pos.previousClose) * 100 : null;
+    const dayChangeEur = dayChange !== null ? (pos.currentPrice - pos.previousClose) * pos.shares : null;
     const detail = positionDetailsMap[pos.ticker];
     const tooltipParts = [];
     if (detail) {
@@ -3774,7 +3776,7 @@ function renderTable() {
       const rIcon = realizedPL >= 0 ? '✅' : '❌';
       // Count sell operations for this ticker
       const sellOps = dcaEntries.filter(e => e.ticker === pos.ticker && e.type === 'SELL').length;
-      realizedTag = `<br><span style="font-size:9px;color:${rColor};opacity:.9" title="P&L realizado por ${sellOps} venta${sellOps !== 1 ? 's' : ''} parcial${sellOps !== 1 ? 'es' : ''}">${rIcon} ${fmtEur(realizedPL)} realiz. (${sellOps}v)</span>`;
+      realizedTag = `<span style="font-size:9px;color:${rColor};opacity:.9" title="P&L realizado por ${sellOps} venta${sellOps !== 1 ? 's' : ''} parcial${sellOps !== 1 ? 'es' : ''}">${rIcon} ${fmtEur(realizedPL)}</span>`;
     }
 
     const tr = document.createElement('tr');
@@ -3792,11 +3794,12 @@ function renderTable() {
       <td>${fmtShares(pos.shares)}</td>
       <td>${fmtEur(pos.avgPrice, 4)}</td>
       <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate, pos.yahooTicker) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
-      <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
+      <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) + '<br><span style="font-size:10px;opacity:.8">' + fmtEur(dayChangeEur) + '</span>' : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td>${wlVolumeBadge(pos.volume, pos.avgVolume)}</td>
       <td>${fmtEur(invested)}</td>
       <td>${value !== null ? fmtEur(value) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
-      <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span>${realizedTag}</td>
+      <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
+      <td class="${plClass(realizedPL)}">${realizedTag || '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td class="${plClass(posXirr)}">${posXirr != null ? fmtPct(posXirr * 100) : '—'}</td>
       <td style="text-align:center;white-space:nowrap">
         <button class="btn-ghost btn btn-sm" onclick="openEditModal('${pos.ticker}')" title="Editar" style="padding:2px 6px">
@@ -3817,12 +3820,18 @@ function renderTable() {
     const pl = tvActive !== null ? tvActive - tiPriced : null;
     const plPct = pl !== null && tiPriced > 0 ? (pl / tiPriced) * 100 : null;
     const totalXirr = metrics ? metrics.portfolioXirr : null;
+    const totalActiveRealizedPL = metrics && metrics.positionRealizedPL
+        ? active.reduce((s, p) => s + (metrics.positionRealizedPL[p.ticker] || 0), 0) : 0;
+    const totalRealizedTag = totalActiveRealizedPL !== 0
+        ? `<span style="color:${totalActiveRealizedPL >= 0 ? 'var(--color-success)' : 'var(--color-notification)'};font-weight:600">${fmtEur(totalActiveRealizedPL)} ${totalActiveRealizedPL >= 0 ? '✅' : '❌'}</span>`
+        : '<span style="color:var(--color-text-faint)">—</span>';
     tbody.insertAdjacentHTML('beforeend', `
       <tr style="background:var(--color-surface-offset);font-weight:700">
         <td colspan="6" style="text-align:left;color:var(--color-text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">TOTAL CARTERA</td>
         <td>${fmtEur(ti)}</td>
         <td>${tvActive !== null ? fmtEur(tvActive) : '—'}</td>
         <td class="${plClass(pl)}">${fmtEur(pl)}<br><span style="font-size:10px;opacity:.8">${fmtPct(plPct)}</span></td>
+        <td>${totalRealizedTag}</td>
         <td class="${plClass(totalXirr)}">${totalXirr != null ? fmtPct(totalXirr * 100) : '—'}</td>
         <td></td>
       </tr>`);

@@ -37,3 +37,4 @@ data/*.db
 
 /plans
 /.playwright-mcp
+reasonix.toml
