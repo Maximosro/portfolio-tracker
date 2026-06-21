@@ -3755,6 +3755,7 @@ function renderTable() {
     const realizedPL = metrics && metrics.positionRealizedPL ? metrics.positionRealizedPL[pos.ticker] : null;
     const dayChange = (pos.currentPrice && pos.previousClose && pos.previousClose > 0)
         ? ((pos.currentPrice - pos.previousClose) / pos.previousClose) * 100 : null;
+    const dayChangeEur = dayChange !== null ? (pos.currentPrice - pos.previousClose) * pos.shares : null;
     const detail = positionDetailsMap[pos.ticker];
     const tooltipParts = [];
     if (detail) {
@@ -3792,7 +3793,7 @@ function renderTable() {
       <td>${fmtShares(pos.shares)}</td>
       <td>${fmtEur(pos.avgPrice, 4)}</td>
       <td>${pos.currentPrice ? '<span style="color:var(--color-primary);font-weight:600">' + fmtEur(pos.currentPrice, 4) + '</span> ' + priceAge(pos.lastPriceUpdate, pos.yahooTicker) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
-      <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
+      <td class="${plClass(dayChange)}">${dayChange !== null ? fmtPct(dayChange) + '<br><span style="font-size:10px;opacity:.8">' + fmtEur(dayChangeEur) + '</span>' : '<span style="color:var(--color-text-faint)">—</span>'}</td>
       <td>${wlVolumeBadge(pos.volume, pos.avgVolume)}</td>
       <td>${fmtEur(invested)}</td>
       <td>${value !== null ? fmtEur(value) : '<span style="color:var(--color-text-faint)">—</span>'}</td>
