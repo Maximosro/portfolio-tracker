@@ -1,6 +1,8 @@
+name: root
+
 services:
   traefik:
-    image: "traefik"
+    image: "traefik:v3.3"
     restart: always
     command:
       - "--api=true"
