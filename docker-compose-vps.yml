@@ -1,28 +1,6 @@
-name: root
+name: portfolio-tracker
 
 services:
-  traefik:
-    image: "traefik:v3.3"
-    restart: always
-    command:
-      - "--api=true"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
-      - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
-      - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - traefik_data:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-
   portfolio-tracker:
     image: ghcr.io/maximosro/portfolio-tracker:latest
     restart: always
@@ -37,13 +15,9 @@ services:
       - traefik.http.routers.portfolio.rule=Host(`portfolio.srv1158554.hstgr.cloud`)
       - traefik.http.routers.portfolio.tls=true
       - traefik.http.routers.portfolio.entrypoints=web,websecure
-      - traefik.http.routers.portfolio.tls.certresolver=mytlschallenge
+      - traefik.http.routers.portfolio.tls.certresolver=letsencrypt
       - traefik.http.middlewares.portfolio-redirect.redirectregex.regex=^https?://portfolio\.srv1158554\.hstgr\.cloud/?$$
       - traefik.http.middlewares.portfolio-redirect.redirectregex.replacement=https://portfolio.srv1158554.hstgr.cloud/portfoliotracker/
       - traefik.http.middlewares.portfolio-redirect.redirectregex.permanent=true
       - traefik.http.routers.portfolio.middlewares=portfolio-redirect@docker
       - traefik.http.services.portfolio.loadbalancer.server.url=http://172.18.0.1:19480
-
-volumes:
-  traefik_data:
-    external: true
