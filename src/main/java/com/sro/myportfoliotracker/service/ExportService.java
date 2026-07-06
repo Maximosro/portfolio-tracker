@@ -595,6 +595,23 @@ public class ExportService {
     Map<String, Position> posMap = positions.stream()
         .collect(Collectors.toMap(Position::getTicker, p -> p, (a, b) -> a));
 
+    // Precio medio de compra blended (todas las compras, independiente de ventas)
+    // para calcular P&L por venta individual en la tabla
+    Map<String, Double> blendedAvgByTicker = new HashMap<>();
+    for (DcaEntry de : dcaEntries) {
+      if (!"SELL".equals(de.getType())) {
+        blendedAvgByTicker.merge(de.getTicker(), de.getShares(), Double::sum);
+      }
+    }
+    Map<String, Double> blendedCostByTicker = new HashMap<>();
+    for (DcaEntry de : dcaEntries) {
+      if (!"SELL".equals(de.getType())) {
+        blendedCostByTicker.merge(de.getTicker(), de.getShares() * de.getPrice(), Double::sum);
+      }
+    }
+    blendedAvgByTicker.replaceAll((ticker, shares) ->
+        shares > 0 ? blendedCostByTicker.getOrDefault(ticker, 0.0) / shares : 0.0);
+
     // Calcular acciones acumuladas para saber si fue venta parcial o cierre
     Map<String, Double> runningSharesForSales = new HashMap<>();
     List<DcaEntry> allSorted = dcaEntries.stream()
@@ -627,8 +644,7 @@ public class ExportService {
 
     for (DcaEntry sell : sellOps) {
       double proceeds = sell.getShares() * sell.getPrice();
-      Position pos = posMap.get(sell.getTicker());
-      double avgBuyPrice = pos != null && pos.getAvgPrice() != null ? pos.getAvgPrice() : 0;
+      double avgBuyPrice = blendedAvgByTicker.getOrDefault(sell.getTicker(), 0.0);
       double costBasis = sell.getShares() * avgBuyPrice;
       double realizedPL = proceeds - costBasis;
       double plPct = costBasis > 0 ? (realizedPL / costBasis) * 100 : 0;
@@ -855,6 +871,20 @@ public class ExportService {
     Map<String, Position> posMap = positions.stream()
         .collect(Collectors.toMap(Position::getTicker, p -> p, (a, b) -> a));
 
+    // Precio medio de compra blended para P&L por venta en el histórico
+    Map<String, Double> blendedSharesByTicker = new HashMap<>();
+    Map<String, Double> blendedCostByTicker = new HashMap<>();
+    for (DcaEntry de : dcaEntries) {
+      if (!"SELL".equals(de.getType())) {
+        blendedSharesByTicker.merge(de.getTicker(), de.getShares(), Double::sum);
+        blendedCostByTicker.merge(de.getTicker(), de.getShares() * de.getPrice(), Double::sum);
+      }
+    }
+    Map<String, Double> blendedAvgByTicker = new HashMap<>();
+    blendedSharesByTicker.forEach((ticker, shares) ->
+        blendedAvgByTicker.put(ticker, shares > 0
+            ? blendedCostByTicker.getOrDefault(ticker, 0.0) / shares : 0.0));
+
     sb.append(String.format("Total de operaciones: **%d**\n\n", dcaEntries.size()));
     sb.append(
         "| Fecha | Ticker | Tipo | Acciones | Precio (€) | Importe (€) | P&L Realizado | Observación |\n");
@@ -893,10 +923,10 @@ public class ExportService {
         typeIcon = "🔴 VENTA";
         totalDcaCost -= cost;
 
-        // Calculate realized P&L for this sale using the avg buy price
-        Position pos = posMap.get(e.getTicker());
-        if (pos != null && pos.getAvgPrice() != null && pos.getAvgPrice() > 0) {
-          double realizedPL = e.getShares() * (e.getPrice() - pos.getAvgPrice());
+        // Calculate realized P&L for this sale using blended average buy price
+        double avgBuyPrice = blendedAvgByTicker.getOrDefault(e.getTicker(), 0.0);
+        if (avgBuyPrice > 0) {
+          double realizedPL = e.getShares() * (e.getPrice() - avgBuyPrice);
           totalRealizedInHistory += realizedPL;
           plStr = fmtEur(realizedPL) + (realizedPL >= 0 ? " ✅" : " ❌");
         }
