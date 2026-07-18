@@ -5381,17 +5381,9 @@ function openDetailModal(ticker) {
   // Reset tabs to first
   switchDetailTab('overview');
 
-  // Load detail from server
-  fetch(API_DETAIL(ticker))
-    .then(r => r.json())
-    .then(data => {
-      detailData = data;
-      populateDetailModal(data);
-    })
-    .catch(() => {
-      detailData = { ticker, riskRating: 'MEDIUM' };
-      populateDetailModal(detailData);
-    });
+  // Load detail from positionDetailsMap (preloaded by loadAll with auth)
+  detailData = positionDetailsMap[ticker] || { ticker, riskRating: 'MEDIUM' };
+  populateDetailModal(detailData);
 
   document.getElementById('detailOverlay').classList.add('open');
 }
