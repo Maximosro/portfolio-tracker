@@ -88,6 +88,61 @@ public final class FifoCalculator {
     return buyShares > 0 ? buyCost / buyShares : 0.0;
   }
 
+  /**
+   * Computes the FIFO cost basis per share for a SELL operation.
+   * <p>
+   * Builds lots from all BUY entries in {@code entriesUpToNow}, consumes previous
+   * SELLs from those lots (oldest first), then simulates consuming {@code sellShares}
+   * from the remaining lots.
+   *
+   * @param entriesUpToNow all DCA entries (BUY+SELL) existing BEFORE this sale,
+   *                       sorted by date ASC
+   * @param sellShares     number of shares to sell
+   * @return weighted average price of the FIFO-consumed shares, or 0 if no lots
+   */
+  public static double computeSellCostBasis(List<DcaEntry> entriesUpToNow, double sellShares) {
+    // Build lots from all BUY entries
+    List<Lot> lots = new ArrayList<>();
+    for (DcaEntry e : entriesUpToNow) {
+      if (!"SELL".equals(e.getType())) {
+        lots.add(new Lot(e.getShares(), e.getPrice()));
+      }
+    }
+
+    // Consume previous SELLs from lots (FIFO)
+    for (DcaEntry e : entriesUpToNow) {
+      if ("SELL".equals(e.getType())) {
+        double remaining = e.getShares();
+        while (remaining > 0 && !lots.isEmpty()) {
+          Lot first = lots.get(0);
+          double consumed = Math.min(first.shares, remaining);
+          first.shares -= consumed;
+          remaining -= consumed;
+          if (first.shares <= 0) {
+            lots.remove(0);
+          }
+        }
+      }
+    }
+
+    // Simulate consuming sellShares from remaining lots
+    double totalCost = 0;
+    double remaining = sellShares;
+    while (remaining > 0 && !lots.isEmpty()) {
+      Lot first = lots.get(0);
+      double consumed = Math.min(first.shares, remaining);
+      totalCost += consumed * first.price;
+      first.shares -= consumed;
+      remaining -= consumed;
+      if (first.shares <= 0) {
+        lots.remove(0);
+      }
+    }
+
+    double consumedShares = sellShares - remaining;
+    return consumedShares > 0 ? totalCost / consumedShares : 0;
+  }
+
   private static class Lot {
 
     double shares;
