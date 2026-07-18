@@ -173,14 +173,13 @@ public class DcaService {
   }
 
   /**
-   * Recalcula shares y avgPrice de una posición sumando TODOS los registros DCA existentes para ese
-   * ticker.
+   * Recalcula shares y avgPrice de una posición usando FIFO sobre TODOS los registros DCA.
    * <p>
-   * - avgPrice se calcula solo con las COMPRAS (BUY): Σ(shares_i * price_i) / Σ(shares_i) - shares
-   * actuales = Σ(BUY shares) - Σ(SELL shares) - Si no quedan entradas DCA, pone shares=0 y
-   * avgPrice=0.
+   * Las compras añaden lotes; las ventas consumen los lotes más antiguos primero (FIFO).
+   * El avgPrice resultante es el coste medio de los lotes que aún tienen shares.
+   * Si no quedan entradas DCA, pone shares=0 y avgPrice=0.
    */
-  void recalculatePositionFromDca(String ticker, Position position) {
+  public void recalculatePositionFromDca(String ticker, Position position) {
     final List<DcaEntry> allEntries = this.dcaEntryRepository.findByTickerOrderByDateAsc(ticker);
 
     if (allEntries.isEmpty()) {
@@ -189,21 +188,9 @@ public class DcaService {
       log.warn("No quedan entradas DCA para ticker {}. Posición puesta a shares=0, avgPrice=0",
           ticker);
     } else {
-      // avgPrice basado SOLO en compras (las ventas no afectan el precio medio de
-      // compra)
-      final double buyShares = allEntries.stream().filter(e -> !"SELL".equals(e.getType()))
-          .mapToDouble(DcaEntry::getShares).sum();
-      final double buyCost = allEntries.stream().filter(e -> !"SELL".equals(e.getType()))
-          .mapToDouble(e -> e.getShares() * e.getPrice()).sum();
-      final double avgPrice = buyShares > 0 ? buyCost / buyShares : 0.0;
-
-      // Shares actuales = compras - ventas
-      final double sellShares = allEntries.stream().filter(e -> "SELL".equals(e.getType()))
-          .mapToDouble(DcaEntry::getShares).sum();
-      final double currentShares = buyShares - sellShares;
-
-      position.setShares(Math.max(0.0, currentShares));
-      position.setAvgPrice(avgPrice);
+      FifoCalculator.FifoResult result = FifoCalculator.calculate(allEntries);
+      position.setShares(result.remainingShares());
+      position.setAvgPrice(result.avgPrice());
     }
 
     this.positionRepository.save(position);

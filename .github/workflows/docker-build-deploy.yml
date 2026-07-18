@@ -56,37 +56,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Deploy to VPS via SSH
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          for i in $(seq 1 3); do
-            echo "SSH attempt $i/3..."
-            if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 -o ServerAliveInterval=10 -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cd /root && docker compose pull portfolio-tracker && docker compose up -d portfolio-tracker && docker compose ps portfolio-tracker"; then
-              echo "SSH deploy OK (attempt $i)"
-              break
-            fi
-            if [ "$i" -eq 3 ]; then
-              echo "SSH deploy FAILED after 3 attempts"
-              exit 1
-            fi
-            echo "Retrying in 10s..."
-            sleep 10
-          done
-
-      - name: Smoke test
-        run: |
-          echo "Waiting for app to start..."
-          for i in $(seq 1 12); do
-            HTTP_CODE=$(curl -f -s -o /dev/null -w "%{http_code}" https://portfolio.srv1158554.hstgr.cloud/portfoliotracker/ || echo "000")
-            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
-              echo "Smoke test passed (HTTP $HTTP_CODE) after ${i}x5s"
-              exit 0
-            fi
-            echo "Attempt $i/12: HTTP $HTTP_CODE — waiting..."
-            sleep 5
-          done
-          echo "Smoke test failed after 60s"
-          exit 1

@@ -297,5 +297,29 @@ class DcaServiceTest {
     assertEquals(30.0, existingPosition.getShares(), 0.001);
     assertEquals(98.333, existingPosition.getAvgPrice(), 0.01);
   }
+
+  @Test
+  void recalculate_withSells_fifoRemaining() {
+    // BUYs: 10@100, 20@120 → SELL 15@130
+    // FIFO: 10 del 1er lote + 5 del 2º lote
+    // remaining: 15sh del 2º lote @120 → avgPrice = 120
+    List<DcaEntry> entries = List.of(
+        DcaEntry.builder().ticker("VWCE").id(1L).shares(10.0).price(100.0)
+            .date(LocalDate.of(2025, 1, 1)).type("BUY").build(),
+        DcaEntry.builder().ticker("VWCE").id(2L).shares(20.0).price(120.0)
+            .date(LocalDate.of(2025, 2, 1)).type("BUY").build(),
+        DcaEntry.builder().ticker("VWCE").id(3L).shares(15.0).price(130.0)
+            .date(LocalDate.of(2025, 3, 1)).type("SELL").build()
+    );
+    when(dcaEntryRepository.findByTickerOrderByDateAsc("VWCE")).thenReturn(entries);
+    when(positionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+    dcaService.recalculatePositionFromDca("VWCE", existingPosition);
+
+    // 30 compradas - 15 vendidas = 15 restantes
+    assertEquals(15.0, existingPosition.getShares(), 0.001);
+    // Solo queda el 2º lote: avgPrice = 120
+    assertEquals(120.0, existingPosition.getAvgPrice(), 0.001);
+  }
 }
 

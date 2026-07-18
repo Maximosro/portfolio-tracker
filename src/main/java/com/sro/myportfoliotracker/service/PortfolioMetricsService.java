@@ -47,12 +47,20 @@ public class PortfolioMetricsService {
       List<DcaEntry> dcaEntries = dcaByTicker.getOrDefault(pos.getTicker(),
           Collections.emptyList());
 
-      // Calcular P&L realizado de las ventas usando el avgPrice de la posición
+      // P&L realizado con coste medio blended (no FIFO), igual que el broker
       double realizedPL = 0.0;
-      if (!dcaEntries.isEmpty() && pos.getAvgPrice() != null && pos.getAvgPrice() > 0) {
+      if (!dcaEntries.isEmpty()) {
+        double buyShares = 0, buyCost = 0;
+        for (DcaEntry dca : dcaEntries) {
+          if (!"SELL".equals(dca.getType())) {
+            buyShares += dca.getShares();
+            buyCost += dca.getShares() * dca.getPrice();
+          }
+        }
+        double blendedAvg = buyShares > 0 ? buyCost / buyShares : 0;
         for (DcaEntry dca : dcaEntries) {
           if ("SELL".equals(dca.getType())) {
-            realizedPL += dca.getShares() * (dca.getPrice() - pos.getAvgPrice());
+            realizedPL += dca.getShares() * (dca.getPrice() - blendedAvg);
           }
         }
       }

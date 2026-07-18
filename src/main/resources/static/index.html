@@ -4269,6 +4269,22 @@ function renderDcaHistory() {
   });
 
   const visible = dcaEntries.slice(0, dcaDisplayLimit);
+
+  // Precio medio blended (todas las compras) para P&L por venta en la tabla
+  const blendedAvg = {};
+  dcaEntries.forEach(e => {
+    if (e.type !== 'SELL') {
+      if (!blendedAvg[e.ticker]) blendedAvg[e.ticker] = { shares: 0, cost: 0 };
+      blendedAvg[e.ticker].shares += e.shares;
+      blendedAvg[e.ticker].cost += e.shares * e.price;
+    }
+  });
+  const blendedAvgPrice = {};
+  for (const ticker in blendedAvg) {
+    blendedAvgPrice[ticker] = blendedAvg[ticker].shares > 0
+      ? blendedAvg[ticker].cost / blendedAvg[ticker].shares : 0;
+  }
+
   visible.forEach(entry => {
     const pos = positions.find(p => p.ticker === entry.ticker);
     const color = pos ? pos.color : '#4f98a3';
@@ -4279,10 +4295,10 @@ function renderDcaHistory() {
       ? '<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;background:oklch(from var(--color-notification) l c h / .12);color:var(--color-notification)">VENTA</span>'
       : '<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;background:oklch(from var(--color-success) l c h / .12);color:var(--color-success)">COMPRA</span>';
 
-    // Calculate realized P&L for sell entries
+    // Calculate realized P&L for sell entries using blended average
     let plCell = '<span style="color:var(--color-text-faint)">—</span>';
-    if (isSell && pos && pos.avgPrice > 0) {
-      const realizedPL = entry.shares * (entry.price - pos.avgPrice);
+    if (isSell && blendedAvgPrice[entry.ticker] > 0) {
+      const realizedPL = entry.shares * (entry.price - blendedAvgPrice[entry.ticker]);
       const plColor = realizedPL >= 0 ? 'var(--color-success)' : 'var(--color-notification)';
       const plIcon = realizedPL >= 0 ? '✅' : '❌';
       plCell = `<span style="color:${plColor};font-weight:600">${fmtEur(realizedPL)}</span> ${plIcon}`;

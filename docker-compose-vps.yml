@@ -1,7 +1,5 @@
-name: portfolio-tracker
-
 services:
-  portfolio-tracker:
+  app:
     image: ghcr.io/maximosro/portfolio-tracker:latest
     restart: always
     network_mode: host
@@ -12,12 +10,12 @@ services:
       - JAVA_OPTS=-Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
     labels:
       - traefik.enable=true
-      - traefik.http.routers.portfolio.rule=Host(`portfolio.srv1158554.hstgr.cloud`)
-      - traefik.http.routers.portfolio.tls=true
-      - traefik.http.routers.portfolio.entrypoints=web,websecure
-      - traefik.http.routers.portfolio.tls.certresolver=letsencrypt
-      - traefik.http.middlewares.portfolio-redirect.redirectregex.regex=^https?://portfolio\.srv1158554\.hstgr\.cloud/?$$
-      - traefik.http.middlewares.portfolio-redirect.redirectregex.replacement=https://portfolio.srv1158554.hstgr.cloud/portfoliotracker/
-      - traefik.http.middlewares.portfolio-redirect.redirectregex.permanent=true
-      - traefik.http.routers.portfolio.middlewares=portfolio-redirect@docker
-      - traefik.http.services.portfolio.loadbalancer.server.url=http://172.18.0.1:19480
+      - traefik.http.routers.app.rule=Host(`portfolio.srv1158554.hstgr.cloud`)
+      - traefik.http.routers.app.tls=true
+      - traefik.http.routers.app.entrypoints=web,websecure
+      - traefik.http.routers.app.tls.certresolver=letsencrypt
+      - traefik.http.middlewares.app-redirect.redirectregex.regex=^https?://portfolio\.srv1158554\.hstgr\.cloud/?$$
+      - traefik.http.middlewares.app-redirect.redirectregex.replacement=https://portfolio.srv1158554.hstgr.cloud/portfoliotracker/
+      - traefik.http.middlewares.app-redirect.redirectregex.permanent=true
+      - traefik.http.routers.app.middlewares=app-redirect@docker
+      - traefik.http.services.app.loadbalancer.server.url=http://127.0.0.1:19480
