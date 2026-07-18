@@ -78,6 +78,15 @@ public class DcaService {
       }
     }
 
+    // Para ventas, capturar el cost basis FIFO en este momento exacto
+    if ("SELL".equals(entry.getType())) {
+      final List<DcaEntry> existingEntries = this.dcaEntryRepository
+          .findByTickerOrderByDateAsc(ticker);
+      final double costBasis = FifoCalculator.computeSellCostBasis(existingEntries,
+          entry.getShares());
+      entry.setCostBasis(costBasis);
+    }
+
     // Guardar primero la entrada DCA
     final DcaEntry saved = this.dcaEntryRepository.save(entry);
 
