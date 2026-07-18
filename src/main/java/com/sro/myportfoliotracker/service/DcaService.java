@@ -82,7 +82,7 @@ public class DcaService {
     if ("SELL".equals(entry.getType())) {
       final List<DcaEntry> existingEntries = this.dcaEntryRepository
           .findByTickerOrderByDateAsc(ticker);
-      final double costBasis = FifoCalculator.computeSellCostBasis(existingEntries,
+      final double costBasis = WeightedAverageCalculator.computeSellCostBasis(existingEntries,
           entry.getShares());
       entry.setCostBasis(costBasis);
     }
@@ -136,7 +136,7 @@ public class DcaService {
           .filter(e -> e.getDate().isBefore(existing.getDate())
               || (e.getDate().equals(existing.getDate()) && e.getId() < id))
           .toList();
-      final double costBasis = FifoCalculator.computeSellCostBasis(beforeEntries,
+      final double costBasis = WeightedAverageCalculator.computeSellCostBasis(beforeEntries,
           existing.getShares());
       existing.setCostBasis(costBasis);
     }
@@ -212,7 +212,7 @@ public class DcaService {
       log.warn("No quedan entradas DCA para ticker {}. Posición puesta a shares=0, avgPrice=0",
           ticker);
     } else {
-      FifoCalculator.FifoResult result = FifoCalculator.calculate(allEntries);
+      WeightedAverageCalculator.WacResult result = WeightedAverageCalculator.calculate(allEntries);
       position.setShares(result.remainingShares());
       position.setAvgPrice(result.avgPrice());
     }
