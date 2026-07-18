@@ -78,7 +78,7 @@ public class DcaService {
       }
     }
 
-    // Para ventas, capturar el cost basis FIFO en este momento exacto
+    // Para ventas, capturar el cost basis WAC (precio medio ponderado) en este momento exacto
     if ("SELL".equals(entry.getType())) {
       final List<DcaEntry> existingEntries = this.dcaEntryRepository
           .findByTickerOrderByDateAsc(ticker);
@@ -197,10 +197,11 @@ public class DcaService {
   }
 
   /**
-   * Recalcula shares y avgPrice de una posición usando FIFO sobre TODOS los registros DCA.
+   * Recalcula shares y avgPrice de una posición usando precio medio ponderado sobre TODOS los registros DCA.
    * <p>
-   * Las compras añaden lotes; las ventas consumen los lotes más antiguos primero (FIFO).
-   * El avgPrice resultante es el coste medio de los lotes que aún tienen shares.
+   * Cada compra incrementa shares y coste total, actualizando el precio medio.
+   * Cada venta usa el precio medio actual como cost basis y reduce shares y coste proporcionalmente.
+   * El avgPrice resultante es el coste medio ponderado de todas las compras.
    * Si no quedan entradas DCA, pone shares=0 y avgPrice=0.
    */
   public void recalculatePositionFromDca(String ticker, Position position) {
