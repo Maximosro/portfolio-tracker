@@ -126,6 +126,19 @@ public class DcaService {
     existing.setShares(updated.getShares());
     existing.setPrice(updated.getPrice());
     existing.setDate(updated.getDate());
+
+    // Recalcular cost basis si es una venta (las shares o la fecha pueden haber cambiado)
+    if ("SELL".equals(existing.getType())) {
+      final List<DcaEntry> allEntries = this.dcaEntryRepository
+          .findByTickerOrderByDateAsc(ticker);
+      final List<DcaEntry> beforeEntries = allEntries.stream()
+          .filter(e -> !e.getId().equals(id))
+          .toList();
+      final double costBasis = FifoCalculator.computeSellCostBasis(beforeEntries,
+          existing.getShares());
+      existing.setCostBasis(costBasis);
+    }
+
     final DcaEntry saved = this.dcaEntryRepository.save(existing);
 
     // Recalcular la posición desde todos los DCA
