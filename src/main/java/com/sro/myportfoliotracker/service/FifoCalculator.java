@@ -68,27 +68,6 @@ public final class FifoCalculator {
   }
 
   /**
-   * Calcula el precio medio de compra (blended average) ignorando ventas.
-   * <p>
-   * Útil para mostrar P&amp;L por venta individual en exports e histórico,
-   * donde se necesita una referencia de coste que no cambie tras ventas parciales.
-   *
-   * @param entries entradas DCA
-   * @return coste total de compras / shares totales de compras, o 0 si no hay compras
-   */
-  public static double blendedAveragePrice(List<DcaEntry> entries) {
-    double buyShares = 0.0;
-    double buyCost = 0.0;
-    for (DcaEntry e : entries) {
-      if (!"SELL".equals(e.getType())) {
-        buyShares += e.getShares();
-        buyCost += e.getShares() * e.getPrice();
-      }
-    }
-    return buyShares > 0 ? buyCost / buyShares : 0.0;
-  }
-
-  /**
    * Computes the FIFO cost basis per share for a SELL operation.
    * <p>
    * Builds lots from all BUY entries in {@code entriesUpToNow}, consumes previous
@@ -101,16 +80,20 @@ public final class FifoCalculator {
    * @return weighted average price of the FIFO-consumed shares, or 0 if no lots
    */
   public static double computeSellCostBasis(List<DcaEntry> entriesUpToNow, double sellShares) {
+    // Sort by date ASC, ID ASC (tiebreaker) — same as calculate()
+    List<DcaEntry> sorted = new ArrayList<>(entriesUpToNow);
+    sorted.sort(Comparator.comparing(DcaEntry::getDate).thenComparing(DcaEntry::getId));
+
     // Build lots from all BUY entries
     List<Lot> lots = new ArrayList<>();
-    for (DcaEntry e : entriesUpToNow) {
+    for (DcaEntry e : sorted) {
       if (!"SELL".equals(e.getType())) {
         lots.add(new Lot(e.getShares(), e.getPrice()));
       }
     }
 
     // Consume previous SELLs from lots (FIFO)
-    for (DcaEntry e : entriesUpToNow) {
+    for (DcaEntry e : sorted) {
       if ("SELL".equals(e.getType())) {
         double remaining = e.getShares();
         while (remaining > 0 && !lots.isEmpty()) {

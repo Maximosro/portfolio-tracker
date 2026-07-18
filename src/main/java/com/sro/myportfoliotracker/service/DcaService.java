@@ -133,6 +133,8 @@ public class DcaService {
           .findByTickerOrderByDateAsc(ticker);
       final List<DcaEntry> beforeEntries = allEntries.stream()
           .filter(e -> !e.getId().equals(id))
+          .filter(e -> e.getDate().isBefore(existing.getDate())
+              || (e.getDate().equals(existing.getDate()) && e.getId() < id))
           .toList();
       final double costBasis = FifoCalculator.computeSellCostBasis(beforeEntries,
           existing.getShares());
