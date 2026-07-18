@@ -38,5 +38,12 @@ public class DcaEntry {
     @Column(name = "entry_type", length = 4)
     @Builder.Default
     private String type = "BUY";
+
+    /**
+     * Precio medio FIFO por acción de los lotes consumidos en una venta.
+     * Solo se asigna en operaciones SELL. {@code null} para BUY y entradas antiguas.
+     */
+    @Column(name = "cost_basis")
+    private Double costBasis;
 }
 
