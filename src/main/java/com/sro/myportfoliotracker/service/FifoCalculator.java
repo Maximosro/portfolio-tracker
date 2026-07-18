@@ -68,24 +68,62 @@ public final class FifoCalculator {
   }
 
   /**
-   * Calcula el precio medio de compra (blended average) ignorando ventas.
+   * Computes the FIFO cost basis per share for a SELL operation.
    * <p>
-   * Útil para mostrar P&amp;L por venta individual en exports e histórico,
-   * donde se necesita una referencia de coste que no cambie tras ventas parciales.
+   * Builds lots from all BUY entries in {@code entriesUpToNow}, consumes previous
+   * SELLs from those lots (oldest first), then simulates consuming {@code sellShares}
+   * from the remaining lots.
    *
-   * @param entries entradas DCA
-   * @return coste total de compras / shares totales de compras, o 0 si no hay compras
+   * @param entriesUpToNow all DCA entries (BUY+SELL) existing BEFORE this sale,
+   *                       sorted by date ASC
+   * @param sellShares     number of shares to sell
+   * @return weighted average price of the FIFO-consumed shares, or 0 if no lots
    */
-  public static double blendedAveragePrice(List<DcaEntry> entries) {
-    double buyShares = 0.0;
-    double buyCost = 0.0;
-    for (DcaEntry e : entries) {
+  public static double computeSellCostBasis(List<DcaEntry> entriesUpToNow, double sellShares) {
+    // Sort by date ASC, ID ASC (tiebreaker) — same as calculate()
+    List<DcaEntry> sorted = new ArrayList<>(entriesUpToNow);
+    sorted.sort(Comparator.comparing(DcaEntry::getDate).thenComparing(DcaEntry::getId));
+
+    // Build lots from all BUY entries
+    List<Lot> lots = new ArrayList<>();
+    for (DcaEntry e : sorted) {
       if (!"SELL".equals(e.getType())) {
-        buyShares += e.getShares();
-        buyCost += e.getShares() * e.getPrice();
+        lots.add(new Lot(e.getShares(), e.getPrice()));
       }
     }
-    return buyShares > 0 ? buyCost / buyShares : 0.0;
+
+    // Consume previous SELLs from lots (FIFO)
+    for (DcaEntry e : sorted) {
+      if ("SELL".equals(e.getType())) {
+        double remaining = e.getShares();
+        while (remaining > 0 && !lots.isEmpty()) {
+          Lot first = lots.get(0);
+          double consumed = Math.min(first.shares, remaining);
+          first.shares -= consumed;
+          remaining -= consumed;
+          if (first.shares <= 0) {
+            lots.remove(0);
+          }
+        }
+      }
+    }
+
+    // Simulate consuming sellShares from remaining lots
+    double totalCost = 0;
+    double remaining = sellShares;
+    while (remaining > 0 && !lots.isEmpty()) {
+      Lot first = lots.get(0);
+      double consumed = Math.min(first.shares, remaining);
+      totalCost += consumed * first.price;
+      first.shares -= consumed;
+      remaining -= consumed;
+      if (first.shares <= 0) {
+        lots.remove(0);
+      }
+    }
+
+    double consumedShares = sellShares - remaining;
+    return consumedShares > 0 ? totalCost / consumedShares : 0;
   }
 
   private static class Lot {
