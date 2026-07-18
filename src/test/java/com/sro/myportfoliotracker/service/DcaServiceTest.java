@@ -299,7 +299,7 @@ class DcaServiceTest {
   }
 
   @Test
-  void recalculate_withSells_fifoRemaining() {
+  void recalculate_withSells_wacRemaining() {
     // BUYs: 10@100, 20@120 → SELL 15@130
     // FIFO: 10 del 1er lote + 5 del 2º lote
     // remaining: 15sh del 2º lote @120 → avgPrice = 120
@@ -318,8 +318,8 @@ class DcaServiceTest {
 
     // 30 compradas - 15 vendidas = 15 restantes
     assertEquals(15.0, existingPosition.getShares(), 0.001);
-    // Solo queda el 2º lote: avgPrice = 120
-    assertEquals(120.0, existingPosition.getAvgPrice(), 0.001);
+    // WAC: avg = (10*100 + 20*120) / 30 = 3400/30 = 113.333, unchanged after sell
+    assertEquals(113.333, existingPosition.getAvgPrice(), 0.01);
   }
 }
 
