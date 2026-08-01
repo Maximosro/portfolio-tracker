@@ -492,7 +492,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       </div>
     </div>
     <div class="header-right">
-      <button class="alert-btn" id="alertBtn" onclick="toggleAlertPanel()" aria-label="Alertas" title="Alertas y límites">
+      <button class="alert-btn" id="alertBtn" onclick="toggleAlertPanel()" aria-label="Alertas" title="Alertas">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="alert-badge" id="alertBadge" style="display:none">0</span>
       </button>
@@ -1244,16 +1244,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       <h4>XIRR (Rentabilidad anualizada)</h4>
       <p>La rentabilidad <em>real</em> de tu inversión teniendo en cuenta cuándo compraste y cuánto. Es como el "interés anual" que estás obteniendo. Un 8% de XIRR significa que ganas un ~8% al año.</p>
     </div>
-    <div class="guide-card">
-      <div class="guide-card-icon">🛑</div>
-      <h4>Stop-Loss</h4>
-      <p>Un precio mínimo que defines tú. Si tu inversión cae hasta ese precio, la app te avisa para que consideres vender y limitar pérdidas.</p>
-    </div>
-    <div class="guide-card">
-      <div class="guide-card-icon">🏆</div>
-      <h4>Take-Profit</h4>
-      <p>Un precio máximo que defines tú. Si tu inversión sube hasta ese precio, la app te avisa para que consideres recoger beneficios.</p>
-    </div>
   </div>
 </section>
 
@@ -1545,8 +1535,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
 
   <h3>📑 Pestañas del detalle</h3>
   <ul>
-    <li><strong>Resumen:</strong> Estadísticas principales, peso en cartera vs objetivo, nivel de riesgo y estrategia.</li>
-    <li><strong>Límites:</strong> Stop-loss, take-profit, trailing stop, DCA target, alertas de precio. Con indicadores visuales de distancia al precio actual.</li>
+    <li><strong>Resumen:</strong> Estadísticas principales, peso en cartera vs objetivo, nivel de riesgo, estrategia y alertas de precio.</li>
     <li><strong>Notas:</strong> Espacio libre para apuntar tu análisis, motivos de entrada, niveles técnicos, catalizadores pendientes, etc. (hasta 2.000 caracteres).</li>
     <li><strong>🤖 IA:</strong> Generador de prompts para análisis con inteligencia artificial e importación automática de respuestas.</li>
   </ul>
@@ -1557,26 +1546,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
         <tr><th>Parámetro</th><th>¿Qué es?</th><th>Ejemplo</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td><strong>Stop-Loss</strong></td>
-          <td>Precio mínimo. Si cae hasta aquí, te avisa. Es tu "límite de pérdida aceptable".</td>
-          <td>Si compraste a 100€, puedes poner stop-loss en 85€ (aceptas hasta un -15%).</td>
-        </tr>
-        <tr>
-          <td><strong>Take-Profit</strong></td>
-          <td>Precio objetivo. Si sube hasta aquí, te avisa para que consideres vender.</td>
-          <td>Si compraste a 100€, puedes poner take-profit en 130€ (tu meta es un +30%).</td>
-        </tr>
-        <tr>
-          <td><strong>Precio DCA objetivo</strong></td>
-          <td>El precio al que te gustaría comprar más. Si baja hasta aquí, es "oportunidad de compra".</td>
-          <td>Quieres comprar más VUAA si baja a 70€.</td>
-        </tr>
-        <tr>
-          <td><strong>Trailing Stop (%)</strong></td>
-          <td>Porcentaje de caída desde tu precio medio que consideras peligroso.</td>
-          <td>Un trailing stop de 15% te avisa si cae un 15% o más desde tu precio medio.</td>
-        </tr>
         <tr>
           <td><strong>Alerta Precio Superior</strong></td>
           <td>Te avisa si el precio sube por encima de este valor.</td>
@@ -1611,14 +1580,9 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     </table>
   </div>
 
-  <div class="guide-info-box">
-    <span class="guide-box-icon">ℹ️</span>
-    <div>
-      En la pestaña <strong>Límites</strong>, debajo de cada campo verás <strong>indicadores de distancia</strong>
-      que te muestran a qué porcentaje de distancia está el precio actual respecto a cada nivel configurado.
-      Así sabes de un vistazo si estás lejos o cerca de tus límites.
-    </div>
-  </div>
+  <p>
+    Los indicadores de distancia al precio actual se muestran en el panel de alertas de cada alerta activa.
+  </p>
 </section>
 
 <!-- ────────── PRECIOS ────────── -->
@@ -1679,26 +1643,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
         <tr><th>Tipo</th><th>¿Cuándo salta?</th><th>Severidad</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td><strong>🛑 Stop-Loss</strong></td>
-          <td>El precio ha caído hasta (o por debajo de) tu límite de pérdida.</td>
-          <td><span class="badge badge-danger">CRÍTICA</span> si lo alcanza, <span class="badge badge-warning">AVISO</span> si está a menos del 5%.</td>
-        </tr>
-        <tr>
-          <td><strong>🎯 Take-Profit</strong></td>
-          <td>El precio ha subido hasta (o por encima de) tu objetivo de ganancia.</td>
-          <td><span class="badge badge-danger">CRÍTICA</span> si lo alcanza, <span class="badge badge-info">INFO</span> si está cerca.</td>
-        </tr>
-        <tr>
-          <td><strong>📉 Trailing Stop</strong></td>
-          <td>La caída desde tu precio medio supera el porcentaje que configuraste.</td>
-          <td><span class="badge badge-warning">AVISO</span></td>
-        </tr>
-        <tr>
-          <td><strong>💰 DCA Target</strong></td>
-          <td>El precio ha bajado a tu objetivo de compra → ¡Oportunidad de comprar más!</td>
-          <td><span class="badge badge-info">INFO</span></td>
-        </tr>
         <tr>
           <td><strong>📈 Alerta Precio ↑</strong></td>
           <td>El precio ha superado el umbral superior que configuraste.</td>
@@ -2039,7 +1983,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       <div class="guide-step-body">
         <h4>Genera el prompt</h4>
         <p>Pulsa <strong>"Generar prompt para Claude"</strong>. La app recopilará automáticamente todos los datos de la posición
-        (precio actual, precio medio, participaciones, sector, historial DCA, límites actuales, etc.) y creará un prompt
+        (precio actual, precio medio, participaciones, sector, historial DCA, etc.) y creará un prompt
         optimizado para que la IA te ayude.</p>
       </div>
     </div>
@@ -2052,8 +1996,8 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <div class="guide-step">
       <div class="guide-step-body">
         <h4>Recibe un JSON con recomendaciones</h4>
-        <p>La IA te devolverá un JSON con propuestas de: stop-loss, take-profit, DCA target, alertas de precio,
-        nivel de riesgo, estrategia y notas de seguimiento.</p>
+        <p>La IA te devolverá un JSON con propuestas de: alertas de precio,
+        nivel de riesgo, estrategia, peso objetivo y notas de seguimiento.</p>
       </div>
     </div>
     <div class="guide-step">
@@ -2311,18 +2255,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       <dd>Tasa interna de retorno extendida. La rentabilidad anualizada real, teniendo en cuenta fechas y montos exactos de cada inversión.</dd>
     </div>
     <div class="guide-glossary-term">
-      <dt>Stop-Loss</dt>
-      <dd>Precio mínimo que defines como "alarma". Si el precio cae a este nivel, recibes aviso para considerar vender.</dd>
-    </div>
-    <div class="guide-glossary-term">
-      <dt>Take-Profit</dt>
-      <dd>Precio máximo que defines como "meta". Si el precio sube a este nivel, recibes aviso para considerar recoger beneficios.</dd>
-    </div>
-    <div class="guide-glossary-term">
-      <dt>Trailing Stop</dt>
-      <dd>Porcentaje de caída que consideras peligroso. Si tu inversión cae ese porcentaje desde tu precio medio, recibes aviso.</dd>
-    </div>
-    <div class="guide-glossary-term">
       <dt>Snapshot</dt>
       <dd>"Foto" del valor de tu cartera en un momento concreto. Se guarda cada día para poder ver la evolución.</dd>
     </div>
@@ -2456,9 +2388,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <summary>¿Qué significan los colores de severidad en las alertas?</summary>
     <div class="guide-details-body">
       <ul>
-        <li><span class="badge badge-danger">CRÍTICA (rojo)</span> → Acción recomendada. Un límite importante se ha alcanzado.</li>
-        <li><span class="badge badge-warning">AVISO (amarillo)</span> → Presta atención. Algo se acerca a un límite.</li>
-        <li><span class="badge badge-info">INFO (azul)</span> → Informativo. Oportunidad u observación sin urgencia.</li>
+        <li><span class="badge badge-warning">AVISO (amarillo)</span> → El precio ha superado un umbral de alerta configurado.</li>
       </ul>
     </div>
   </details>
@@ -2476,7 +2406,8 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <summary>¿Cómo funciona el asistente de IA?</summary>
     <div class="guide-details-body">
       <p>Abre el detalle de cualquier posición y ve a la pestaña <strong>🤖 IA</strong>. La app genera un prompt con todos los datos de la posición
-      que puedes copiar y enviar a Claude o ChatGPT. La IA te devolverá un JSON con recomendaciones de límites operativos que puedes importar
+      que puedes copiar y enviar a Claude o ChatGPT. La IA te devolverá un JSON con recomendaciones de alertas de precio, estrategia,
+      peso objetivo y notas que puedes importar
       directamente para rellenar el detalle de la posición. Consulta la sección <a href="#guide-ia" style="color:var(--color-primary)">"Asistente IA"</a> para más detalle.</p>
     </div>
   </details>
@@ -2838,7 +2769,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <div class="news-placeholder">
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <div style="font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-1)">Sin alertas activas</div>
-      <div style="font-size:var(--text-xs)">Todas tus posiciones están dentro de los límites configurados</div>
+      <div style="font-size:var(--text-xs)">No hay alertas activas</div>
     </div>
   </div>
 
@@ -2876,19 +2807,12 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <div style="display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);font-size:10px;color:var(--color-text-muted);line-height:1.6">
       <div style="display:flex;flex-direction:column;gap:var(--space-1)">
         <span style="font-weight:600;color:var(--color-text-faint)">Severidad</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--color-notification);vertical-align:middle;margin-right:3px"></span> Crítica — Límite alcanzado</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--color-gold);vertical-align:middle;margin-right:3px"></span> Aviso — Cerca del límite (&lt;5%)</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--color-primary);vertical-align:middle;margin-right:3px"></span> Info — Oportunidad o referencia</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--color-gold);vertical-align:middle;margin-right:3px"></span> Aviso — Umbral de precio superado</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:var(--space-1)">
         <span style="font-weight:600;color:var(--color-text-faint)">Tipos</span>
-        <span>🛑 Stop-Loss — Precio de salida por pérdida</span>
-        <span>🎯 Take-Profit — Objetivo de venta</span>
-        <span>📉 Trailing Stop — Caída desde máximo</span>
-        <span>💰 DCA Target — Oportunidad de compra</span>
         <span>📈 Alerta ↑ — Superó nivel superior</span>
         <span>📉 Alerta ↓ — Rompió nivel inferior</span>
-        <span>⚖️ Peso — Desviación del peso objetivo</span>
       </div>
     </div>
     <div style="margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between">
@@ -3036,7 +2960,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       <div class="detail-pane" id="pane-aiprompt">
         <div class="detail-section-title">Asistente IA para análisis operativo</div>
         <div style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);line-height:1.6">
-          Genera un prompt con todos los datos de esta posición para que Claude analice y te proponga límites operativos (stop-loss, take-profit, DCA target, alertas) y notas de seguimiento. El resultado será un JSON que podrás pegar aquí para importar automáticamente.
+          Genera un prompt con todos los datos de esta posición para que Claude analice y te proponga alertas de precio, estrategia, peso objetivo y notas de seguimiento. El resultado será un JSON que podrás pegar aquí para importar automáticamente.
         </div>
         <button class="btn btn-primary" onclick="generateAIPrompt()" style="width:100%;justify-content:center;gap:var(--space-2);margin-bottom:var(--space-4)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22"/><path d="M8 6a4 4 0 0 1 8 0"/><path d="M17 12H7"/><path d="M19 16H5"/></svg>
@@ -3055,7 +2979,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
         <div class="detail-divider"></div>
         <div class="detail-section-title">Importar respuesta de Claude</div>
         <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-3);line-height:1.5">
-          Pega aquí el JSON que te devuelva Claude y pulsa "Importar". Se rellenarán automáticamente los límites, notas, estrategia y nivel de riesgo.
+          Pega aquí el JSON que te devuelva Claude y pulsa "Importar". Se rellenarán automáticamente las alertas de precio, notas, estrategia y nivel de riesgo.
         </div>
         <textarea class="form-input" id="aiImportJson" rows="6" placeholder='Pega aquí el JSON de Claude…' style="resize:vertical;font-size:11px;line-height:1.5;font-family:monospace"></textarea>
         <button class="btn btn-primary btn-sm" onclick="importAIResponse()" style="margin-top:var(--space-3);gap:var(--space-1)">
@@ -3727,9 +3651,6 @@ function renderTable() {
     if (detail) {
       if (detail.strategy) tooltipParts.push('📋 ' + detail.strategy);
       if (detail.riskRating) tooltipParts.push('⚡ Riesgo: ' + ({LOW:'Bajo',MEDIUM:'Medio',HIGH:'Alto'}[detail.riskRating] || detail.riskRating));
-      if (detail.stopLoss) tooltipParts.push('🛑 Stop-Loss: ' + detail.stopLoss.toFixed(2) + ' €');
-      if (detail.takeProfit) tooltipParts.push('🎯 Take-Profit: ' + detail.takeProfit.toFixed(2) + ' €');
-      if (detail.dcaTargetPrice) tooltipParts.push('💰 DCA Target: ' + detail.dcaTargetPrice.toFixed(2) + ' €');
       if (detail.notes) tooltipParts.push('📝 ' + (detail.notes.length > 80 ? detail.notes.substring(0, 80) + '…' : detail.notes));
     }
     const rowTooltip = tooltipParts.length > 0 ? tooltipParts.join('\n') : '';
@@ -5939,26 +5860,16 @@ function checkNewAlerts() {
 
 function alertTypeLabel(type) {
   switch (type) {
-    case 'STOP_LOSS': return 'Stop-Loss';
-    case 'TAKE_PROFIT': return 'Take-Profit';
-    case 'TRAILING_STOP': return 'Trailing Stop';
-    case 'DCA_TARGET': return 'DCA Target';
     case 'ALERT_ABOVE': return 'Alerta ↑';
     case 'ALERT_BELOW': return 'Alerta ↓';
-    case 'WEIGHT_DEVIATION': return 'Peso';
     default: return type;
   }
 }
 
 function alertIcon(type) {
   switch (type) {
-    case 'STOP_LOSS': return '🛑';
-    case 'TAKE_PROFIT': return '🎯';
-    case 'TRAILING_STOP': return '📉';
-    case 'DCA_TARGET': return '💰';
     case 'ALERT_ABOVE': return '📈';
     case 'ALERT_BELOW': return '📉';
-    case 'WEIGHT_DEVIATION': return '⚖️';
     default: return '⚠️';
   }
 }
@@ -5976,7 +5887,7 @@ function renderAlerts() {
       <div class="news-placeholder">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <div style="font-weight:600;color:var(--color-success);margin-bottom:var(--space-1)">✓ Sin alertas activas</div>
-        <div style="font-size:var(--text-xs);color:var(--color-text-muted)">Todas tus posiciones están dentro de los límites configurados</div>
+        <div style="font-size:var(--text-xs);color:var(--color-text-muted)">No hay alertas activas</div>
       </div>`;
     return;
   }
