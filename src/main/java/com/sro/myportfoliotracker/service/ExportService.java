@@ -704,7 +704,7 @@ public class ExportService {
     // Posiciones en pérdidas
     long losing = positions.stream()
         .filter(p -> p.getCurrentPrice() != null)
-        .filter(p -> p.getShares() * p.getCurrentPrice() < p.getShares() * p.getAvgPrice())
+        .filter(p -> valuations.get(p.getTicker()).pl() < 0)
         .count();
     long withPrice = positions.stream().filter(p -> p.getCurrentPrice() != null).count();
     sb.append(String.format("| **Posiciones en pérdidas** | %d de %d | |\n", losing, withPrice));
