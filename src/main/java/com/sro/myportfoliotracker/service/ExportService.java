@@ -352,8 +352,7 @@ public class ExportService {
     sb.append("## 2. Alertas Activas\n\n");
 
     if (alerts.isEmpty()) {
-      sb.append(
-          "✅ **Sin alertas activas.** Todas las posiciones están dentro de los límites configurados.\n\n");
+      sb.append("✅ **Sin alertas activas.**\n\n");
       return;
     }
 
@@ -369,13 +368,8 @@ public class ExportService {
         default -> alert.getSeverity();
       };
       String typeLabel = switch (alert.getType()) {
-        case "STOP_LOSS" -> "Stop-Loss";
-        case "TAKE_PROFIT" -> "Take-Profit";
-        case "TRAILING_STOP" -> "Trailing Stop";
-        case "DCA_TARGET" -> "DCA Target";
         case "ALERT_ABOVE" -> "Alerta ↑";
         case "ALERT_BELOW" -> "Alerta ↓";
-        case "WEIGHT_DEVIATION" -> "Peso Objetivo";
         default -> alert.getType();
       };
       sb.append(String.format("| %s | **%s** | %s | %s |\n",
@@ -704,8 +698,8 @@ public class ExportService {
         continue;
       }
 
-      boolean hasContent = d.getStrategy() != null || d.getStopLoss() != null ||
-          d.getTakeProfit() != null || d.getTargetWeightPct() != null;
+      boolean hasContent = d.getStrategy() != null || d.getTargetWeightPct() != null ||
+          d.getAlertPriceAbove() != null || d.getAlertPriceBelow() != null;
       if (!hasContent) {
         continue;
       }
@@ -731,19 +725,6 @@ public class ExportService {
       if (d.getTargetWeightPct() != null) {
         sb.append(String.format("| **Peso objetivo** | %s |\n", fmtPct(d.getTargetWeightPct())));
       }
-      if (d.getStopLoss() != null) {
-        sb.append(String.format("| **Stop-Loss** | %s |\n", fmtEur(d.getStopLoss())));
-      }
-      if (d.getTakeProfit() != null) {
-        sb.append(String.format("| **Take-Profit** | %s |\n", fmtEur(d.getTakeProfit())));
-      }
-      if (d.getTrailingStopPct() != null) {
-        sb.append(String.format("| **Trailing Stop** | %s |\n", fmtPct(d.getTrailingStopPct())));
-      }
-      if (d.getDcaTargetPrice() != null) {
-        sb.append(
-            String.format("| **Precio DCA objetivo** | %s |\n", fmtEur(d.getDcaTargetPrice())));
-      }
       if (d.getAlertPriceAbove() != null) {
         sb.append(
             String.format("| **Alerta precio superior** | %s |\n", fmtEur(d.getAlertPriceAbove())));
@@ -751,25 +732,6 @@ public class ExportService {
       if (d.getAlertPriceBelow() != null) {
         sb.append(
             String.format("| **Alerta precio inferior** | %s |\n", fmtEur(d.getAlertPriceBelow())));
-      }
-
-      // Distancias actuales
-      if (p.getCurrentPrice() != null && p.getCurrentPrice() > 0) {
-        sb.append("\n**Distancias al precio actual (").append(fmtEur(p.getCurrentPrice()))
-            .append("):**\n");
-        if (d.getStopLoss() != null) {
-          double dist = ((p.getCurrentPrice() - d.getStopLoss()) / d.getStopLoss()) * 100;
-          sb.append(String.format("- Stop-Loss: %s desde precio actual\n", fmtPct(dist)));
-        }
-        if (d.getTakeProfit() != null) {
-          double dist = ((d.getTakeProfit() - p.getCurrentPrice()) / p.getCurrentPrice()) * 100;
-          sb.append(String.format("- Take-Profit: %s hasta objetivo\n", fmtPct(dist)));
-        }
-        if (d.getDcaTargetPrice() != null) {
-          double dist =
-              ((p.getCurrentPrice() - d.getDcaTargetPrice()) / d.getDcaTargetPrice()) * 100;
-          sb.append(String.format("- DCA Target: %s desde precio actual\n", fmtPct(dist)));
-        }
       }
 
       sb.append("\n");
