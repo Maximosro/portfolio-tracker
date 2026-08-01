@@ -156,9 +156,8 @@ La app usa **Supabase Auth** con login client-side:
 
 Cada posición tiene un panel con pestañas:
 
-- **Resumen:** Peso en cartera, estadísticas, nivel de riesgo, estrategia y alertas de precio
-- **Notas:** Espacio libre para análisis personal (hasta 2.000 caracteres)
-- **🤖 IA:** Generador de prompts para Claude/ChatGPT con importación automática de respuestas JSON
+- **Resumen:** Peso en cartera, estadísticas, nivel de riesgo y alertas de precio
+- **Notas:** Espacio libre para estrategia y análisis personal (hasta 2.000 caracteres)
 
 ### 💰 Precios en tiempo real
 
