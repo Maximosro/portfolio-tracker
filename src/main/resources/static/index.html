@@ -2902,6 +2902,21 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
           <!-- Filled by JS -->
         </div>
         <div class="detail-divider"></div>
+        <div class="detail-section-title">Alertas de precio</div>
+        <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-4);line-height:1.5">Niveles de precio que quieres vigilar. Apúntalos aquí como recordatorio de niveles técnicos o fundamentales importantes.</div>
+        <div class="detail-grid">
+          <div class="form-group">
+            <label class="form-label" for="detailAlertAbove">Alerta si sube por encima de (€)</label>
+            <input class="form-input" type="number" id="detailAlertAbove" step="0.01" min="0" placeholder="Avisar si precio >">
+            <div style="font-size:10px;color:var(--color-text-faint);margin-top:2px;line-height:1.4">Nivel de resistencia o precio clave al alza. Puede indicar momento de revisar la posición o tomar beneficios parciales.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="detailAlertBelow">Alerta si baja por debajo de (€)</label>
+            <input class="form-input" type="number" id="detailAlertBelow" step="0.01" min="0" placeholder="Avisar si precio <">
+            <div style="font-size:10px;color:var(--color-text-faint);margin-top:2px;line-height:1.4">Nivel de soporte o precio clave a la baja. Si se pierde este nivel, puede ser señal de debilidad o oportunidad de compra.</div>
+          </div>
+        </div>
+        <div class="detail-divider"></div>
         <div class="detail-section-title">Peso en cartera</div>
         <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-3);line-height:1.5">Compara el peso real de esta posición con tu objetivo. Útil para decidir si necesitas rebalancear comprando más o reduciendo.</div>
         <div style="display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap">
@@ -2931,21 +2946,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
         <div class="detail-section-title">Estrategia</div>
         <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-3);line-height:1.5">Describe brevemente tu plan para esta posición: compras periódicas (DCA), mantener a largo plazo, trading a corto, etc.</div>
         <textarea class="form-input" id="detailStrategy" rows="2" placeholder="Ej: DCA mensual, mantener largo plazo, swing trading…" style="resize:vertical"></textarea>
-        <div class="detail-divider"></div>
-        <div class="detail-section-title">Alertas de precio</div>
-        <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-4);line-height:1.5">Niveles de precio que quieres vigilar. Apúntalos aquí como recordatorio de niveles técnicos o fundamentales importantes.</div>
-        <div class="detail-grid">
-          <div class="form-group">
-            <label class="form-label" for="detailAlertAbove">Alerta si sube por encima de (€)</label>
-            <input class="form-input" type="number" id="detailAlertAbove" step="0.01" min="0" placeholder="Avisar si precio >">
-            <div style="font-size:10px;color:var(--color-text-faint);margin-top:2px;line-height:1.4">Nivel de resistencia o precio clave al alza. Puede indicar momento de revisar la posición o tomar beneficios parciales.</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="detailAlertBelow">Alerta si baja por debajo de (€)</label>
-            <input class="form-input" type="number" id="detailAlertBelow" step="0.01" min="0" placeholder="Avisar si precio <">
-            <div style="font-size:10px;color:var(--color-text-faint);margin-top:2px;line-height:1.4">Nivel de soporte o precio clave a la baja. Si se pierde este nivel, puede ser señal de debilidad o oportunidad de compra.</div>
-          </div>
-        </div>
       </div>
 
       <!-- TAB: NOTAS -->
