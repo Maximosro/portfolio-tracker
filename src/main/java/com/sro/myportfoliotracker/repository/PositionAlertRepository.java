@@ -16,4 +16,6 @@ public interface PositionAlertRepository extends JpaRepository<PositionAlert, Lo
     Optional<PositionAlert> findByTickerAndAlertTypeAndTriggeredAtAfter(String ticker, String alertType, Instant from);
 
     void deleteByTriggeredAtBefore(Instant before);
+
+    long deleteByAlertTypeIn(List<String> types);
 }
