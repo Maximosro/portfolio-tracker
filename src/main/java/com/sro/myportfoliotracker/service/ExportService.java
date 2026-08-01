@@ -73,10 +73,28 @@ public class ExportService {
     List<Position> activePositions = positions.stream().filter(p -> p.getShares() > 0).toList();
     List<Position> closedPositions = positions.stream().filter(p -> p.getShares() <= 0).toList();
 
+    // Valoración unificada de posiciones activas (regla única: fallback a avgPrice sin precio)
+    Map<String, PositionValuation> valuations = new LinkedHashMap<>();
+    double totalInvested = 0, totalValue = 0, totalPL = 0;
+    for (Position p : activePositions) {
+      double invested = p.getShares() * p.getAvgPrice();
+      double price = p.getCurrentPrice() != null ? p.getCurrentPrice() : p.getAvgPrice();
+      double value = p.getShares() * price;
+      double pl = value - invested;
+      double plPct = invested > 0 ? (pl / invested) * 100 : 0;
+      valuations.put(p.getTicker(), new PositionValuation(invested, value, pl, plPct));
+      totalInvested += invested;
+      totalValue += value;
+      totalPL += pl;
+    }
+    double totalPLPct = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
+    PositionTotals totals = new PositionTotals(totalInvested, totalValue, totalPL, totalPLPct);
+
     StringBuilder sb = new StringBuilder();
 
     appendHeader(sb);
-    appendExecutiveSummary(sb, positions, activePositions, closedPositions, metrics, dcaEntries);
+    appendExecutiveSummary(sb, positions, activePositions, closedPositions, metrics, dcaEntries,
+        valuations, totals);
     appendInvestmentPlan(sb, dcaEntries);
     appendPlannedCashFlows(sb);
     appendActiveAlerts(sb, alerts);
@@ -117,20 +135,13 @@ public class ExportService {
 
   private void appendExecutiveSummary(StringBuilder sb, List<Position> positions,
       List<Position> activePositions, List<Position> closedPositions,
-      PortfolioMetricsDto metrics, List<DcaEntry> dcaEntries) {
-    // Solo posiciones activas para el cálculo de mercado
-    double totalInvested = activePositions.stream()
-        .mapToDouble(p -> p.getShares() * p.getAvgPrice()).sum();
-    double totalValue = activePositions.stream()
-        .filter(p -> p.getCurrentPrice() != null)
-        .mapToDouble(p -> p.getShares() * p.getCurrentPrice())
-        .sum();
-    double investedPriced = activePositions.stream()
-        .filter(p -> p.getCurrentPrice() != null)
-        .mapToDouble(p -> p.getShares() * p.getAvgPrice())
-        .sum();
-    double unrealizedPL = totalValue - investedPriced;
-    double unrealizedPLPct = investedPriced > 0 ? (unrealizedPL / investedPriced) * 100 : 0;
+      PortfolioMetricsDto metrics, List<DcaEntry> dcaEntries,
+      Map<String, PositionValuation> valuations, PositionTotals totals) {
+    // Totales unificados (calculados una sola vez en generateReport)
+    double totalInvested = totals.invested();
+    double totalValue = totals.value();
+    double unrealizedPL = totals.pl();
+    double unrealizedPLPct = totals.plPct();
     long positionsWithPrice = activePositions.stream().filter(p -> p.getCurrentPrice() != null)
         .count();
 
@@ -1205,5 +1216,11 @@ public class ExportService {
   private String nvl(String s) {
     return s != null && !s.isBlank() ? s : "—";
   }
+
+  // Valoración unificada de una posición (regla única: fallback a avgPrice sin precio)
+  private record PositionValuation(double invested, double value, double pl, double plPct) {}
+
+  // Totales de cartera calculados una sola vez sobre la misma map de valoraciones
+  private record PositionTotals(double invested, double value, double pl, double plPct) {}
 }
 
