@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Elimina al arrancar las alertas persistidas de tipos de límites obsoletos (stop-loss,
@@ -24,6 +25,7 @@ public class PositionLimitsCleanupRunner implements CommandLineRunner {
   private final PositionAlertRepository positionAlertRepository;
 
   @Override
+  @Transactional
   public void run(String... args) {
     long deleted = positionAlertRepository.deleteByAlertTypeIn(OBSOLETE_ALERT_TYPES);
     if (deleted > 0) {
