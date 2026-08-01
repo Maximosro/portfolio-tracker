@@ -2890,7 +2890,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       <div class="detail-tabs">
         <button class="detail-tab active" data-dtab="overview" onclick="switchDetailTab('overview')">Resumen</button>
         <button class="detail-tab" data-dtab="notes" onclick="switchDetailTab('notes')">Notas</button>
-        <button class="detail-tab" data-dtab="aiprompt" onclick="switchDetailTab('aiprompt')">🤖 IA</button>
       </div>
     </div>
 
@@ -2942,50 +2941,14 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
           <button class="risk-btn" onclick="setRisk('MEDIUM')">🟡 Medio</button>
           <button class="risk-btn" onclick="setRisk('HIGH')">🔴 Alto</button>
         </div>
-        <div class="detail-divider"></div>
-        <div class="detail-section-title">Estrategia</div>
-        <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-3);line-height:1.5">Describe brevemente tu plan para esta posición: compras periódicas (DCA), mantener a largo plazo, trading a corto, etc.</div>
-        <textarea class="form-input" id="detailStrategy" rows="2" placeholder="Ej: DCA mensual, mantener largo plazo, swing trading…" style="resize:vertical"></textarea>
       </div>
 
       <!-- TAB: NOTAS -->
       <div class="detail-pane" id="pane-notes">
         <div class="detail-section-title">Notas operativas</div>
-        <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-3);line-height:1.5">Espacio libre para apuntar tu análisis, motivos de entrada, niveles técnicos, catalizadores pendientes, fechas de resultados o cualquier información que quieras tener a mano sobre esta posición.</div>
-        <textarea class="form-input" id="detailNotes" rows="12" placeholder="Escribe aquí tus notas de seguimiento, análisis, puntos clave, recordatorios…" style="resize:vertical;line-height:1.7"></textarea>
+        <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--space-3);line-height:1.5">Espacio libre para apuntar tu estrategia, análisis, motivos de entrada, niveles técnicos, catalizadores pendientes, fechas de resultados o cualquier información que quieras tener a mano sobre esta posición.</div>
+        <textarea class="form-input" id="detailNotes" rows="12" placeholder="Escribe aquí tu estrategia, notas de seguimiento, análisis, puntos clave, recordatorios…" style="resize:vertical;line-height:1.7"></textarea>
         <div style="text-align:right;margin-top:var(--space-2);font-size:10px;color:var(--color-text-faint)"><span id="notesCharCount">0</span> / 2000 caracteres</div>
-      </div>
-
-      <!-- TAB: IA PROMPT -->
-      <div class="detail-pane" id="pane-aiprompt">
-        <div class="detail-section-title">Asistente IA para análisis operativo</div>
-        <div style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);line-height:1.6">
-          Genera un prompt con todos los datos de esta posición para que Claude analice y te proponga alertas de precio, estrategia, peso objetivo y notas de seguimiento. El resultado será un JSON que podrás pegar aquí para importar automáticamente.
-        </div>
-        <button class="btn btn-primary" onclick="generateAIPrompt()" style="width:100%;justify-content:center;gap:var(--space-2);margin-bottom:var(--space-4)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22"/><path d="M8 6a4 4 0 0 1 8 0"/><path d="M17 12H7"/><path d="M19 16H5"/></svg>
-          Generar prompt para Claude
-        </button>
-        <div id="aiPromptOutput" style="display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
-            <span class="detail-section-title" style="margin-bottom:0">Prompt generado</span>
-            <button class="btn btn-secondary btn-sm" onclick="copyAIPrompt()" style="gap:var(--space-1)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copiar
-            </button>
-          </div>
-          <textarea class="form-input" id="aiPromptText" rows="10" readonly style="resize:vertical;font-size:11px;line-height:1.5;font-family:monospace;background:var(--color-surface-offset)"></textarea>
-        </div>
-        <div class="detail-divider"></div>
-        <div class="detail-section-title">Importar respuesta de Claude</div>
-        <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-3);line-height:1.5">
-          Pega aquí el JSON que te devuelva Claude y pulsa "Importar". Se rellenarán automáticamente las alertas de precio, notas, estrategia y nivel de riesgo.
-        </div>
-        <textarea class="form-input" id="aiImportJson" rows="6" placeholder='Pega aquí el JSON de Claude…' style="resize:vertical;font-size:11px;line-height:1.5;font-family:monospace"></textarea>
-        <button class="btn btn-primary btn-sm" onclick="importAIResponse()" style="margin-top:var(--space-3);gap:var(--space-1)">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Importar y rellenar
-        </button>
       </div>
 
     </div>
@@ -3649,7 +3612,6 @@ function renderTable() {
     const detail = positionDetailsMap[pos.ticker];
     const tooltipParts = [];
     if (detail) {
-      if (detail.strategy) tooltipParts.push('📋 ' + detail.strategy);
       if (detail.riskRating) tooltipParts.push('⚡ Riesgo: ' + ({LOW:'Bajo',MEDIUM:'Medio',HIGH:'Alto'}[detail.riskRating] || detail.riskRating));
       if (detail.notes) tooltipParts.push('📝 ' + (detail.notes.length > 80 ? detail.notes.substring(0, 80) + '…' : detail.notes));
     }
@@ -5343,9 +5305,6 @@ function populateDetailModal(data) {
   detailRisk = data.riskRating || 'MEDIUM';
   updateRiskUI();
 
-  // Strategy
-  document.getElementById('detailStrategy').value = data.strategy || '';
-
   // Alerts
   document.getElementById('detailAlertAbove').value = data.alertPriceAbove ?? '';
   document.getElementById('detailAlertBelow').value = data.alertPriceBelow ?? '';
@@ -5353,11 +5312,6 @@ function populateDetailModal(data) {
   // Notes
   document.getElementById('detailNotes').value = data.notes || '';
   updateNotesCharCount();
-
-  // AI prompt - reset
-  document.getElementById('aiPromptOutput').style.display = 'none';
-  document.getElementById('aiPromptText').value = '';
-  document.getElementById('aiImportJson').value = '';
 
   // Updated at
   if (data.updatedAt) {
@@ -5450,151 +5404,6 @@ function updateWeightComparison() {
     </div>`;
 }
 
-// AI PROMPT GENERATOR
-function generateAIPrompt() {
-  const pos = detailPosition;
-  if (!pos) return;
-
-  const invested = calcInvested(pos);
-  const value = calcValue(pos);
-  const pl = calcPL(pos);
-  const plPct = calcPLPct(pos);
-  const posXirr = metrics && metrics.positionXirr ? metrics.positionXirr[pos.ticker] : null;
-  const weight = totalValue() ? ((value || invested) / totalValue() * 100) : null;
-
-  // Gather DCA history for this ticker
-  const tickerDca = dcaEntries.filter(e => e.ticker === pos.ticker);
-  let dcaText = 'Sin historial DCA registrado.';
-  if (tickerDca.length > 0) {
-    dcaText = tickerDca.map(e =>
-      `  - ${e.date}: ${e.shares} acc. a ${e.price} €/acc (coste: ${(e.shares * e.price).toFixed(2)} €)`
-    ).join('\n');
-  }
-
-  // Current detail if any
-  const d = detailData || {};
-  let currentDetailText = 'Sin detalle operativo previo guardado.';
-  if (d.alertPriceAbove || d.alertPriceBelow || d.notes || d.strategy || d.targetWeightPct) {
-    const parts = [];
-    if (d.alertPriceAbove) parts.push(`Alerta por encima: ${d.alertPriceAbove} €`);
-    if (d.alertPriceBelow) parts.push(`Alerta por debajo: ${d.alertPriceBelow} €`);
-    if (d.riskRating) parts.push(`Riesgo: ${d.riskRating}`);
-    if (d.strategy) parts.push(`Estrategia: ${d.strategy}`);
-    if (d.targetWeightPct) parts.push(`Peso objetivo: ${d.targetWeightPct}%`);
-    if (d.notes) parts.push(`Notas: ${d.notes}`);
-    currentDetailText = parts.join('\n  ');
-  }
-
-  const today = new Date().toISOString().split('T')[0];
-
-  const prompt = `Eres un analista financiero personal. Analiza la siguiente posición de mi cartera y genera recomendaciones operativas.
-
-## Datos de la posición
-
-- **Ticker:** ${pos.ticker}
-- **Nombre:** ${pos.name || 'N/A'}
-- **Yahoo Ticker:** ${pos.yahooTicker || pos.ticker}
-- **Sector:** ${pos.sector || 'No especificado'}
-- **Acciones:** ${pos.shares}
-- **Precio medio de compra:** ${pos.avgPrice} €
-- **Precio actual:** ${pos.currentPrice || 'No disponible'} €
-- **Capital invertido:** ${invested.toFixed(2)} €
-- **Valor actual:** ${value !== null ? value.toFixed(2) : 'N/A'} €
-- **P&L:** ${pl !== null ? pl.toFixed(2) : 'N/A'} € (${plPct !== null ? plPct.toFixed(2) + '%' : 'N/A'})
-- **TIR anualizada:** ${posXirr != null ? (posXirr * 100).toFixed(2) + '%' : 'N/A'}
-- **Peso en cartera:** ${weight !== null ? weight.toFixed(1) + '%' : 'N/A'}
-- **Peso objetivo:** ${d.targetWeightPct != null ? d.targetWeightPct + '%' : 'No definido'}
-- **Fecha de análisis:** ${today}
-
-## Historial de compras (DCA)
-${dcaText}
-
-## Detalle operativo actual
-  ${currentDetailText}
-
-## Lo que necesito
-
-Analiza esta posición teniendo en cuenta:
-1. La evolución del precio respecto a mi precio medio
-2. El historial de compras y el patrón DCA
-3. El peso que tiene en mi cartera
-4. El sector/temática del activo
-
-Genera una respuesta que contenga ÚNICAMENTE un bloque JSON (sin texto antes ni después, sin markdown) con esta estructura exacta:
-
-{
-  "alertPriceAbove": <número o null — alertar si sube por encima de este precio>,
-  "alertPriceBelow": <número o null — alertar si baja por debajo de este precio>,
-  "riskRating": "<LOW|MEDIUM|HIGH — nivel de riesgo de esta posición>",
-  "strategy": "<texto corto — estrategia recomendada, max 500 caracteres>",
-  "targetWeightPct": <número o null — peso objetivo recomendado de esta posición en la cartera, en %>,
-  "notes": "<texto — notas operativas detalladas con tu análisis, niveles clave, consideraciones del sector, recomendaciones concretas. Max 2000 caracteres>"
-}
-
-IMPORTANTE: Responde SOLO con el JSON, sin explicaciones adicionales, sin bloque de código markdown. Solo el JSON puro.`;
-
-  document.getElementById('aiPromptText').value = prompt;
-  document.getElementById('aiPromptOutput').style.display = 'block';
-}
-
-function copyAIPrompt() {
-  const text = document.getElementById('aiPromptText').value;
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('Prompt copiado al portapapeles ✓', 'success');
-  }).catch(() => {
-    // Fallback
-    document.getElementById('aiPromptText').select();
-    document.execCommand('copy');
-    showToast('Prompt copiado ✓', 'success');
-  });
-}
-
-function importAIResponse() {
-  const raw = document.getElementById('aiImportJson').value.trim();
-  if (!raw) {
-    showToast('Pega el JSON de Claude primero', 'error');
-    return;
-  }
-
-  let data;
-  try {
-    // Try to extract JSON from possible markdown code blocks
-    let jsonStr = raw;
-    const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1].trim();
-    }
-    data = JSON.parse(jsonStr);
-  } catch (e) {
-    showToast('JSON inválido. Asegúrate de pegar solo el JSON.', 'error');
-    return;
-  }
-
-  // Fill in the form fields
-  if (data.alertPriceAbove != null) document.getElementById('detailAlertAbove').value = data.alertPriceAbove;
-  if (data.alertPriceBelow != null) document.getElementById('detailAlertBelow').value = data.alertPriceBelow;
-
-  if (data.riskRating && ['LOW','MEDIUM','HIGH'].includes(data.riskRating.toUpperCase())) {
-    detailRisk = data.riskRating.toUpperCase();
-    updateRiskUI();
-  }
-
-  if (data.strategy) document.getElementById('detailStrategy').value = data.strategy.substring(0, 500);
-  if (data.targetWeightPct != null) {
-    document.getElementById('detailTargetWeight').value = data.targetWeightPct;
-    updateWeightComparison();
-  }
-  if (data.notes) {
-    document.getElementById('detailNotes').value = data.notes.substring(0, 2000);
-    updateNotesCharCount();
-  }
-
-  showToast('Datos importados ✓ — Revisa las pestañas y pulsa Guardar', 'success');
-
-  // Switch to overview tab to show the imported data
-  switchDetailTab('overview');
-}
-
 async function saveDetail() {
   if (!detailTicker) return;
 
@@ -5604,7 +5413,6 @@ async function saveDetail() {
     alertPriceAbove: parseFloat(document.getElementById('detailAlertAbove').value) || null,
     alertPriceBelow: parseFloat(document.getElementById('detailAlertBelow').value) || null,
     riskRating: detailRisk,
-    strategy: document.getElementById('detailStrategy').value.trim().substring(0, 500) || null,
     targetWeightPct: parseFloat(document.getElementById('detailTargetWeight').value) || null
   };
 
