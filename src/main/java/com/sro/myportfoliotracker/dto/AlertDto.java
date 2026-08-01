@@ -16,7 +16,7 @@ public class AlertDto {
     private String ticker;
     private String name;
     private String color;
-    private String type;        // STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, DCA_TARGET, ALERT_ABOVE, ALERT_BELOW
+    private String type;        // ALERT_ABOVE, ALERT_BELOW
     private String severity;    // DANGER, WARNING, INFO
     private String message;
     private Double currentPrice;
