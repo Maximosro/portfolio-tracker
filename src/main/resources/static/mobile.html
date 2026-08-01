@@ -1097,9 +1097,8 @@ async function openMDetail(ticker){
     if(r.ok){
       const d=await r.json();
       let notesHtml='';
-      if(d.notes||d.strategy){
+      if(d.notes){
         notesHtml='<div class="m-section" style="margin-top:16px">';
-        if(d.strategy) notesHtml+=`<div class="m-section-title">Estrategia</div><div style="padding:12px 16px;font-size:12px;color:var(--color-text-muted);line-height:1.6">${escHtml(d.strategy)}</div>`;
         if(d.notes) notesHtml+=`<div class="m-section-title">Notas</div><div style="padding:12px 16px;font-size:12px;color:var(--color-text-muted);line-height:1.6;white-space:pre-line">${escHtml(d.notes)}</div>`;
         notesHtml+='</div>';
       }
