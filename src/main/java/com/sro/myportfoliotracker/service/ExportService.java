@@ -367,7 +367,7 @@ public class ExportService {
     sb.append(
         "| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | Var. Día | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR | Primera Compra |\n");
     sb.append(
-        "|--------|--------|--------|----------|-------------|---------------|------------|----------|---------------|-----------|---------|---------|------|----------------|\n");
+        "|--------|--------|--------|----------|-------------|---------------|------------|----------|---------------|-----------|---------|------|----------------|\n");
 
     // Pre-calcular primera compra por ticker
     Map<String, LocalDate> firstBuyByTicker = dcaEntries.stream()
