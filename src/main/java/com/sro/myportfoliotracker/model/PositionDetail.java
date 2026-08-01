@@ -33,9 +33,6 @@ public class PositionDetail {
     @Builder.Default
     private String riskRating = "MEDIUM";
 
-    @Column(name = "strategy", length = 500)
-    private String strategy;
-
     @Column(name = "target_weight_pct")
     private Double targetWeightPct;
 

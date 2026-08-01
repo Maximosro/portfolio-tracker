@@ -698,7 +698,7 @@ public class ExportService {
         continue;
       }
 
-      boolean hasContent = d.getStrategy() != null || d.getTargetWeightPct() != null ||
+      boolean hasContent = d.getNotes() != null || d.getTargetWeightPct() != null ||
           d.getAlertPriceAbove() != null || d.getAlertPriceBelow() != null;
       if (!hasContent) {
         continue;
@@ -718,9 +718,6 @@ public class ExportService {
           default -> d.getRiskRating();
         };
         sb.append(String.format("| **Nivel de riesgo** | %s |\n", risk));
-      }
-      if (d.getStrategy() != null) {
-        sb.append(String.format("| **Estrategia** | %s |\n", d.getStrategy()));
       }
       if (d.getTargetWeightPct() != null) {
         sb.append(String.format("| **Peso objetivo** | %s |\n", fmtPct(d.getTargetWeightPct())));
