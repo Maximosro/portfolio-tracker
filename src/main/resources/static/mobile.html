@@ -462,8 +462,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
       </div>
       <div class="m-chart-wrap"><canvas id="mDetailChart"></canvas></div>
     </div>
-    <!-- Limits & notes (read-only) -->
-    <div id="mDetailLimits"></div>
+    <!-- Notes (read-only) -->
     <div id="mDetailNotes"></div>
   </div>
 </div>
@@ -1097,17 +1096,6 @@ async function openMDetail(ticker){
     const r=await authFetch(`${BASE}/api/positions/${encodeURIComponent(ticker)}/detail`);
     if(r.ok){
       const d=await r.json();
-      let limitsHtml='';
-      if(d.stopLoss||d.takeProfit||d.trailingStopPct||d.dcaTargetPrice){
-        limitsHtml='<div class="m-section" style="margin-top:16px"><div class="m-section-title">Límites</div><div style="padding:12px 16px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-        if(d.stopLoss) limitsHtml+=`<div><span style="color:var(--color-text-muted)">Stop-Loss:</span> ${fmtEur(d.stopLoss,4)}</div>`;
-        if(d.takeProfit) limitsHtml+=`<div><span style="color:var(--color-text-muted)">Take-Profit:</span> ${fmtEur(d.takeProfit,4)}</div>`;
-        if(d.trailingStopPct) limitsHtml+=`<div><span style="color:var(--color-text-muted)">Trailing Stop:</span> ${d.trailingStopPct}%</div>`;
-        if(d.dcaTargetPrice) limitsHtml+=`<div><span style="color:var(--color-text-muted)">DCA Target:</span> ${fmtEur(d.dcaTargetPrice,4)}</div>`;
-        limitsHtml+='</div></div>';
-      }
-      document.getElementById('mDetailLimits').innerHTML=limitsHtml;
-
       let notesHtml='';
       if(d.notes||d.strategy){
         notesHtml='<div class="m-section" style="margin-top:16px">';
@@ -1372,10 +1360,10 @@ async function runMonteCarlo(){
 
 // ===================== ALERTS =====================
 function alertTypeLabel(type){
-  switch(type){case 'STOP_LOSS':return'Stop-Loss';case 'TAKE_PROFIT':return'Take-Profit';case 'TRAILING_STOP':return'Trailing Stop';case 'DCA_TARGET':return'DCA Target';case 'ALERT_ABOVE':return'Alerta ↑';case 'ALERT_BELOW':return'Alerta ↓';case 'WEIGHT_DEVIATION':return'Peso';default:return type}
+  switch(type){case 'ALERT_ABOVE':return'Alerta ↑';case 'ALERT_BELOW':return'Alerta ↓';default:return type}
 }
 function alertIcon(type){
-  switch(type){case 'STOP_LOSS':return'🛑';case 'TAKE_PROFIT':return'🎯';case 'TRAILING_STOP':return'📉';case 'DCA_TARGET':return'💰';case 'ALERT_ABOVE':return'📈';case 'ALERT_BELOW':return'📉';case 'WEIGHT_DEVIATION':return'⚖️';default:return'⚠️'}
+  switch(type){case 'ALERT_ABOVE':return'📈';case 'ALERT_BELOW':return'📉';default:return'⚠️'}
 }
 function renderMAlerts(){
   const badge=document.getElementById('mAlertBadge');
@@ -1403,7 +1391,7 @@ function renderMAlerts(){
   count.textContent=currentAlerts.length>0?'('+currentAlerts.length+')':'';
 
   if(currentAlerts.length===0){
-    body.innerHTML='<div class="m-empty" style="padding:48px 16px"><div style="font-size:28px;margin-bottom:8px">🔔</div><div style="font-weight:600;color:var(--color-success);margin-bottom:4px">✓ Sin alertas activas</div><div style="font-size:11px;color:var(--color-text-muted)">Todas las posiciones están dentro de los límites</div></div>';
+    body.innerHTML='<div class="m-empty" style="padding:48px 16px"><div style="font-size:28px;margin-bottom:8px">🔔</div><div style="font-weight:600;color:var(--color-success);margin-bottom:4px">✓ Sin alertas activas</div><div style="font-size:11px;color:var(--color-text-muted)">No hay alertas activas</div></div>';
     return;
   }
 
