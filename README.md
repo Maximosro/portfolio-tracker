@@ -156,8 +156,7 @@ La app usa **Supabase Auth** con login client-side:
 
 Cada posición tiene un panel con pestañas:
 
-- **Resumen:** Peso en cartera, estadísticas, nivel de riesgo, estrategia
-- **Límites:** Stop-loss, take-profit, trailing stop, DCA target, alertas de precio, con indicadores de distancia
+- **Resumen:** Peso en cartera, estadísticas, nivel de riesgo, estrategia y alertas de precio
 - **Notas:** Espacio libre para análisis personal (hasta 2.000 caracteres)
 - **🤖 IA:** Generador de prompts para Claude/ChatGPT con importación automática de respuestas JSON
 
@@ -174,11 +173,7 @@ Cada posición tiene un panel con pestañas:
 
 ### 🔔 Sistema de alertas
 
-- **Stop-Loss / Take-Profit**: alerta cuando el precio alcanza los límites configurados
-- **Trailing Stop**: alerta basada en porcentaje de caída desde precio medio
-- **DCA Target**: notifica cuando el precio baja al nivel objetivo de compra
 - **Alerta Precio Superior/Inferior**: umbrales personalizados por posición
-- **Peso objetivo**: alerta si la ponderación se desvía ≥5pp del target configurado
 - Severidades: 🔴 CRÍTICA, 🟡 AVISO, 🔵 INFO
 - Las alertas leídas se **persisten en localStorage** (no reaparecen al recargar)
 

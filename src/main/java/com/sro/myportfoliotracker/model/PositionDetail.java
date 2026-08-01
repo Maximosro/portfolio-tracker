@@ -23,18 +23,6 @@ public class PositionDetail {
     @Column(length = 2000)
     private String notes;
 
-    @Column(name = "stop_loss")
-    private Double stopLoss;
-
-    @Column(name = "take_profit")
-    private Double takeProfit;
-
-    @Column(name = "dca_target_price")
-    private Double dcaTargetPrice;
-
-    @Column(name = "trailing_stop_pct")
-    private Double trailingStopPct;
-
     @Column(name = "alert_price_above")
     private Double alertPriceAbove;
 

@@ -203,10 +203,6 @@ public class TelegramService {
         "✅ <b>Portfolio Tracker — Telegram conectado</b>\n\n"
             + "Las notificaciones de alertas están activas.\n"
             + "Recibirás avisos de:\n"
-            + "• 🔴 Stop-Loss alcanzado\n"
-            + "• 🟢 Take-Profit alcanzado\n"
-            + "• 🔵 DCA Target disponible\n"
-            + "• ⚠️ Desviación de peso\n"
             + "• 📊 Alertas de precio\n\n"
             + "🕐 " + TIME_FMT.format(Instant.now())
     );
@@ -265,13 +261,8 @@ public class TelegramService {
     };
 
     String typeLabel = switch (alert.getType()) {
-      case "STOP_LOSS" -> "STOP-LOSS";
-      case "TAKE_PROFIT" -> "TAKE-PROFIT";
-      case "TRAILING_STOP" -> "TRAILING STOP";
-      case "DCA_TARGET" -> "DCA TARGET";
       case "ALERT_ABOVE" -> "ALERTA PRECIO ↑";
       case "ALERT_BELOW" -> "ALERTA PRECIO ↓";
-      case "WEIGHT_DEVIATION" -> "PESO CARTERA";
       default -> alert.getType();
     };
 
