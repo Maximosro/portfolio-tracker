@@ -4,13 +4,11 @@ import com.sro.myportfoliotracker.dto.AlertDto;
 import com.sro.myportfoliotracker.dto.PortfolioMetricsDto;
 import com.sro.myportfoliotracker.model.DcaEntry;
 import com.sro.myportfoliotracker.model.InvestmentPlan;
-import com.sro.myportfoliotracker.model.PlannedCashFlow;
 import com.sro.myportfoliotracker.model.Position;
 import com.sro.myportfoliotracker.model.PositionDetail;
 import com.sro.myportfoliotracker.model.PriceHistory;
 import com.sro.myportfoliotracker.repository.DcaEntryRepository;
 import com.sro.myportfoliotracker.repository.InvestmentPlanRepository;
-import com.sro.myportfoliotracker.repository.PlannedCashFlowRepository;
 import com.sro.myportfoliotracker.repository.PositionRepository;
 import com.sro.myportfoliotracker.repository.PriceHistoryRepository;
 import java.time.Duration;
@@ -21,7 +19,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -31,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +49,6 @@ public class ExportService {
   private final PositionDetailService positionDetailService;
   private final AlertService alertService;
   private final InvestmentPlanRepository investmentPlanRepository;
-  private final PlannedCashFlowRepository plannedCashFlowRepository;
 
   private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
   private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern(
@@ -96,15 +91,11 @@ public class ExportService {
     appendExecutiveSummary(sb, positions, activePositions, closedPositions, metrics, dcaEntries,
         valuations, totals);
     appendInvestmentPlan(sb, dcaEntries);
-    appendPlannedCashFlows(sb);
     appendActiveAlerts(sb, alerts);
     appendPositionsDetail(sb, activePositions, metrics, dcaEntries, valuations, totals);
-    appendClosedPositionsDetail(sb, closedPositions, dcaEntries, metrics);
     appendSalesOperationsDetail(sb, dcaEntries, positions, metrics);
     appendOperationalDetail(sb, activePositions, detailMap);
     appendAllocationAnalysis(sb, activePositions, detailMap, valuations, totals);
-    appendDcaHistory(sb, dcaEntries, positions);
-    appendDcaAnalytics(sb, dcaEntries, positions);
     appendPriceEvolution(sb, activePositions);
     appendRiskAnalysis(sb, activePositions, metrics, valuations, totals);
     appendContextNotes(sb, positions);
@@ -329,35 +320,6 @@ public class ExportService {
     }
   }
 
-  // ───────────────────── FLUJOS DE CAJA PLANIFICADOS ─────────────────────
-
-  private void appendPlannedCashFlows(StringBuilder sb) {
-    List<PlannedCashFlow> pending = plannedCashFlowRepository.findByExecutedFalseOrderByExpectedDateAsc();
-
-    sb.append("## 1c. Flujos de Caja Planificados\n\n");
-
-    if (pending.isEmpty()) {
-      sb.append("*Sin flujos de caja futuros planificados.*\n\n");
-      return;
-    }
-
-    double totalPending = pending.stream().mapToDouble(PlannedCashFlow::getAmount).sum();
-    sb.append(String.format("Total pendiente: **%s** en **%d** flujo(s)\n\n", fmtEur(totalPending),
-        pending.size()));
-    sb.append("| Fecha Prevista | Tipo | Importe (€) | Descripción |\n");
-    sb.append("|----------------|------|-------------|-------------|\n");
-
-    for (PlannedCashFlow cf : pending) {
-      sb.append(String.format("| %s | %s | %s | %s |\n",
-          cf.getExpectedDate().format(DATE_FMT),
-          cf.getType(),
-          fmtEur(cf.getAmount()),
-          cf.getDescription()));
-    }
-    sb.append("\n");
-  }
-
-  // ───────────────────── ALERTAS ACTIVAS ─────────────────────
 
   private void appendActiveAlerts(StringBuilder sb, List<AlertDto> alerts) {
     sb.append("## 2. Alertas Activas\n\n");
@@ -465,97 +427,6 @@ public class ExportService {
     sb.append("\n");
   }
 
-  // ───────────────────── POSICIONES CERRADAS ─────────────────────
-
-  private void appendClosedPositionsDetail(StringBuilder sb, List<Position> closedPositions,
-      List<DcaEntry> dcaEntries, PortfolioMetricsDto metrics) {
-    sb.append("## 3b. Posiciones Cerradas\n\n");
-
-    if (closedPositions.isEmpty()) {
-      sb.append("✅ **No hay posiciones cerradas.** Todas las posiciones están activas.\n\n");
-      return;
-    }
-
-    Map<String, List<DcaEntry>> dcaByTicker = dcaEntries.stream()
-        .collect(Collectors.groupingBy(DcaEntry::getTicker));
-
-    sb.append(String.format("Total de posiciones cerradas: **%d**\n\n", closedPositions.size()));
-    sb.append(
-        "| Ticker | Nombre | Sector | P.Medio Compra (€) | P.Medio Venta (€) | Total Invertido (€) | Total Recuperado (€) | P&L Realizado (€) | P&L (%) | XIRR |\n");
-    sb.append(
-        "|--------|--------|--------|--------------------|--------------------|---------------------|----------------------|--------------------|---------|------|\n");
-
-    double sumInvested = 0, sumRecovered = 0, sumRealizedPL = 0;
-
-    for (Position p : closedPositions) {
-      List<DcaEntry> tickerDca = dcaByTicker.getOrDefault(p.getTicker(), Collections.emptyList());
-      List<DcaEntry> buys = tickerDca.stream().filter(e -> !"SELL".equals(e.getType())).toList();
-      List<DcaEntry> sells = tickerDca.stream().filter(e -> "SELL".equals(e.getType())).toList();
-
-      double totalBought = buys.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
-      double totalSold = sells.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
-      double buyShares = buys.stream().mapToDouble(DcaEntry::getShares).sum();
-      double sellShares = sells.stream().mapToDouble(DcaEntry::getShares).sum();
-      double avgBuyPrice = buyShares > 0 ? totalBought / buyShares : 0;
-      double avgSellPrice = sellShares > 0 ? totalSold / sellShares : 0;
-
-      double realizedPL = metrics.positionRealizedPL() != null
-          ? metrics.positionRealizedPL().getOrDefault(p.getTicker(), 0.0) : 0.0;
-      double plPct = totalBought > 0 ? (realizedPL / totalBought) * 100 : 0;
-      Double xirr =
-          metrics.positionXirr() != null ? metrics.positionXirr().get(p.getTicker()) : null;
-
-      sumInvested += totalBought;
-      sumRecovered += totalSold;
-      sumRealizedPL += realizedPL;
-
-      String result = realizedPL >= 0 ? "✅" : "❌";
-
-      sb.append(String.format("| **%s** | %s | %s | %s | %s | %s | %s | %s %s | %s | %s |\n",
-          p.getTicker(),
-          nvl(p.getName()),
-          nvl(p.getSector()),
-          fmtNum(avgBuyPrice, 4),
-          avgSellPrice > 0 ? fmtNum(avgSellPrice, 4) : "—",
-          fmtEur(totalBought),
-          fmtEur(totalSold),
-          fmtEur(realizedPL), result,
-          fmtPct(plPct),
-          xirr != null ? fmtPct(xirr * 100) : "N/D"));
-    }
-
-    // Total row
-    double totalPLPct = sumInvested > 0 ? (sumRealizedPL / sumInvested) * 100 : 0;
-    sb.append(String.format("| **TOTAL** | | | | | **%s** | **%s** | **%s** | **%s** | |\n",
-        fmtEur(sumInvested), fmtEur(sumRecovered), fmtEur(sumRealizedPL), fmtPct(totalPLPct)));
-    sb.append("\n");
-
-    // Detail per closed position
-    for (Position p : closedPositions) {
-      List<DcaEntry> tickerDca = dcaByTicker.getOrDefault(p.getTicker(), Collections.emptyList());
-      if (tickerDca.isEmpty()) {
-        continue;
-      }
-
-      sb.append(String.format("#### %s — %s (cerrada)\n\n", p.getTicker(), nvl(p.getName())));
-      sb.append("| Fecha | Operación | Acciones | Precio (€) | Importe (€) |\n");
-      sb.append("|-------|-----------|----------|------------|-------------|\n");
-
-      tickerDca.stream().sorted(Comparator.comparing(DcaEntry::getDate)).forEach(e -> {
-        boolean isSell = "SELL".equals(e.getType());
-        double cost = e.getShares() * e.getPrice();
-        sb.append(String.format("| %s | %s | %s | %s | %s |\n",
-            e.getDate().format(DATE_FMT),
-            isSell ? "🔴 Venta" : "🟢 Compra",
-            fmtNum(e.getShares(), 6),
-            fmtNum(e.getPrice(), 4),
-            isSell ? "-" + fmtEur(cost) : fmtEur(cost)));
-      });
-      sb.append("\n");
-    }
-  }
-
-  // ───────────────────── OPERACIONES DE VENTA DETALLADAS ─────────────────────
 
   private void appendSalesOperationsDetail(StringBuilder sb, List<DcaEntry> dcaEntries,
       List<Position> positions, PortfolioMetricsDto metrics) {
@@ -774,169 +645,6 @@ public class ExportService {
     sb.append("\n");
   }
 
-  // ───────────────────── HISTORIAL DCA ─────────────────────
-
-  private void appendDcaHistory(StringBuilder sb, List<DcaEntry> dcaEntries,
-      List<Position> positions) {
-    sb.append("## 7. Historial Completo de Operaciones (DCA)\n\n");
-
-    if (dcaEntries.isEmpty()) {
-      sb.append("*Sin operaciones registradas.*\n\n");
-      return;
-    }
-
-    Map<String, Position> posMap = positions.stream()
-        .collect(Collectors.toMap(Position::getTicker, p -> p, (a, b) -> a));
-
-    sb.append(String.format("Total de operaciones: **%d**\n\n", dcaEntries.size()));
-    sb.append(
-        "| Fecha | Ticker | Tipo | Acciones | Precio (€) | Importe (€) | P&L Realizado | Observación |\n");
-    sb.append(
-        "|-------|--------|------|----------|------------|-------------|---------------|-------------|\n");
-
-    // Ordenar por fecha para calcular estado de posición en cada venta
-    List<DcaEntry> sorted = dcaEntries.stream()
-        .sorted(Comparator.comparing(DcaEntry::getDate))
-        .toList();
-
-    // Calcular acciones acumuladas por ticker para determinar si una venta es parcial o cierre
-    Map<String, Double> runningShares = new HashMap<>();
-
-    double totalDcaCost = 0;
-    double totalRealizedInHistory = 0;
-
-    for (DcaEntry e : sorted) {
-      double cost = e.getShares() * e.getPrice();
-      boolean isSell = "SELL".equals(e.getType());
-
-      // Track running shares
-      double currentShares = runningShares.getOrDefault(e.getTicker(), 0.0);
-      if (isSell) {
-        currentShares -= e.getShares();
-      } else {
-        currentShares += e.getShares();
-      }
-      runningShares.put(e.getTicker(), currentShares);
-
-      String typeIcon;
-      String plStr = "—";
-      String observation = "—";
-
-      if (isSell) {
-        typeIcon = "🔴 VENTA";
-        totalDcaCost -= cost;
-
-        // Calculate realized P&L for this sale using the FIFO cost basis captured at sale time
-        double avgBuyPrice = e.getCostBasis() != null ? e.getCostBasis() : 0;
-        if (avgBuyPrice > 0) {
-          double realizedPL = e.getShares() * (e.getPrice() - avgBuyPrice);
-          totalRealizedInHistory += realizedPL;
-          plStr = fmtEur(realizedPL) + (realizedPL >= 0 ? " ✅" : " ❌");
-        }
-
-        // Determine if partial sale or full closure
-        if (currentShares <= 0.000001) {
-          observation = "🔒 Cierre total";
-        } else {
-          observation = String.format("📊 Venta parcial (quedan %s acc.)",
-              fmtNum(Math.max(0, currentShares), 2));
-        }
-      } else {
-        typeIcon = "🟢 COMPRA";
-        totalDcaCost += cost;
-        if (Math.abs(runningShares.getOrDefault(e.getTicker(), 0.0) - e.getShares()) < 0.000001) {
-          observation = "🆕 Apertura";
-        } else {
-          observation = String.format("📈 Acum. %s acc.", fmtNum(currentShares, 2));
-        }
-      }
-
-      sb.append(String.format("| %s | %s | %s | %s | %s | %s | %s | %s |\n",
-          e.getDate().format(DATE_FMT),
-          e.getTicker(),
-          typeIcon,
-          fmtNum(e.getShares(), 6),
-          fmtNum(e.getPrice(), 4),
-          isSell ? "-" + fmtEur(cost) : fmtEur(cost),
-          plStr,
-          observation));
-    }
-    sb.append(String.format("| | | | | **NETO** | **%s** | **%s** | |\n", fmtEur(totalDcaCost),
-        totalRealizedInHistory != 0 ? fmtEur(totalRealizedInHistory) : "—"));
-    sb.append("\n");
-  }
-
-  // ───────────────────── ANALYTICS DCA ─────────────────────
-
-  private void appendDcaAnalytics(StringBuilder sb, List<DcaEntry> dcaEntries,
-      List<Position> positions) {
-    if (dcaEntries.isEmpty()) {
-      return;
-    }
-
-    sb.append("## 8. Análisis de la Estrategia DCA\n\n");
-
-    // Agrupar por ticker
-    Map<String, List<DcaEntry>> byTicker = dcaEntries.stream()
-        .collect(Collectors.groupingBy(DcaEntry::getTicker));
-
-    sb.append(
-        "| Ticker | Nº Compras | Primera Compra | Última Compra | Inversión Total DCA (€) | Precio Medio DCA (€) | Frecuencia Media |\n");
-    sb.append(
-        "|--------|------------|----------------|---------------|-------------------------|---------------------|------------------|\n");
-
-    for (Map.Entry<String, List<DcaEntry>> entry : byTicker.entrySet()) {
-      String ticker = entry.getKey();
-      List<DcaEntry> entries = entry.getValue().stream()
-          .sorted(Comparator.comparing(DcaEntry::getDate))
-          .toList();
-
-      double totalCost = entries.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
-      double totalShares = entries.stream().mapToDouble(DcaEntry::getShares).sum();
-      double avgPrice = totalShares > 0 ? totalCost / totalShares : 0;
-
-      LocalDate first = entries.getFirst().getDate();
-      LocalDate last = entries.getLast().getDate();
-      long daysBetween = ChronoUnit.DAYS.between(first, last);
-      String frequency = entries.size() > 1
-          ? String.format("~%d días", daysBetween / (entries.size() - 1))
-          : "Única compra";
-
-      sb.append(String.format("| %s | %d | %s | %s | %s | %s | %s |\n",
-          ticker, entries.size(),
-          first.format(DATE_FMT), last.format(DATE_FMT),
-          fmtEur(totalCost), fmtNum(avgPrice, 4), frequency));
-    }
-    sb.append("\n");
-
-    // Inversión mensual (solo compras, excluyendo ventas)
-    sb.append("### Inversión mensual (solo compras)\n\n");
-    Map<String, Double> monthlyBuys = new TreeMap<>();
-    Map<String, Double> monthlySells = new TreeMap<>();
-    for (DcaEntry e : dcaEntries) {
-      String key = e.getDate().getYear() + "-" + String.format("%02d", e.getDate().getMonthValue());
-      if ("SELL".equals(e.getType())) {
-        monthlySells.merge(key, e.getShares() * e.getPrice(), Double::sum);
-      } else {
-        monthlyBuys.merge(key, e.getShares() * e.getPrice(), Double::sum);
-      }
-    }
-    // Todos los meses con actividad
-    Set<String> allMonths = new TreeSet<>();
-    allMonths.addAll(monthlyBuys.keySet());
-    allMonths.addAll(monthlySells.keySet());
-    sb.append("| Mes | Compras (€) | Ventas (€) | Neto (€) |\n");
-    sb.append("|-----|-------------|------------|----------|\n");
-    for (String m : allMonths) {
-      double buys = monthlyBuys.getOrDefault(m, 0.0);
-      double sells = monthlySells.getOrDefault(m, 0.0);
-      sb.append(String.format("| %s | %s | %s | %s |\n", m, fmtEur(buys),
-          sells > 0 ? fmtEur(sells) : "—", fmtEur(buys - sells)));
-    }
-    sb.append("\n");
-  }
-
-  // ───────────────────── EVOLUCIÓN DE PRECIOS ─────────────────────
 
   private void appendPriceEvolution(StringBuilder sb, List<Position> positions) {
     sb.append("## 9. Evolución de Precios (Resumen)\n\n");
