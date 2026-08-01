@@ -20,7 +20,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -93,7 +92,7 @@ public class ExportService {
     appendInvestmentPlan(sb, dcaEntries);
     appendActiveAlerts(sb, alerts);
     appendPositionsDetail(sb, activePositions, metrics, dcaEntries, valuations, totals);
-    appendSalesOperationsDetail(sb, dcaEntries, positions, metrics);
+    appendSalesSummary(sb, dcaEntries, metrics);
     appendOperationalDetail(sb, activePositions, detailMap);
     appendAllocationAnalysis(sb, activePositions, detailMap, valuations, totals);
     appendPriceEvolution(sb, activePositions);
@@ -428,90 +427,21 @@ public class ExportService {
   }
 
 
-  private void appendSalesOperationsDetail(StringBuilder sb, List<DcaEntry> dcaEntries,
-      List<Position> positions, PortfolioMetricsDto metrics) {
+  private void appendSalesSummary(StringBuilder sb, List<DcaEntry> dcaEntries,
+      PortfolioMetricsDto metrics) {
     List<DcaEntry> sellOps = dcaEntries.stream()
         .filter(e -> "SELL".equals(e.getType()))
         .sorted(Comparator.comparing(DcaEntry::getDate))
         .toList();
 
-    sb.append("## 4. Detalle de Operaciones de Venta\n\n");
+    sb.append("## 6. Resumen de Ventas por Ticker\n\n");
 
     if (sellOps.isEmpty()) {
       sb.append("*Sin operaciones de venta registradas.*\n\n");
       return;
     }
 
-    Map<String, Position> posMap = positions.stream()
-        .collect(Collectors.toMap(Position::getTicker, p -> p, (a, b) -> a));
-
-    // Calcular acciones acumuladas para saber si fue venta parcial o cierre
-    Map<String, Double> runningSharesForSales = new HashMap<>();
-    List<DcaEntry> allSorted = dcaEntries.stream()
-        .sorted(Comparator.comparing(DcaEntry::getDate)
-            .thenComparing(e -> "SELL".equals(e.getType()) ? 1 : 0))
-        .toList();
-
-    Map<Long, Double> sharesAfterOp = new HashMap<>();
-    for (DcaEntry e : allSorted) {
-      double current = runningSharesForSales.getOrDefault(e.getTicker(), 0.0);
-      if ("SELL".equals(e.getType())) {
-        current -= e.getShares();
-      } else {
-        current += e.getShares();
-      }
-      runningSharesForSales.put(e.getTicker(), current);
-      if (e.getId() != null) {
-        sharesAfterOp.put(e.getId(), Math.max(0, current));
-      }
-    }
-
     sb.append(String.format("Total de ventas: **%d** operaciones\n\n", sellOps.size()));
-    sb.append(
-        "| Fecha | Ticker | Tipo Venta | Acciones Vendidas | P.Venta (€) | Importe (€) | P.Medio Compra (€) | P&L Realizado (€) | P&L (%) | Acc. Restantes |\n");
-    sb.append(
-        "|-------|--------|------------|-------------------|-------------|-------------|---------------------|--------------------|---------|-----------------|\n");
-
-    double totalSalesProceeds = 0;
-    double totalSalesRealized = 0;
-
-    for (DcaEntry sell : sellOps) {
-      double proceeds = sell.getShares() * sell.getPrice();
-      double avgBuyPrice = sell.getCostBasis() != null ? sell.getCostBasis() : 0;
-      double costBasis = sell.getShares() * avgBuyPrice;
-      double realizedPL = proceeds - costBasis;
-      double plPct = costBasis > 0 ? (realizedPL / costBasis) * 100 : 0;
-
-      Double sharesRemaining = sell.getId() != null ? sharesAfterOp.get(sell.getId()) : null;
-      String saleType =
-          sharesRemaining != null && sharesRemaining <= 0.000001 ? "🔒 Cierre total" : "📊 Parcial";
-      String remaining = sharesRemaining != null ? fmtNum(sharesRemaining, 2) : "—";
-      String result = realizedPL >= 0 ? "✅" : "❌";
-
-      totalSalesProceeds += proceeds;
-      totalSalesRealized += realizedPL;
-
-      sb.append(String.format("| %s | **%s** | %s | %s | %s | %s | %s | %s %s | %s | %s |\n",
-          sell.getDate().format(DATE_FMT),
-          sell.getTicker(),
-          saleType,
-          fmtNum(sell.getShares(), 6),
-          fmtNum(sell.getPrice(), 4),
-          fmtEur(proceeds),
-          fmtNum(avgBuyPrice, 4),
-          fmtEur(realizedPL), result,
-          fmtPct(plPct),
-          remaining));
-    }
-
-    // Total row
-    String totalResult = totalSalesRealized >= 0 ? "✅" : "❌";
-    sb.append(String.format("| | **TOTAL** | | | | **%s** | | **%s** %s | | |\n",
-        fmtEur(totalSalesProceeds), fmtEur(totalSalesRealized), totalResult));
-    sb.append("\n");
-
-    // Summary by ticker
-    sb.append("### Resumen de ventas por ticker\n\n");
     sb.append("| Ticker | Nº Ventas | Total Vendido (€) | P&L Total Realizado (€) | Resultado |\n");
     sb.append(
         "|--------|-----------|--------------------|-------------------------|-----------|\n");
@@ -524,10 +454,9 @@ public class ExportService {
       List<DcaEntry> sells = entry.getValue();
 
       double totalSold = sells.stream().mapToDouble(e -> e.getShares() * e.getPrice()).sum();
-      double totalPL = sells.stream()
-          .mapToDouble(e -> e.getShares() * (e.getPrice() -
-              (e.getCostBasis() != null ? e.getCostBasis() : 0)))
-          .sum();
+      // P&L FIFO canónico desde PortfolioMetricsService (misma fuente que el Resumen Ejecutivo)
+      double totalPL = metrics.positionRealizedPL() != null
+          ? metrics.positionRealizedPL().getOrDefault(ticker, 0.0) : 0.0;
       String result = totalPL >= 0 ? "✅ Ganancia" : "❌ Pérdida";
 
       sb.append(String.format("| **%s** | %d | %s | %s | %s |\n",
