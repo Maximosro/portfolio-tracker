@@ -102,11 +102,11 @@ public class ExportService {
     appendClosedPositionsDetail(sb, closedPositions, dcaEntries, metrics);
     appendSalesOperationsDetail(sb, dcaEntries, positions, metrics);
     appendOperationalDetail(sb, activePositions, detailMap);
-    appendAllocationAnalysis(sb, activePositions, detailMap);
+    appendAllocationAnalysis(sb, activePositions, detailMap, valuations, totals);
     appendDcaHistory(sb, dcaEntries, positions);
     appendDcaAnalytics(sb, dcaEntries, positions);
     appendPriceEvolution(sb, activePositions);
-    appendRiskAnalysis(sb, activePositions, metrics);
+    appendRiskAnalysis(sb, activePositions, metrics, valuations, totals);
     appendContextNotes(sb, positions);
 
     return sb.toString();
@@ -723,13 +723,11 @@ public class ExportService {
   // ───────────────────── DISTRIBUCIÓN/ASIGNACIÓN ─────────────────────
 
   private void appendAllocationAnalysis(StringBuilder sb, List<Position> positions,
-      Map<String, PositionDetail> detailMap) {
+      Map<String, PositionDetail> detailMap, Map<String, PositionValuation> valuations,
+      PositionTotals totals) {
     sb.append("## 6. Distribución de Cartera (Allocation)\n\n");
 
-    double totalValue = positions.stream()
-        .mapToDouble(p -> p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice()
-            : p.getShares() * p.getAvgPrice())
-        .sum();
+    double totalValue = totals.value();
 
     sb.append("### Por posición\n\n");
     sb.append("| Ticker | Valor (€) | Peso Actual (%) | Peso Objetivo (%) | Desviación (pp) |\n");
@@ -737,16 +735,10 @@ public class ExportService {
 
     // Ordenar por peso descendente
     positions.stream()
-        .sorted((a, b) -> {
-          double va = a.getCurrentPrice() != null ? a.getShares() * a.getCurrentPrice()
-              : a.getShares() * a.getAvgPrice();
-          double vb = b.getCurrentPrice() != null ? b.getShares() * b.getCurrentPrice()
-              : b.getShares() * b.getAvgPrice();
-          return Double.compare(vb, va);
-        })
+        .sorted((a, b) -> Double.compare(
+            valuations.get(b.getTicker()).value(), valuations.get(a.getTicker()).value()))
         .forEach(p -> {
-          double val = p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice()
-              : p.getShares() * p.getAvgPrice();
+          double val = valuations.get(p.getTicker()).value();
           double weight = totalValue > 0 ? (val / totalValue) * 100 : 0;
           PositionDetail d = detailMap.get(p.getTicker());
           String targetStr = "—";
@@ -766,9 +758,7 @@ public class ExportService {
     for (Position p : positions) {
       String sector =
           p.getSector() != null && !p.getSector().isBlank() ? p.getSector() : "Sin clasificar";
-      double val = p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice()
-          : p.getShares() * p.getAvgPrice();
-      sectorMap.merge(sector, val, Double::sum);
+      sectorMap.merge(sector, valuations.get(p.getTicker()).value(), Double::sum);
     }
 
     sb.append("### Por sector/temática\n\n");
@@ -1037,20 +1027,17 @@ public class ExportService {
   // ───────────────────── ANÁLISIS DE RIESGO ─────────────────────
 
   private void appendRiskAnalysis(StringBuilder sb, List<Position> positions,
-      PortfolioMetricsDto metrics) {
+      PortfolioMetricsDto metrics, Map<String, PositionValuation> valuations,
+      PositionTotals totals) {
     sb.append("## 10. Indicadores de Riesgo y Concentración\n\n");
 
-    double totalValue = positions.stream()
-        .mapToDouble(p -> p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice()
-            : p.getShares() * p.getAvgPrice())
-        .sum();
+    double totalValue = totals.value();
 
     // HHI (Herfindahl-Hirschman Index) para medir concentración
     double hhi = 0;
     List<Double> weights = new ArrayList<>();
     for (Position p : positions) {
-      double val = p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice()
-          : p.getShares() * p.getAvgPrice();
+      double val = valuations.get(p.getTicker()).value();
       double w = totalValue > 0 ? val / totalValue : 0;
       weights.add(w);
       hhi += w * w;
