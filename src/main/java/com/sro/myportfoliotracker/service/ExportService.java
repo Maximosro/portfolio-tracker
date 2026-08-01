@@ -62,6 +62,7 @@ public class ExportService {
     Map<String, PositionDetail> detailMap = details.stream()
         .collect(Collectors.toMap(PositionDetail::getTicker, d -> d));
     List<AlertDto> alerts = alertService.checkAlerts();
+    InvestmentPlan plan = investmentPlanRepository.findById(1L).orElse(null);
 
     // Separar posiciones activas y cerradas
     List<Position> activePositions = positions.stream().filter(p -> p.getShares() > 0).toList();
@@ -89,7 +90,8 @@ public class ExportService {
     appendHeader(sb);
     appendExecutiveSummary(sb, positions, activePositions, closedPositions, metrics, dcaEntries,
         valuations, totals);
-    appendInvestmentPlan(sb, dcaEntries);
+    appendInvestmentPlan(sb, dcaEntries, plan);
+    appendRealInvestment(sb, dcaEntries, plan);
     appendActiveAlerts(sb, alerts);
     appendPositionsDetail(sb, activePositions, metrics, dcaEntries, valuations, totals);
     appendSalesSummary(sb, dcaEntries, metrics);
@@ -227,10 +229,9 @@ public class ExportService {
 
   // ───────────────────── PLAN DE INVERSIÓN ─────────────────────
 
-  private void appendInvestmentPlan(StringBuilder sb, List<DcaEntry> dcaEntries) {
-    sb.append("## 1b. Plan de Inversión Mensual\n\n");
-
-    InvestmentPlan plan = investmentPlanRepository.findById(1L).orElse(null);
+  private void appendInvestmentPlan(StringBuilder sb, List<DcaEntry> dcaEntries,
+      InvestmentPlan plan) {
+    sb.append("## 2. Plan de Inversión Mensual\n\n");
 
     if (plan == null || plan.getMonthlyBudget() == null || plan.getMonthlyBudget() <= 0) {
       sb.append("⚠️ **No hay plan de inversión mensual configurado.**\n\n");
@@ -273,6 +274,13 @@ public class ExportService {
               ? fmtPct((totalDca / plan.getMonthlyBudget()) * 100) : "—"));
       sb.append("\n");
     }
+  }
+
+  // ───────────────────── INVERSIÓN REAL 6 MESES ─────────────────────
+
+  private void appendRealInvestment(StringBuilder sb, List<DcaEntry> dcaEntries,
+      InvestmentPlan plan) {
+    sb.append("## 3. Inversión Real Últimos 6 Meses Completos\n\n");
 
     // Comparar con la media real de los últimos 6 meses COMPLETOS (excluye mes actual)
     LocalDate firstDayCurrentMonth = LocalDate.now().withDayOfMonth(1);
@@ -290,7 +298,6 @@ public class ExportService {
 
     if (!recentMonthly.isEmpty()) {
       double avgMonthly = recentMonthly.values().stream().mapToDouble(v -> v).average().orElse(0);
-      sb.append("### Inversión real últimos 6 meses completos\n\n");
       sb.append("| Mes | Invertido (€) | Nota |\n");
       sb.append("|-----|---------------|------|\n");
       recentMonthly.forEach((k, v) -> sb.append(String.format("| %s | %s | |\n", k, fmtEur(v))));
@@ -316,6 +323,8 @@ public class ExportService {
         sb.append(String.format("- Desviación media vs objetivo: **%s** %s\n\n",
             fmtPct(deviation), Math.abs(deviation) >= 20 ? "⚠️" : "✅"));
       }
+    } else {
+      sb.append("*Sin datos de inversión en los últimos 6 meses completos.*\n\n");
     }
   }
 
