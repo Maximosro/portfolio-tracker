@@ -98,7 +98,7 @@ public class ExportService {
     appendInvestmentPlan(sb, dcaEntries);
     appendPlannedCashFlows(sb);
     appendActiveAlerts(sb, alerts);
-    appendPositionsDetail(sb, activePositions, metrics, dcaEntries);
+    appendPositionsDetail(sb, activePositions, metrics, dcaEntries, valuations, totals);
     appendClosedPositionsDetail(sb, closedPositions, dcaEntries, metrics);
     appendSalesOperationsDetail(sb, dcaEntries, positions, metrics);
     appendOperationalDetail(sb, activePositions, detailMap);
@@ -392,12 +392,13 @@ public class ExportService {
   // ───────────────────── DETALLE POR POSICIÓN ─────────────────────
 
   private void appendPositionsDetail(StringBuilder sb, List<Position> positions,
-      PortfolioMetricsDto metrics, List<DcaEntry> dcaEntries) {
+      PortfolioMetricsDto metrics, List<DcaEntry> dcaEntries,
+      Map<String, PositionValuation> valuations, PositionTotals totals) {
     sb.append("## 3. Detalle por Posición\n\n");
     sb.append(
-        "| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | P.Hace7d (€) | Var.Semana | Var. Día | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR | Primera Compra |\n");
+        "| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | Var. Día | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR | Primera Compra |\n");
     sb.append(
-        "|--------|--------|--------|----------|-------------|---------------|--------------|------------|----------|---------------|-----------|---------|---------|------|----------------|\n");
+        "|--------|--------|--------|----------|-------------|---------------|------------|----------|---------------|-----------|---------|---------|------|----------------|\n");
 
     // Pre-calcular primera compra por ticker
     Map<String, LocalDate> firstBuyByTicker = dcaEntries.stream()
@@ -407,15 +408,8 @@ public class ExportService {
                 Collectors.minBy(Comparator.comparing(DcaEntry::getDate)),
                 opt -> opt.map(DcaEntry::getDate).orElse(null))));
 
-    Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
-
-    double sumInvested = 0, sumValue = 0, sumPL = 0;
-
     for (Position p : positions) {
-      double invested = p.getShares() * p.getAvgPrice();
-      Double value = p.getCurrentPrice() != null ? p.getShares() * p.getCurrentPrice() : null;
-      Double pl = value != null ? value - invested : null;
-      Double plPct = pl != null && invested > 0 ? (pl / invested) * 100 : null;
+      PositionValuation v = valuations.get(p.getTicker());
       Double xirr =
           metrics.positionXirr() != null ? metrics.positionXirr().get(p.getTicker()) : null;
       String dayChange = "—";
@@ -424,60 +418,40 @@ public class ExportService {
         dayChange = fmtPct(pct);
       }
 
-      // Precio hace 7 días y variación semanal
-      String price7dStr = "—";
-      String weekChangeStr = "—";
-      if (p.getCurrentPrice() != null) {
-        List<PriceHistory> weekHistory = priceHistoryRepository
-            .findByTickerAndTimestampAfterOrderByTimestampAsc(p.getTicker(), oneWeekAgo);
-        if (!weekHistory.isEmpty()) {
-          double price7d = weekHistory.getFirst().getPriceEur();
-          price7dStr = fmtNum(price7d, 4);
-          if (price7d > 0) {
-            double weekPct = ((p.getCurrentPrice() - price7d) / price7d) * 100;
-            weekChangeStr = fmtPct(weekPct);
-          }
-        }
-      }
-
       // Primera compra
       LocalDate firstBuy = firstBuyByTicker.get(p.getTicker());
       String firstBuyStr = firstBuy != null ? firstBuy.format(DATE_FMT) : "—";
 
       sb.append(String.format(
-          "| **%s** | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
+          "| **%s** | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
           p.getTicker(),
           nvl(p.getName()),
           nvl(p.getSector()),
           fmtNum(p.getShares(), 6),
           fmtNum(p.getAvgPrice(), 4),
           p.getCurrentPrice() != null ? fmtNum(p.getCurrentPrice(), 4) : "—",
-          price7dStr,
-          weekChangeStr,
           dayChange,
-          fmtEur(invested),
-          value != null ? fmtEur(value) : "—",
-          pl != null ? fmtEur(pl) : "—",
-          plPct != null ? fmtPct(plPct) : "—",
+          fmtEur(v.invested()),
+          fmtEur(v.value()),
+          fmtEur(v.pl()),
+          fmtPct(v.plPct()),
           xirr != null ? fmtPct(xirr * 100) : "N/D",
           firstBuyStr
       ));
-
-      sumInvested += invested;
-      if (value != null) {
-        sumValue += value;
-      }
-      if (pl != null) {
-        sumPL += pl;
-      }
     }
 
-    double sumPLPct = sumInvested > 0 ? (sumPL / sumInvested) * 100 : 0;
     sb.append(String.format(
-        "| **TOTAL** | | | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** | |\n",
-        fmtEur(sumInvested), fmtEur(sumValue), fmtEur(sumPL), fmtPct(sumPLPct),
+        "| **TOTAL** | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** | |\n",
+        fmtEur(totals.invested()), fmtEur(totals.value()), fmtEur(totals.pl()),
+        fmtPct(totals.plPct()),
         metrics.portfolioXirr() != null ? fmtPct(metrics.portfolioXirr() * 100) : "N/D"));
     sb.append("\n");
+
+    // Leyenda de columnas
+    sb.append("> **Leyenda:** P.Medio = precio medio de compra ponderado · P.Actual = último precio "
+        + "(EUR) · Var.Día = variación vs cierre anterior · Invertido = acciones × P.Medio · "
+        + "Valor = acciones × P.Actual · P&L = Valor − Invertido · XIRR = rentabilidad "
+        + "anualizada · Primera Compra = fecha del primer DCA de compra.\n\n");
 
     // Info adicional por posición
     sb.append("### Información adicional por posición\n\n");
