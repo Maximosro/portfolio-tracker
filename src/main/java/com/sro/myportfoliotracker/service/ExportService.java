@@ -330,7 +330,7 @@ public class ExportService {
 
 
   private void appendActiveAlerts(StringBuilder sb, List<AlertDto> alerts) {
-    sb.append("## 2. Alertas Activas\n\n");
+    sb.append("## 4. Alertas Activas\n\n");
 
     if (alerts.isEmpty()) {
       sb.append("✅ **Sin alertas activas.**\n\n");
@@ -364,7 +364,7 @@ public class ExportService {
   private void appendPositionsDetail(StringBuilder sb, List<Position> positions,
       PortfolioMetricsDto metrics, List<DcaEntry> dcaEntries,
       Map<String, PositionValuation> valuations, PositionTotals totals) {
-    sb.append("## 3. Detalle por Posición\n\n");
+    sb.append("## 5. Detalle por Posición\n\n");
     sb.append(
         "| Ticker | Nombre | Sector | Acciones | P.Medio (€) | P.Actual (€) | Var. Día | Invertido (€) | Valor (€) | P&L (€) | P&L (%) | XIRR | Primera Compra |\n");
     sb.append(
@@ -478,7 +478,7 @@ public class ExportService {
 
   private void appendOperationalDetail(StringBuilder sb, List<Position> positions,
       Map<String, PositionDetail> detailMap) {
-    sb.append("## 5. Detalle Operativo por Posición\n\n");
+    sb.append("## 7. Detalle Operativo por Posición\n\n");
 
     boolean hasAny = positions.stream().anyMatch(p -> detailMap.containsKey(p.getTicker()));
     if (!hasAny) {
@@ -534,7 +534,7 @@ public class ExportService {
   private void appendAllocationAnalysis(StringBuilder sb, List<Position> positions,
       Map<String, PositionDetail> detailMap, Map<String, PositionValuation> valuations,
       PositionTotals totals) {
-    sb.append("## 6. Distribución de Cartera (Allocation)\n\n");
+    sb.append("## 8. Distribución de Cartera (Allocation)\n\n");
 
     double totalValue = totals.value();
 
