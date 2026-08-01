@@ -1132,7 +1132,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <a href="#guide-noticias"><span class="nav-icon">📰</span> Noticias</a>
     <a href="#guide-exportar"><span class="nav-icon">📄</span> Exportar informes</a>
     <a href="#guide-simuladores"><span class="nav-icon">🧮</span> Simuladores</a>
-    <a href="#guide-ia"><span class="nav-icon">🤖</span> Asistente IA</a>
     <a href="#guide-plan"><span class="nav-icon">🎯</span> Plan de inversión</a>
     <a href="#guide-horarios"><span class="nav-icon">🕐</span> Horarios de mercado</a>
     <a href="#guide-telegram"><span class="nav-icon">✈️</span> Telegram</a>
@@ -1181,11 +1180,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
       <div class="guide-card-icon">🔒</div>
       <h4>Privada</h4>
       <p>Funciona en tu propio ordenador. Tus datos nunca salen de tu equipo.</p>
-    </div>
-    <div class="guide-card">
-      <div class="guide-card-icon">🤖</div>
-      <h4>IA integrada</h4>
-      <p>Genera prompts para analizar posiciones con Claude o ChatGPT e importa las respuestas automáticamente.</p>
     </div>
     <div class="guide-card">
       <div class="guide-card-icon">📥</div>
@@ -1535,9 +1529,8 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
 
   <h3>📑 Pestañas del detalle</h3>
   <ul>
-    <li><strong>Resumen:</strong> Estadísticas principales, peso en cartera vs objetivo, nivel de riesgo, estrategia y alertas de precio.</li>
-    <li><strong>Notas:</strong> Espacio libre para apuntar tu análisis, motivos de entrada, niveles técnicos, catalizadores pendientes, etc. (hasta 2.000 caracteres).</li>
-    <li><strong>🤖 IA:</strong> Generador de prompts para análisis con inteligencia artificial e importación automática de respuestas.</li>
+    <li><strong>Resumen:</strong> Estadísticas principales, peso en cartera vs objetivo, nivel de riesgo y alertas de precio.</li>
+    <li><strong>Notas:</strong> Espacio libre para apuntar tu estrategia, análisis, motivos de entrada, niveles técnicos, catalizadores pendientes, etc. (hasta 2.000 caracteres).</li>
   </ul>
 
   <div class="guide-table-wrap">
@@ -1565,11 +1558,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
           <td><strong>Nivel de riesgo</strong></td>
           <td>Tu valoración personal: Bajo 🟢, Medio 🟡 o Alto 🔴.</td>
           <td>Un ETF de bonos sería "Bajo", uno de tecnología "Medio-Alto".</td>
-        </tr>
-        <tr>
-          <td><strong>Estrategia</strong></td>
-          <td>Texto libre donde apuntas tu plan para esta inversión.</td>
-          <td>"DCA mensual 150€. Mantener mínimo 3 años."</td>
         </tr>
         <tr>
           <td><strong>Notas</strong></td>
@@ -1898,7 +1886,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <li><strong>Resumen ejecutivo:</strong> Valor total, invertido, ganancia/pérdida, XIRR, mejor y peor posición.</li>
     <li><strong>Alertas activas:</strong> Lista de todas las alertas que están disparadas.</li>
     <li><strong>Detalle por posición:</strong> Tabla completa con todas las cifras de cada inversión.</li>
-    <li><strong>Detalle operativo:</strong> Stop-loss, take-profit, estrategia, notas de cada posición.</li>
+    <li><strong>Detalle operativo:</strong> Configuración operativa de cada posición (riesgo, peso objetivo, alertas de precio).</li>
     <li><strong>Distribución de cartera:</strong> Pesos por posición y por sector.</li>
     <li><strong>Historial DCA:</strong> Todas tus compras y ventas con fechas y importes.</li>
     <li><strong>Análisis de la estrategia DCA:</strong> Frecuencia de compra, inversión mensual.</li>
@@ -1968,57 +1956,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
   </div>
 </section>
 
-<!-- ────────── ASISTENTE IA ────────── -->
-<section id="guide-ia">
-  <h2>🤖 Asistente IA (Análisis por posición)</h2>
-  <p>
-    Cada posición tiene una pestaña <strong>"🤖 IA"</strong> en su detalle operativo.
-    Esta funcionalidad te ayuda a utilizar inteligencia artificial (Claude, ChatGPT, etc.)
-    para analizar cada inversión y obtener recomendaciones operativas personalizadas.
-  </p>
-
-  <h3>🧠 ¿Cómo funciona?</h3>
-  <div class="guide-steps">
-    <div class="guide-step">
-      <div class="guide-step-body">
-        <h4>Genera el prompt</h4>
-        <p>Pulsa <strong>"Generar prompt para Claude"</strong>. La app recopilará automáticamente todos los datos de la posición
-        (precio actual, precio medio, participaciones, sector, historial DCA, etc.) y creará un prompt
-        optimizado para que la IA te ayude.</p>
-      </div>
-    </div>
-    <div class="guide-step">
-      <div class="guide-step-body">
-        <h4>Copia y envía a la IA</h4>
-        <p>Pulsa <strong>"Copiar"</strong> para copiar el prompt al portapapeles. Pégalo en Claude, ChatGPT u otro asistente de IA.</p>
-      </div>
-    </div>
-    <div class="guide-step">
-      <div class="guide-step-body">
-        <h4>Recibe un JSON con recomendaciones</h4>
-        <p>La IA te devolverá un JSON con propuestas de: alertas de precio,
-        nivel de riesgo, estrategia, peso objetivo y notas de seguimiento.</p>
-      </div>
-    </div>
-    <div class="guide-step">
-      <div class="guide-step-body">
-        <h4>Importa la respuesta</h4>
-        <p>Pega el JSON en el campo <strong>"Importar respuesta de Claude"</strong> y pulsa <strong>"Importar y rellenar"</strong>.
-        Se rellenarán automáticamente todos los campos del detalle operativo. Revisa y pulsa <strong>Guardar</strong>.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="guide-tip-box">
-    <span class="guide-box-icon">💡</span>
-    <div>
-      <strong>Consejo:</strong> El prompt generado incluye todos los datos de la posición (precio medio, actual, historial de compras,
-      sector, etc.), por lo que la IA tiene el contexto necesario para darte recomendaciones informadas.
-      Puedes editar los valores importados antes de guardar si quieres ajustarlos.
-    </div>
-  </div>
-</section>
-
 <!-- ────────── PLAN DE INVERSIÓN ────────── -->
 <section id="guide-plan">
   <h2>🎯 Plan de inversión y flujos de caja</h2>
@@ -2052,7 +1989,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
     <span class="guide-box-icon">ℹ️</span>
     <div>
       Los flujos de caja planificados se incluyen automáticamente en el <strong>informe de exportación</strong>
-      para que el asistente de IA pueda tenerlos en cuenta al analizar tu cartera.
+      para que tengas el contexto completo de tu cartera.
     </div>
   </div>
 </section>
@@ -2403,14 +2340,6 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.7;co
   </details>
 
   <details>
-    <summary>¿Cómo funciona el asistente de IA?</summary>
-    <div class="guide-details-body">
-      <p>Abre el detalle de cualquier posición y ve a la pestaña <strong>🤖 IA</strong>. La app genera un prompt con todos los datos de la posición
-      que puedes copiar y enviar a Claude o ChatGPT. La IA te devolverá un JSON con recomendaciones de alertas de precio, estrategia,
-      peso objetivo y notas que puedes importar
-      directamente para rellenar el detalle de la posición. Consulta la sección <a href="#guide-ia" style="color:var(--color-primary)">"Asistente IA"</a> para más detalle.</p>
-    </div>
-  </details>
 
   <details>
     <summary>¿Puedo llevarme la app a otro PC?</summary>
