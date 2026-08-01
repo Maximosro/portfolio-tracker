@@ -114,11 +114,10 @@ public class ExportService {
     sb.append("> **Sistema:** Portfolio Tracker — Exportación para análisis con IA\n\n");
     sb.append("---\n\n");
     sb.append("""
-        > **NOTA PARA EL ASISTENTE:** Este documento contiene un snapshot completo de una cartera de inversión real.
-        > Todos los importes están en EUR salvo que se indique lo contrario. Los precios actuales provienen de
-        > Yahoo Finance y se convierten automáticamente a EUR. El XIRR se calcula con los flujos DCA reales.
-        > Puedes usar esta información para responder preguntas sobre rendimiento, distribución, riesgo,
-        > estrategia DCA, comparativas entre posiciones, sugerencias de rebalanceo, etc.
+        > **NOTA PARA EL ASISTENTE:** Snapshot de una cartera de inversión real. Importes en EUR salvo
+        > indicación. Los precios actuales provienen de Yahoo Finance y se convierten automáticamente a EUR.
+        > El XIRR se calcula con los flujos DCA reales. Las métricas están unificadas: si una cifra aparece
+        > en varias secciones, es el mismo valor.
         
         """);
   }
@@ -751,12 +750,6 @@ public class ExportService {
         - El **XIRR** (Extended Internal Rate of Return) se calcula considerando las fechas y montos exactos de cada
           compra DCA como flujos de caja negativos, y el valor actual como flujo positivo.
         - Las posiciones con XIRR "N/D" no tienen historial DCA suficiente para calcular la TIR.
-        - **Evolución de la estrategia:** Inicialmente se operó con acciones individuales y operaciones puntuales,
-          pero rápidamente se migró a una estrategia de **DCA (Dollar Cost Averaging)**: compras periódicas
-          y sistemáticas sin intentar hacer timing del mercado. Esta es la estrategia activa actualmente y
-          la que refleja el grueso de las posiciones abiertas.
-        - Las posiciones cerradas y algunas operaciones antiguas pueden corresponder a la fase inicial
-          de acciones individuales, antes de adoptar el enfoque DCA.
         - **Comisiones:** Las compras DCA automatizadas con Trade Republic tienen comisión **0 €**. Las operaciones
           de venta tienen una comisión fija de **1 €** por operación. Estas comisiones no están descontadas
           en los cálculos de P&L del informe, pero deben tenerse en cuenta para el resultado neto real.
