@@ -4,7 +4,12 @@
 
 set -e
 
-SUPABASE_URL="postgresql://postgres@db.agtkcnxmlbccbwmsuxdz.supabase.co:6543/postgres?sslmode=require"
+# Conexión DIRECTA (5432). El puerto 6543 es el pooler en modo *transaction*
+# (pgbouncer), donde pg_dump es poco fiable: Supabase recomienda la conexión
+# directa o el session pooler (también 5432) para volcados.
+# Ojo: db.<ref>.supabase.co suele resolver SOLO a IPv6; si tu red no tiene IPv6,
+# usa el session pooler: postgresql://postgres.<ref>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
+SUPABASE_URL="postgresql://postgres@db.agtkcnxmlbccbwmsuxdz.supabase.co:5432/postgres?sslmode=require"
 LOCAL_CONTAINER="portfolio-tracker-postgres-1"
 LOCAL_DB="portfoliodb"
 LOCAL_USER="portfolio"
