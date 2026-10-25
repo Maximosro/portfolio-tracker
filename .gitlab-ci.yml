@@ -1,5 +1,7 @@
-# GitLab Pages deployment
-# Sirve los archivos estáticos de docs/public/ como GitLab Pages
+# GitLab Pages deployment (opcional)
+# Publica docs/public/ como GitLab Pages, pero SOLO si esa carpeta existe en la rama.
+# docs/public/ se eliminó del proyecto (ya no hay landing en docs/), así que el job
+# no se crea y no se genera un pipeline fallido en cada push a la rama por defecto.
 image: alpine:latest
 
 pages:
@@ -11,6 +13,6 @@ pages:
     paths:
       - public
   rules:
-    - if: $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"
-
-
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      exists:
+        - docs/public/index.html
